@@ -1,0 +1,147 @@
+# -*- coding:utf-8 -*
+'''
+Created on 2017年4月10日
+
+@author: chenyitao
+'''
+
+import random
+import gevent
+import json
+from thrift.transport import TSocket  
+from thrift.transport import TTransport
+from thrift.protocol import TBinaryProtocol  
+from hbase import THBaseService  
+from hbase.ttypes import TColumnValue, TPut, TGet, TColumn
+from thrift.transport.TTransport import TTransportException
+from conf.base_site import STATUS
+
+
+class HBaseManager(object):
+    '''
+    classdocs
+    '''
+
+    def __init__(self, host_ports, callback=None):
+        '''
+        Constructor
+        '''
+        self._callback = callback
+        self._status = False
+        self._host_ports = list(host_ports)
+        self._host_ports_pool = list(self._host_ports)
+        self._connect()
+        gevent.spawn(self._keep_alive)
+        gevent.sleep()
+        
+    def _connect(self):
+        try:
+            self._current_host_port = random.choice(self._host_ports_pool).split(':')
+            self._sock = TSocket.TSocket(host=self._current_host_port[0],
+                                         port=self._current_host_port[1])
+            self._transport = TTransport.TBufferedTransport(self._sock)
+            self._protocol = TBinaryProtocol.TBinaryProtocol(self._transport)
+            self._client = THBaseService.Client(self._protocol)
+            self._transport.open()
+        except Exception, e:
+            print(e)
+            current_host_port = ':'.join(self._current_host_port)
+            self._host_ports_pool.remove(current_host_port)
+            if len(self._host_ports_pool) > 0:
+                print('HBase Server Exception. Now Is Reconnecting.')
+            else:
+                print('HBase Server Fatal Error. Please Check It.')
+                gevent.sleep(30)
+                self._host_ports_pool = list(self._host_ports)
+                print('Retry Connecting HHase.')
+            self._reconnect()
+        else:
+            self._host_ports_pool = list(self._host_ports)
+            self._status = True
+            print('----->HBase Is Connected.(%s)' % ':'.join(self._current_host_port))
+            self._hbase_was_ready()
+
+    def _hbase_was_ready(self):
+        if self._callback:
+            self._callback()
+        
+    def _keep_alive(self):
+        while STATUS:
+            try:
+                if self._status:
+                    self.get('keep_alive', 'ping')
+            except TTransportException, e:
+                print(e)
+                self._status = False
+                if len(self._host_ports_pool):
+                    self._reconnect()
+            except Exception, e:
+                print(e)
+                gevent.sleep(10)
+            else:
+                gevent.sleep(30)
+                
+    def _reconnect(self):
+        self._connect()
+
+    def put(self, table_name, row_key, task=None, item=None, family='source'):
+        if not self._status:
+            print('[Put Operation Was Failed] HBase Server Is Exception.')
+            return
+        if not item or not isinstance(item, dict):
+            print('Item type error.')
+            return
+        cvs = []
+        for k, v in item.items():
+            if isinstance(v, list) or isinstance(v, dict):
+                v = json.dumps(v)
+            cv = TColumnValue(family, k, v)
+            cvs.append(cv)
+        if task:
+            task_cv = TColumnValue('task', 'task', json.dumps(task.__dict__))
+            cvs.append(task_cv)
+        tp = TPut(row_key, cvs)
+        try:
+            self._client.put(table_name, tp)
+        except Exception, e:
+            print(e)
+
+    def get(self, table_name, row_key, family=None, qualifier=None):
+        if not self._status:
+            print('[Get Operation Was Failed] HBase Server Is Exception.')
+            return None
+        get = TGet()
+        get.row = row_key
+        if family:
+            tc = TColumn()
+            tc.family = family
+            if qualifier:
+                tc.qualifier = qualifier
+            get.columns = [tc]
+        try:
+            ret = None
+            ret = self._client.get(table_name, get)
+        except Exception, e:
+            print(e)
+        return ret
+
+    def close(self):
+        self._transport.close()
+        
+    def __del__(self):
+        self.close()
+        
+    
+def main():
+    from conf.base_site import HBASE_HOST_PORTS
+    hbm = HBaseManager(HBASE_HOST_PORTS)
+    cnt = 1
+    while True:
+        if cnt % 10 == 0:
+            ret = hbm.get('task_test', 'fec03ab4ebda98a394752a3cb290f179')
+            print('get：', ret)
+        cnt += 1
+        gevent.sleep(1)
+    
+if __name__ == '__main__':
+    main()
