@@ -87,3 +87,17 @@ ENV/
 
 # Rope project settings
 .ropeproject
+
+# Eclipse project settings
+.project
+.pydevproject
+.settings
+
+# PyCharm project settings
+.idea
+
+# Log File
+*.log
+
+# Mac OSX Files
+.DS_Store
