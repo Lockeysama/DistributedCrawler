@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 '''
-Created on 2017年4月12日
+Created on 2017年4月20日
 
 @author: chenyitao
 '''
@@ -10,23 +10,18 @@ import json
 import gevent
 
 from conf.base_site import STATUS
-from common.queues import EVENT_QUEUE, PARSER_RULES_MOULDS_UPDATE_QUEUE
-from plugins.db.db_manager import DBManager
-from conf.parser_site import PARSE_RULES_HBASE_TABLE, PARSE_RULES_HBASE_FAMILY, PARSE_RULES_HBASE_INDEX_QUALIFIER
+from common.queues import RULES_MOULDS_UPDATE_QUEUE, EVENT_QUEUE
 from base.rule.rule import Rule
+from plugins.db.db_manager import DBManager
 
-SIGNAL_RULES_UPDATER_READY = object()
 
-class ParserRulesUpdater(object):
-    '''
-    classdocs
-    '''
+class RulesUpdater(object):
 
     def __init__(self, callback=None):
         '''
         Constructor
         '''
-        print('-->Parser Rules Updater Is Starting.')
+        print('-->Proxy Checker Rules Updater Is Starting.')
         self._callback = callback
         self._db = None
         self._idle = 0
@@ -36,10 +31,10 @@ class ParserRulesUpdater(object):
         
     def _ready(self):
         if self._callback:
-            self._callback(self, SIGNAL_RULES_UPDATER_READY, None)
-    
+            self._callback()
+
     def _event(self):
-        print('-->Parser Rules Updater Was Ready.')
+        print('-->Rules Updater Was Ready.')
         while STATUS:
             if not EVENT_QUEUE.empty():
                 if not self._db:
@@ -60,14 +55,14 @@ class ParserRulesUpdater(object):
                     self._db = None
                 gevent.sleep(5)
                 self._idle += 5
-    
+
     def _get_local_conf(self, event):
-        _conf_path = './conf/parse_rule_index/%s.json' % event.platform
+        _conf_path = self.local_conf_path_base % event.platform
         if os.path.exists(_conf_path):
             with open(_conf_path, 'r') as f:
                 return json.loads(f.read())
         return {}
-    
+
     def _save_local_info(self, event, local_confs, remote_confs):
         new_confs = {}
         for remote_conf in remote_confs:
@@ -76,19 +71,19 @@ class ParserRulesUpdater(object):
                 continue
             new_confs[key] = remote_conf
         confs = json.dumps(new_confs)
-        _conf_path = './conf/parse_rule_index/%s.json' % event.platform
+        _conf_path = self.local_conf_path_base % event.platform
         if os.path.exists(_conf_path):
             os.remove(_conf_path)
         with open(_conf_path, 'a') as f:
             f.write(confs)
-    
+
     def _get_update_list(self, event, local_confs):
         _update_list = []
         _remote_confs = None
-        ret = self._db.hbase_instance().get(PARSE_RULES_HBASE_TABLE,
+        ret = self._db.hbase_instance().get(self.hbase_table,
                                             event.platform,
-                                            PARSE_RULES_HBASE_FAMILY,
-                                            PARSE_RULES_HBASE_INDEX_QUALIFIER)
+                                            self.hbase_family,
+                                            self.hbase_index_qualifier)
         for column_value in ret.columnValues:
             _remote_confs = json.loads(column_value.value)
             for _remote_conf in _remote_confs:
@@ -100,7 +95,7 @@ class ParserRulesUpdater(object):
                 continue
             _update_list.append(_remote_conf)
         return _update_list, _remote_confs
- 
+
     def _create_package(self, package):
         _paths = package.split('.')
         _path = './'
@@ -115,9 +110,9 @@ class ParserRulesUpdater(object):
         for item in update_list:
             _package = item['package']
             _md5 = item['md5']
-            ret = self._db.hbase_instance().get(PARSE_RULES_HBASE_TABLE,
+            ret = self._db.hbase_instance().get(self.hbase_table,
                                                 event.platform,
-                                                PARSE_RULES_HBASE_FAMILY,
+                                                self.hbase_family,
                                                 _package.split('.')[-1])
             if not ret:
                 print('Rules Fetch Exception.')
@@ -128,8 +123,8 @@ class ParserRulesUpdater(object):
             with open(_file_path, 'a') as f:
                 f.write(ret.columnValues[0].value)
             rule = Rule(event.platform, _package, item.get('moulds', None))
-            PARSER_RULES_MOULDS_UPDATE_QUEUE.put(rule)
-        
+            RULES_MOULDS_UPDATE_QUEUE.put(rule)
+
     def _update(self, event):
         _local_confs = self._get_local_conf(event) 
         _update_list, _remote_confs = self._get_update_list(event, _local_confs)
@@ -138,10 +133,9 @@ class ParserRulesUpdater(object):
         self._update_moulds(event, _update_list)
         self._save_local_info(event, _local_confs, _remote_confs)
 
+        
 def main():
-    ParserRulesUpdater()
-    while True:
-        gevent.sleep()
+    pass
 
 if __name__ == '__main__':
     main()

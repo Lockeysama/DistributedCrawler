@@ -25,6 +25,9 @@ PARSE_QUEUE = gevent.queue.Queue()
 # Waiting For Storage Queue
 STORAGE_QUEUE = gevent.queue.Queue()
 
+# Rules Moulds Update Queue
+RULES_MOULDS_UPDATE_QUEUE = gevent.queue.Queue()
+
 if MODEL == WorkerModel.CRAWLER:
     # Task Base Info Update Queue
     TASK_BASE_INFO_UPDATE_QUEUE = gevent.queue.Queue()

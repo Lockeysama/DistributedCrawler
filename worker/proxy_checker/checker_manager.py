@@ -82,6 +82,9 @@ class CheckerManager(object):
     
     def _checker(self, tag, proxy_type, src_queue):
         while STATUS:
+            if not len(self._rules_moulds[proxy_type]):
+                gevent.sleep(10)
+                continue
             info = src_queue.get()
             for platform, cls in self._rules_moulds[proxy_type].items():
                 ret = cls(info)

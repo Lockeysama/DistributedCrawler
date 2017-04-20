@@ -8,7 +8,7 @@ import gevent
 
 from conf.base_site import STATUS
 from conf.proxy_checker_site import PLATFORM_PROXY_SET_BASE_KEY,\
-    HTTP_SOURCE_PROXY_SET_KEY, HTTPS_SOURCE_PROXY_SET_KEY, PROXY_PUBSUB_PATTERN
+    HTTP_SOURCE_PROXY_SET_KEY, HTTPS_SOURCE_PROXY_SET_KEY, PROXY_PUBSUB_PATTERN, PROXY_CHECKER_CONCURRENT
 
 from common.queues import HTTP_SOURCE_PROXY_QUEUE, HTTPS_SOURCE_PROXY_QUEUE,\
     USEFUL_PROXY_QUEUE
@@ -17,7 +17,7 @@ from worker.proxy_checker.models.IPInfo import IPInfo
 from plugins.rsm.redis_manager.ip_pool import IPPool
 
 
-class ProxyDBManager(object):
+class ProxyManager(object):
     '''
     classdocs
     '''
@@ -46,28 +46,28 @@ class ProxyDBManager(object):
 
     def _src_ip_fetch(self):
         while STATUS:
-            if HTTP_SOURCE_PROXY_QUEUE.empty():
-                ret = self._ip_pool.members(HTTP_SOURCE_PROXY_SET_KEY)
+            if HTTP_SOURCE_PROXY_QUEUE.qsize() < PROXY_CHECKER_CONCURRENT / 2:
+                ret = self._ip_pool.mspop(HTTP_SOURCE_PROXY_SET_KEY, PROXY_CHECKER_CONCURRENT * 2)
+                ret = [item for item in ret if item]
+                print('http+%d' % len(ret))
                 for ip in ret:
-                    info = IPInfo()
-                    info.ip_port = ip
-                    HTTP_SOURCE_PROXY_QUEUE.put(info)
-            elif HTTPS_SOURCE_PROXY_QUEUE.empty():
-                ret = self._ip_pool.members(HTTPS_SOURCE_PROXY_SET_KEY)
+                    HTTP_SOURCE_PROXY_QUEUE.put(IPInfo(ip))
+            if HTTPS_SOURCE_PROXY_QUEUE.qsize() < PROXY_CHECKER_CONCURRENT / 2:
+                ret = self._ip_pool.mspop(HTTPS_SOURCE_PROXY_SET_KEY, PROXY_CHECKER_CONCURRENT * 2)
+                ret = [item for item in ret if item]
+                print('https+%d' % len(ret))
                 for ip in ret:
-                    info = IPInfo()
-                    info.ip_port = ip
-                    HTTPS_SOURCE_PROXY_QUEUE.put(info)
-            else:
-                gevent.sleep(10)
+                    HTTPS_SOURCE_PROXY_QUEUE.put(IPInfo(ip, 'https'))
+            gevent.sleep(5)
 
 
 def main():
-    ProxyDBManager()
+    ProxyManager()
     while STATUS:
         info = HTTP_SOURCE_PROXY_QUEUE.get()
-        info.platform = 'test'
-        USEFUL_PROXY_QUEUE.put(info)
+        print(info.ip_port, info.http_or_https)
+#         info.platform = 'test'
+#         USEFUL_PROXY_QUEUE.put(info)
         gevent.sleep(0.5)
         
     

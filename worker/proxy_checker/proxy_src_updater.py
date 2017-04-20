@@ -51,7 +51,6 @@ class ProxySourceUpdater(object):
                            'type': 'https'}]
         
     def start(self):
-        ticktock = 0
         while STATUS:
             for infos in self._src_apis:
                 platform = infos.get('platform')
@@ -66,14 +65,9 @@ class ProxySourceUpdater(object):
                     print('Exception: parse_mould is None.')
                     continue
                 ips = self._proxy_active_check(parse_mould(rsp.text))
-                if ticktock >= 300:
-                    self._ip_pool.delete('tddc:test:proxy:ip_src:%s' % ips_type)
-                    print('Clear Remote Proxy（%s） Caches.' % ips_type)
+                self._ip_pool.msadd('tddc:test:proxy:ip_src:%s' % ips_type, ips)
                 print('Source IPS（%s） Growth：%d' % (ips_type, len(ips)))
-                for i in range(0, len(ips), 5):
-                    self._ip_pool.add('tddc:test:proxy:ip_src:%s' % ips_type, *ips[i:i+5])
-            gevent.sleep(60)
-            ticktock += 60
+            gevent.sleep(10)
     
     def _proxy_active_check(self, ips):
         active_ips = []

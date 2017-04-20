@@ -10,13 +10,13 @@ class IPInfo(object):
     classdocs
     '''
 
-    def __init__(self):
+    def __init__(self, ip_port=None, http_or_https='http', platform=None):
         '''
         Constructor
         '''
-        self.ip_port = None
-        self.platform = None
-        self.http_or_https = 'MIX'
+        self.ip_port = ip_port
+        self.http_or_https = http_or_https
+        self.platform = platform
         
 
 def main():

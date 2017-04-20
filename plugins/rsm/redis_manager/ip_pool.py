@@ -29,12 +29,24 @@ class IPPool(object):
     
     def add(self, name, *values): 
         self._rdm.sadd(name, *values)
+        
+    def msadd(self, name, values): 
+        ppl = self._rdm.pipeline()
+        for value in values:
+            ppl.sadd(name, value)
+        return ppl.execute()
     
     def randmember(self, name, count=1):
         return self._rdm.srandmember(name, count)
      
     def members(self, name):
         return self._rdm.smembers(name)
+    
+    def mspop(self, name, count):
+        ppl = self._rdm.pipeline()
+        for _ in xrange(count):
+            ppl.spop(name)
+        return ppl.execute()
 
     def remove(self, name, *values):
         self._rdm.srem(name, *values)
@@ -64,6 +76,9 @@ def main():
     import gevent.monkey
     gevent.monkey.patch_all()
     ip_pool = IPPool()
+    
+    rets = ip_pool.mspop('tddc:test:proxy:ip_src:http', 2)
+    print(rets) 
     def subscribe(ip_pool):
         items = ip_pool.psubscribe('tddc:ip:platform:*')
         for item in items:
