@@ -8,10 +8,11 @@ import gevent
 import os
 import json
 import importlib
+
 from conf.base_site import STATUS
 from conf.proxy_checker_site import PROXY_CHECKER_CONCURRENT
 from common.queues import HTTP_SOURCE_PROXY_QUEUE, HTTPS_SOURCE_PROXY_QUEUE,\
-    USEFUL_PROXY_QUEUE
+    USEFUL_PROXY_QUEUE, RULES_MOULDS_UPDATE_QUEUE
 
 class CheckerManager(object):
     '''
@@ -57,28 +58,20 @@ class CheckerManager(object):
                     cls = getattr(module, mould)
                     if not cls:
                         continue
-                    proxy_type = cls.proxy_type
                     platform = index.split('.')[0]
-                    self._rules_moulds[proxy_type][platform] = cls
+                    self._rules_moulds[cls.proxy_type][platform] = cls
     
     def _rules_update(self):
         while STATUS:
-            gevent.sleep(60)
-#             rule = PARSER_RULES_MOULDS_UPDATE_QUEUE.get()
-#             print(rule.platform, rule.package, rule.moulds)
-#             for cls_name in rule.moulds:
-#                 molule = importlib.import_module(rule.package)
-#                 cls = getattr(molule, cls_name)
-#                 feature = cls.__dict__.get('feature', None)
-#                 if not feature:
-#                     print('Exception: import rule failed: '+cls_name)
-#                     continue
-#                 if self._rules_moulds.get(rule.platform, None):
-#                     self._rules_moulds[rule.platform][feature] = cls
-#                 else:
-#                     self._rules_moulds[rule.platform] = {feature: cls}
-#             while not self._no_match_rules_task_queue.empty():
-#                 WAITING_PARSE_QUEUE.put(self._no_match_rules_task_queue.get())
+            rule = RULES_MOULDS_UPDATE_QUEUE.get()
+            print(rule.platform, rule.package, rule.moulds)
+            for cls_name in rule.moulds:
+                molule = importlib.import_module(rule.package)
+                cls = getattr(molule, cls_name)
+                if not cls:
+                    print('Exception: import rule failed: '+cls_name)
+                    continue
+                self._rules_moulds[cls.proxy_type][cls.proxy_type] = cls
     
     def _checker(self, tag, proxy_type, src_queue):
         while STATUS:
@@ -91,8 +84,7 @@ class CheckerManager(object):
                 if ret.useful:
                     info.platform = platform
                     USEFUL_PROXY_QUEUE.put(info)
-                    print('Add: ' + info.ip_port)
-    
+
 
 def main():
     CheckerManager()

@@ -21,7 +21,7 @@ class RulesUpdater(object):
         '''
         Constructor
         '''
-        print('-->Proxy Checker Rules Updater Is Starting.')
+        print('-->Rules Updater Is Starting.')
         self._callback = callback
         self._db = None
         self._idle = 0

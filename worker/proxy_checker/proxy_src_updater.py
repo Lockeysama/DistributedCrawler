@@ -8,9 +8,7 @@ Created on 2017年4月17日
 import requests
 import socket
 import gevent.pool
-import gevent.monkey
 from plugins.rsm.redis_manager.ip_pool import IPPool
-gevent.monkey.patch_all()
 
 from conf.base_site import STATUS
 
@@ -93,6 +91,8 @@ class ProxySourceUpdater(object):
         
 
 def main():
+    import gevent.monkey
+    gevent.monkey.patch_all()
     ProxySourceUpdater().start()
     
 if __name__ == '__main__':

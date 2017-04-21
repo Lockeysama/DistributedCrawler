@@ -24,7 +24,6 @@ from worker.parser.parse_db_manager import ParseDBManager, SIGNAL_DB_READY
 class Parser(object):
     
     def __init__(self):
-        setproctitle.setproctitle("TDDC_PARSER")
         print('->Client Is Starting')
         self._signals_list = {SIGNAL_PARSER_READY: self._parser_ready,
                               SIGNAL_DB_READY: self._db_ready,
@@ -42,6 +41,7 @@ class Parser(object):
     
     @staticmethod
     def start():
+        setproctitle.setproctitle("TDDC_PARSER")
         Parser()
         while STATUS:
             gevent.sleep(15)

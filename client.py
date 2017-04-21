@@ -7,6 +7,7 @@ Created on 2017年4月14日
 
 from conf.base_site import MODEL
 from common.define import WorkerModel
+import multiprocessing
 
 
 def main():
@@ -18,7 +19,14 @@ def main():
         Crawler.start()
     elif MODEL == WorkerModel.PROXY_CHECKER:
         from worker.proxy_checker.proxy_checker import ProxyChecker
+        from worker.proxy_checker.proxy_src_updater import ProxySourceUpdater
+        def update_ip_source():
+            ProxySourceUpdater().start()
+        multiprocessing.Process(target=update_ip_source).start()
         ProxyChecker.start()
+        
+        
+        
     
 if __name__ == '__main__':
     main()

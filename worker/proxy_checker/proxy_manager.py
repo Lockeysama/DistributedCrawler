@@ -32,6 +32,7 @@ class ProxyManager(object):
         gevent.sleep()
         gevent.spawn(self._useful_push)
         gevent.sleep()
+        self._ip_pool_ready()
         
     def _ip_pool_ready(self):
         if self._callback:

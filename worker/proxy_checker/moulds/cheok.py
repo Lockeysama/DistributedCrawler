@@ -40,18 +40,44 @@ class CheokProxyChecker(object):
         else:
             if rsp.status_code != 200:
                 return
-            doc = html.document_fromstring(rsp.text)
-            ret = doc.xpath('//*[@class="module-title"]')
-            if len(ret):
-                self.useful = True
+            try:
+                doc = html.document_fromstring(rsp.text)
+            except:
+                pass
+            else:
+                ret = doc.xpath('//*[@class="module-title"]')
+                if len(ret):
+                    self.useful = True
         
 
 def main():
-    cnt = 0
+    import csv
+    import Queue
+    import gevent
+    import gevent.monkey
+    gevent.monkey.patch_all()
+    from worker.proxy_checker.models.IPInfo import IPInfo
+    
+    ips = Queue.Queue()
+    csvfile = file('results.csv', 'rb')
+    reader = csv.reader(csvfile)
+    for line in reader:
+        print(line)
+        ips.put(IPInfo(line[0]+':8080'))
+    
+    def test():
+        while True:
+            ip = ips.get()
+            ret = CheokProxyChecker(ip)
+            if ret.useful:
+                print(ip.ip_port)
+#                 print(ret.useful)
+    for _ in range(16):
+        gevent.spawn(test)
+        gevent.sleep()
+        
     while STATUS:
-        CheokProxyChecker('a')
-        print(cnt)
-        cnt += 1
+        gevent.sleep(10)
     
     
 if __name__ == '__main__':
