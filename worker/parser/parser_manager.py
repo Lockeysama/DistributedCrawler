@@ -13,7 +13,7 @@ import importlib
 
 from common.queues import WAITING_PARSE_QUEUE, STORAGE_QUEUE, \
     PARSER_RULES_MOULDS_UPDATE_QUEUE,CRAWL_QUEUE
-from conf.base_site import STATUS, PLATFORM_SUFFIX
+from conf.base_site import STATUS
 
 SIGNAL_PARSER_READY = object()
 
@@ -59,7 +59,7 @@ class ParserManager(object):
                     feature = cls.__dict__.get('feature', None)
                     if not feature:
                         continue
-                    platform = index.split('.')[0] + PLATFORM_SUFFIX
+                    platform = index.split('.')[0]
                     if not self._rules_moulds.get(platform, None):
                         self._rules_moulds[platform] = {}
                     self._rules_moulds[platform][feature] = cls
@@ -75,7 +75,7 @@ class ParserManager(object):
                 if not feature:
                     print('Exception: import rule failed: '+cls_name)
                     continue
-                platform = rule.platform + PLATFORM_SUFFIX
+                platform = rule.platform
                 if not self._rules_moulds.get(platform, None):
                     self._rules_moulds[rule.platform] = {}
                 self._rules_moulds[rule.platform][feature] = cls
@@ -94,16 +94,18 @@ class ParserManager(object):
                     if len(ret.items):
                         self._storage(task, ret.items)
                     self._new_task_push(ret.tasks)
-                    fmt = 'Parse: [P:{platform}][K:{row_key}][S:{items}][N:{tasks}]'
+                    fmt = 'Parse: [P:{platform}][F:{feature}][K:{row_key}][S:{items}][N:{tasks}]'
                     print(fmt.format(platform=task.platform,
+                                     feature=task.feature,
                                      row_key=task.row_key,
                                      items=len(ret.items),
                                      tasks=len(ret.tasks)))
                     no_match = False
             if no_match:
                 self._no_match_rules_task_queue.put(task)
-                print('Parse No Match: [P:{platform}][K:{row_key}]'.format(platform=task.platform,
-                                                                           row_key=task.row_key))
+                print('Parse No Match: [P:{platform}][F:{feature}][K:{row_key}]'.format(platform=task.platform,
+                                                                                        feature=task.feature,
+                                                                                        row_key=task.row_key))
 
     def _storage(self, task, items):
         STORAGE_QUEUE.put([task, items])

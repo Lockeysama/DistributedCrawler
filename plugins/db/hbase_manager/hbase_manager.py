@@ -69,8 +69,11 @@ class HBaseManager(object):
         while STATUS:
             try:
                 if self._status:
-                    self.get('keep_alive', 'ping')
+                    if not self.get('keep_alive', 'ping'):
+                        raise TTransportException
             except TTransportException, e:
+                if not self._status:
+                    return
                 print(e)
                 self._status = False
                 if len(self._host_ports_pool):

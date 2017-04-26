@@ -9,7 +9,6 @@ import time
 
 from worker.crawler.models.crawl_task import CrawlTask
 from worker.parser.models.parse_rule_base import ParseRuleBase
-from platform import platform
 
 class CheokHomepage(ParseRuleBase):
     '''

@@ -8,7 +8,6 @@ Created on 2017年4月18日
 import hashlib
 from lxml import html
 import json
-from conf.base_site import PLATFORM_SUFFIX
 
 
 class ParseRuleBase(object):
@@ -28,7 +27,7 @@ class ParseRuleBase(object):
         '''
         Constructor
         '''
-        self.platform += PLATFORM_SUFFIX
+        self.platform
         self._task = task
         self._body_type = None
         self.items = dict()

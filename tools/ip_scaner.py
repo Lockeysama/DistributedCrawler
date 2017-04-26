@@ -34,6 +34,20 @@ corourine_num = 1024
 
 lock = threading.Lock()
 
+def response_check(response):
+    if response.status_code != 200:
+        return False
+    else:
+        try:
+            doc = html.document_fromstring(response.text)
+        except Exception, e:
+            print(e)
+        else:
+            ret = doc.xpath('//*[@class="module-title"]')
+            if len(ret):
+                return True
+    return False
+
 def check_proxy():
     while True:
         host, port = port_opened_ips.get()
@@ -49,17 +63,7 @@ def check_proxy():
         except Exception, e:
             print(e)
         else:
-            if rsp.status_code != 200:
-                useful = False
-            else:
-                try:
-                    doc = html.document_fromstring(rsp.text)
-                except Exception, e:
-                    print(e)
-                else:
-                    ret = doc.xpath('//*[@class="module-title"]')
-                    if len(ret):
-                        useful = True
+            useful = response_check(rsp)
         finally:
             if useful:
                 lock.acquire()

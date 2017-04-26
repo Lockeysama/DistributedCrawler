@@ -28,7 +28,7 @@ class IPPool(object):
         return self._rdm.get(item)
     
     def add(self, name, *values): 
-        self._rdm.sadd(name, *values)
+        return self._rdm.sadd(name, *values)
         
     def msadd(self, name, values): 
         ppl = self._rdm.pipeline()

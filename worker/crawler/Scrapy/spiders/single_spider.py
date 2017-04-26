@@ -10,6 +10,7 @@ from scrapy import signals
 import scrapy
 from scrapy.exceptions import DontCloseSpider
 from scrapy.http import Request
+from common.queues import UNUSEFUL_PROXY_FEEDBACK_QUEUE
 
 SIGNAL_STORAGE = object()
 
@@ -34,9 +35,9 @@ class SingleSpider(scrapy.Spider):
         '''
         super(SingleSpider, self).__init__()
         self.signals_callback = callback
-#         dispatcher.connect(self.signal_dispatcher)
 
     def add_task(self, task):
+        print('Add New Task: ' + task.url)
         url = task.url
         url_info = urlparse.urlparse(url)
         headers_data = {'Cookie': task.cookie,
@@ -53,9 +54,12 @@ class SingleSpider(scrapy.Spider):
 
     def error_back(self, response):
         task = response.request.meta['item']
-        print('Proxy Info: ' + response.request.meta.get('proxy', None))
+        proxy = response.request.meta.get('proxy', None)
+#         print('Proxy Info: ' + proxy)
         print('Failed: [%s][%s] . Will Retry After While' % (task.platform, task.row_key))
         self.add_task(task)
+        proxy = proxy.split('//')[1]
+        UNUSEFUL_PROXY_FEEDBACK_QUEUE.put([task.platform, proxy])
         
     def parse(self, response):
         global SIGNAL_STORAGE
@@ -64,7 +68,7 @@ class SingleSpider(scrapy.Spider):
                 'content': response.body}
         if self.signals_callback:
             self.signals_callback(self, SIGNAL_STORAGE, [task, item])
-        print('Proxy Info: ' + response.request.meta.get('proxy', None))
+#         print('Proxy Info: ' + response.request.meta.get('proxy', None))
         print('Success: [%s][%s]' % (task.platform, task.row_key))
 
     def signal_dispatcher(self, signal):

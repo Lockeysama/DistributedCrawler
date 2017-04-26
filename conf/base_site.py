@@ -16,9 +16,9 @@ PLATFORM_SUFFIX = '_test' if TEST else ''
 STATUS = True
 
 # Worker Model
-# MODEL = WorkerModel.CRAWLER
+MODEL = WorkerModel.CRAWLER
 # MODEL = WorkerModel.PARSER
-MODEL = WorkerModel.PROXY_CHECKER
+# MODEL = WorkerModel.PROXY_CHECKER
 
 # ZK info
 ZK_HOST_PORTS = ['72.127.2.48:2181']

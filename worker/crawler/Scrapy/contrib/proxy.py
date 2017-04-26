@@ -4,9 +4,10 @@ Created on 2015年8月26日
 
 @author: chenyitao
 '''
-import time
+
 from common.queues import PLATFORM_PROXY_QUEUES
 import random
+import gevent
 
 class ProxyMiddleware(object):
     '''
@@ -24,7 +25,8 @@ class ProxyMiddleware(object):
             task = request.meta.get('item')
             proxies = PLATFORM_PROXY_QUEUES.get(task.platform)
             while not proxies or not len(proxies):
-                time.sleep(0.5)
+                gevent.sleep(0.5)
+                proxies = PLATFORM_PROXY_QUEUES.get(task.platform)
             ip_port = random.choice(list(proxies))
             ip, port = ip_port.split(':')
             proxy = '%s://%s:%s' % (task.proxy_type, ip, port)

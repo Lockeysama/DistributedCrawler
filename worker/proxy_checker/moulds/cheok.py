@@ -53,7 +53,6 @@ class CheokProxyChecker(object):
 def main():
     import csv
     import Queue
-    import gevent
     import gevent.monkey
     gevent.monkey.patch_all()
     from worker.proxy_checker.models.IPInfo import IPInfo

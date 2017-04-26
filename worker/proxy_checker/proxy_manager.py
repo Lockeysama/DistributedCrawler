@@ -41,9 +41,8 @@ class ProxyManager(object):
     def _useful_push(self):
         while STATUS:
             info = USEFUL_PROXY_QUEUE.get()
-            self._ip_pool.add(PLATFORM_PROXY_SET_BASE_KEY + info.platform,
-                              info.ip_port)
-            self._ip_pool.publish(PROXY_PUBSUB_PATTERN[:-1] + info.platform, info.ip_port)
+            if self._ip_pool.add(PLATFORM_PROXY_SET_BASE_KEY + info.platform, info.ip_port):
+                self._ip_pool.publish(PROXY_PUBSUB_PATTERN[:-1] + info.platform, info.ip_port)
 
     def _src_ip_fetch(self):
         while STATUS:
@@ -59,6 +58,7 @@ class ProxyManager(object):
                 print('https+%d' % len(ret))
                 for ip in ret:
                     HTTPS_SOURCE_PROXY_QUEUE.put(IPInfo(ip, 'https'))
+                    HTTP_SOURCE_PROXY_QUEUE.put(IPInfo(ip, 'http'))
             gevent.sleep(5)
 
 

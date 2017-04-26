@@ -108,15 +108,24 @@ class MainHandler(tornado.web.RequestHandler):
     def on_response(self, response):
         self.write(response.body)
         self.finish()
+
+
+class TestHandle(tornado.web.RequestHandler):
+    
+    @tornado.web.asynchronous
+    def get(self):
+        self.write('response.body')
+        self.finish()
     
 application = tornado.web.Application([
-    (r"/info/(.*)", MainHandler),
-    (r'/findDisNew/(.*)', UserInfoHande),
-    (r'/index',UrllibHandle) 
+#     (r"/info/(.*)", MainHandler),
+#     (r'/findDisNew/(.*)', UserInfoHande),
+#     (r'/index',UrllibHandle),
+    (r'.*', TestHandle),
     ])
 
 def main():
-    application.listen(8888)
+    application.listen(8888, xheaders=True)
     tornado.ioloop.IOLoop.instance().start()
 
 if __name__ == '__main__':

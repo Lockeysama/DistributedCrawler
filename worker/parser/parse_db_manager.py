@@ -7,7 +7,7 @@ Created on 2017年4月12日
 
 import gevent
 
-from conf.base_site import STATUS
+from conf.base_site import STATUS, PLATFORM_SUFFIX
 from conf.parser_site import DB_FETCH_CONCURRENT, DB_PUSH_CONCURRENT
 from common.queues import PARSE_QUEUE, WAITING_PARSE_QUEUE,\
     STORAGE_QUEUE
@@ -44,7 +44,7 @@ class ParseDBManager(object):
         _db = DBManager('Push[%d]' % tag)
         while STATUS:
             task, items = STORAGE_QUEUE.get()
-            _db.hbase_instance().put(task.platform, task.row_key, task, items, 'valuable')
+            _db.hbase_instance().put(task.platform + PLATFORM_SUFFIX, task.row_key, task, items, 'valuable')
 
     def _fetch(self, tag):
         _db = DBManager('Fetch[%d]' % tag)
@@ -54,7 +54,7 @@ class ParseDBManager(object):
                 if not task.platform or not task.row_key:
                     print('Task Exception(Parse DB Manager):', task, task.platform, task.row_key)
                     continue
-                ret = _db.hbase_instance().get(task.platform, task.row_key)
+                ret = _db.hbase_instance().get(task.platform + PLATFORM_SUFFIX, task.row_key)
                 if not ret:
                     continue
                 for cv in ret.columnValues:

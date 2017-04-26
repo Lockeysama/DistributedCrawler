@@ -13,6 +13,7 @@ from common.queues import PLATFORM_PROXY_QUEUES, UNUSEFUL_PROXY_FEEDBACK_QUEUE
 from plugins.rsm.redis_manager.ip_pool import IPPool
 from conf.proxy_checker_site import PROXY_PUBSUB_PATTERN,\
     PLATFORM_PROXY_SET_BASE_KEY
+import threading
 
 class CrawlerProxyManager(object):
     '''
@@ -40,7 +41,7 @@ class CrawlerProxyManager(object):
         for ret in s:
             key = ret.encode('utf-8')
             platform = key.split(':')[-1]
-            ips = self._ip_pool.randmember(key, 100)
+            ips = self._ip_pool.members(key)
             if not PLATFORM_PROXY_QUEUES.get(platform):
                 PLATFORM_PROXY_QUEUES[platform] = set()
             PLATFORM_PROXY_QUEUES[platform] |= set(ips)
@@ -59,10 +60,17 @@ class CrawlerProxyManager(object):
             PLATFORM_PROXY_QUEUES[platform].add(data)
     
     def _proxy_unuseful_feedback(self, ip_pool):
+        lock = threading.Lock()
         while STATUS:
-            platform, proxy = UNUSEFUL_PROXY_FEEDBACK_QUEUE.get()
-            PLATFORM_PROXY_QUEUES[platform].remove(proxy)
-            ip_pool.remove(PLATFORM_PROXY_SET_BASE_KEY+platform, proxy.encode('utf-8'))
+            if lock.acquire():
+                try:
+                    platform, proxy = UNUSEFUL_PROXY_FEEDBACK_QUEUE.get()
+                    PLATFORM_PROXY_QUEUES[platform].remove(proxy)
+                    ip_pool.remove(PLATFORM_PROXY_SET_BASE_KEY+platform, proxy.encode('utf-8'))
+                except Exception, e:
+                    print('========>',e)
+                finally:
+                    lock.release()
         
         
 def main():

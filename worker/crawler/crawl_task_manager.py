@@ -9,9 +9,8 @@ import json
 import gevent
 
 from base.task.task_manager_base import TaskManagerBase
-from common.queues import PARSE_QUEUE, CRAWL_QUEUE, EVENT_QUEUE
+from common.queues import PARSE_QUEUE, CRAWL_QUEUE
 from conf.base_site import STATUS, PARSE_TOPIC_NAME, CRAWL_TOPIC_NAME
-from worker.parser.models.event import Event
 from conf.crawler_site import CRAWL_EVENT_TOPIC_NAME, CRAWL_EVENT_TOPIC_GROUP,\
     CRAWL_TOPIC_GROUP
 from worker.crawler.models.crawl_task import CrawlTask
@@ -23,6 +22,10 @@ class CrawlTaskManager(TaskManagerBase):
     '''
     classdocs
     '''
+    
+    event_topic_name = CRAWL_EVENT_TOPIC_NAME
+    
+    event_topic_group = CRAWL_EVENT_TOPIC_GROUP
 
     def __init__(self, callback=None):
         '''
@@ -31,24 +34,17 @@ class CrawlTaskManager(TaskManagerBase):
         print('-->Task Manager Is Starting.')
         super(CrawlTaskManager, self).__init__()
         self._callback = callback
-        self._event_consumer = None
-        self._event_consumer_tag = 1
         self._parse_task_producer = None
         self._parse_task_producer_tag = 2
         self._crawl_task_consumer = None
         self._crawl_task_consumer_tag = 3
-        self._tag_num = 1 + 2 + 3
+        self._tag_num = 2 + 3
         self._cur_tag_num = 0
         self._start_mq_server()
 
     def _start_mq_server(self):
         self._parse_task_producer = self.make_producer(PARSE_TOPIC_NAME)
         gevent.spawn(self._push_parse_task)
-        gevent.sleep()
-        self._event_consumer = self.make_consumer(CRAWL_EVENT_TOPIC_NAME,
-                                                  CRAWL_EVENT_TOPIC_GROUP,
-                                                  True)
-        gevent.spawn(self._fetch_event)
         gevent.sleep()
         self._crawl_task_consumer = self.make_consumer(CRAWL_TOPIC_NAME,
                                                        CRAWL_TOPIC_GROUP,
@@ -98,23 +94,6 @@ class CrawlTaskManager(TaskManagerBase):
                 self._crawl_task_consumer.pause()
             elif CRAWL_QUEUE.qsize() < 32:
                 self._crawl_task_consumer.resume()
-
-    def _fetch_event(self):
-        print('--->Crawl Event Consumer Was Ready.')
-        self._ready(self._event_consumer_tag)
-        while STATUS:
-            msgs = self._event_consumer.start()
-            for msg in msgs:
-                try:
-                    item = json.loads(msg.value)
-                except Exception, e:
-                    self._consume_msg_exp('EVENT_JSON_ERR', msg.value, e)
-                else:
-                    if item and isinstance(item, dict) and item.get('type', None):
-                        event = Event(item)
-                        EVENT_QUEUE.put(event)
-                    else:
-                        self._consume_msg_exp('EVENT_ERR', item) 
 
     def _push_parse_task(self):
         print('--->Parse Task Producer Was Ready.')
