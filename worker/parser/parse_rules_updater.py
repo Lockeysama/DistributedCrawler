@@ -13,7 +13,7 @@ from conf.base_site import STATUS
 from common.queues import EVENT_QUEUE, PARSER_RULES_MOULDS_UPDATE_QUEUE
 from plugins.db.db_manager import DBManager
 from conf.parser_site import PARSE_RULES_HBASE_TABLE, PARSE_RULES_HBASE_FAMILY, PARSE_RULES_HBASE_INDEX_QUALIFIER
-from base.rule.rule import Rule
+from base.models.rule import Rule
 
 SIGNAL_RULES_UPDATER_READY = object()
 

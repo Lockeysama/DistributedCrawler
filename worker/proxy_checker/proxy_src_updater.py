@@ -30,29 +30,33 @@ class ProxySourceUpdater(object):
                                   'b_pcchrome=1&b_pcie=1&b_pcff=1&'
                                   'protocol=1&method=1&an_an=1&'
                                   'an_ha=1&sp1=1&sp2=1&sp3=1&f_pr=1'
-                                  '&dedup=1&format=json&sep=1'),
+                                  '&format=json&sep=1'),
                            'parse_mould': self._parse_kuaidaili}]
         
     def start(self):
         while STATUS:
             for infos in self._src_apis:
-                platform = infos.get('platform')
-                api = infos.get('api')
-                parse_mould = infos.get('parse_mould')
-                rsp = requests.get(api)
-                if not rsp:
-                    print('Exception(%s): '%platform + api)
-                    continue
-                if not parse_mould:
-                    print('Exception: parse_mould is None.')
-                    continue
-                all_ips = parse_mould(rsp.text)
-                http_ips = self._proxy_active_check(all_ips.get('HTTP', []))
-                self._ip_pool.msadd('tddc:test:proxy:ip_src:http', http_ips)
-                print('Source IPS（HTTP） Growth：%d' % len(http_ips))
-                https_ips = self._proxy_active_check(all_ips.get('HTTPS', []))
-                self._ip_pool.msadd('tddc:test:proxy:ip_src:https', https_ips)
-                print('Source IPS（HTTPS） Growth：%d' % len(https_ips))
+                try:
+                    platform = infos.get('platform')
+                    api = infos.get('api')
+                    parse_mould = infos.get('parse_mould')
+                    rsp = requests.get(api)
+                    if not rsp:
+                        print('Exception(%s): '%platform + api)
+                        continue
+                    if not parse_mould:
+                        print('Exception: parse_mould is None.')
+                        continue
+                    all_ips = parse_mould(rsp.text)
+                    http_ips = self._proxy_active_check(all_ips.get('HTTP', []))
+                    self._ip_pool.msadd('tddc:test:proxy:ip_src:http', http_ips)
+                    print('Source IPS（HTTP） Growth：%d' % len(http_ips))
+                    https_ips = self._proxy_active_check(all_ips.get('HTTPS', []))
+                    self._ip_pool.msadd('tddc:test:proxy:ip_src:https', https_ips)
+                    self._ip_pool.msadd('tddc:test:proxy:ip_src:http', https_ips)
+                    print('Source IPS（HTTPS） Growth：%d' % len(https_ips))
+                except Exception, e:
+                    print('IP_SOURCE', e)
             gevent.sleep(10)
     
     @staticmethod

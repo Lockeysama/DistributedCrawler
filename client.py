@@ -15,8 +15,8 @@ def main():
         from worker.parser.parser import Parser
         Parser.start()
     elif MODEL == WorkerModel.CRAWLER:
-        from worker.crawler.crawler import Crawler
-        Crawler.start()
+        from worker.crawler.crawler_manager import CrawlerManager
+        CrawlerManager.start()
     elif MODEL == WorkerModel.PROXY_CHECKER:
         from worker.proxy_checker.proxy_checker import ProxyChecker
         from worker.proxy_checker.proxy_src_updater import ProxySourceUpdater

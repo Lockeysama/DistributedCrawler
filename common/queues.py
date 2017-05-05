@@ -10,9 +10,8 @@ import gevent.queue
 from .define import WorkerModel
 from conf.base_site import MODEL
 
-# Event Queue
-EVENT_QUEUE = gevent.queue.Queue()
 
+EVENT_QUEUE = gevent.queue.Queue()
 # Exception Queue
 EXCEPTION_QUEUE = gevent.queue.Queue()
 

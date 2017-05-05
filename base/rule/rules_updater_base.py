@@ -11,7 +11,7 @@ import gevent
 
 from conf.base_site import STATUS
 from common.queues import RULES_MOULDS_UPDATE_QUEUE, EVENT_QUEUE
-from base.rule.rule import Rule
+from base.models.rule import Rule
 from plugins.db.db_manager import DBManager
 
 

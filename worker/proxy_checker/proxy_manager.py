@@ -58,7 +58,6 @@ class ProxyManager(object):
                 print('https+%d' % len(ret))
                 for ip in ret:
                     HTTPS_SOURCE_PROXY_QUEUE.put(IPInfo(ip, 'https'))
-                    HTTP_SOURCE_PROXY_QUEUE.put(IPInfo(ip, 'http'))
             gevent.sleep(5)
 
 

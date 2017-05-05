@@ -43,9 +43,7 @@ class ParseTaskManager(TaskManagerBase):
         self._start_mq_server()
 
     def _start_mq_server(self):
-        self._parse_task_consumer = self.make_consumer(PARSE_TOPIC_NAME,
-                                                       PARSE_TOPIC_GROUP,
-                                                       True)
+        self._parse_task_consumer = self._kafka_helper.make_consumer(PARSE_TOPIC_NAME)
         gevent.spawn(self._fetch_parse_task)
         gevent.sleep()
         self._crawl_task_producer = self.make_producer(CRAWL_TOPIC_NAME)
@@ -77,9 +75,7 @@ class ParseTaskManager(TaskManagerBase):
         print('--->Parsing Task Consumer Was Ready.')
         self._ready(self._parse_task_consumer_tag)
         while STATUS:
-            gevent.sleep(2)
-            msgs = self._parse_task_consumer.start()
-            for msg in msgs:
+            for msg in self._parse_task_consumer:
                 try:
                     item = json.loads(msg.value)
                 except Exception, e:

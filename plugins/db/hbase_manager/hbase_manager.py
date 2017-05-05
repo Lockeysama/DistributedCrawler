@@ -10,11 +10,11 @@ import gevent
 import json
 from thrift.transport import TSocket  
 from thrift.transport import TTransport
-from thrift.protocol import TBinaryProtocol  
 from hbase import THBaseService  
 from hbase.ttypes import TColumnValue, TPut, TGet, TColumn
 from thrift.transport.TTransport import TTransportException
 from conf.base_site import STATUS
+from thrift.protocol.TCompactProtocol import TCompactProtocol
 
 
 class HBaseManager(object):
@@ -39,8 +39,8 @@ class HBaseManager(object):
             self._current_host_port = random.choice(self._host_ports_pool).split(':')
             self._sock = TSocket.TSocket(host=self._current_host_port[0],
                                          port=self._current_host_port[1])
-            self._transport = TTransport.TBufferedTransport(self._sock)
-            self._protocol = TBinaryProtocol.TBinaryProtocol(self._transport)
+            self._transport = TTransport.TFramedTransport(self._sock)
+            self._protocol = TCompactProtocol(self._transport)
             self._client = THBaseService.Client(self._protocol)
             self._transport.open()
         except Exception, e:
@@ -87,27 +87,27 @@ class HBaseManager(object):
     def _reconnect(self):
         self._connect()
 
-    def put(self, table_name, row_key, task=None, item=None, family='source'):
+    def put(self, table, row_key, items=None):
         if not self._status:
             print('[Put Operation Was Failed] HBase Server Is Exception.')
-            return
-        if not item or not isinstance(item, dict):
-            print('Item type error.')
-            return
+            return False
         cvs = []
-        for k, v in item.items():
-            if isinstance(v, list) or isinstance(v, dict):
-                v = json.dumps(v)
-            cv = TColumnValue(family, k, v)
-            cvs.append(cv)
-        if task:
-            task_cv = TColumnValue('task', 'task', json.dumps(task.__dict__))
-            cvs.append(task_cv)
+        for family, info in items.items():
+            if not isinstance(info, dict):
+                raise TypeError
+            for k, v in info.items():
+                if isinstance(v, list) or isinstance(v, dict):
+                    v = json.dumps(v)
+                cv = TColumnValue(family, k, v)
+                cvs.append(cv)
         tp = TPut(row_key, cvs)
         try:
-            self._client.put(table_name, tp)
+            self._client.put(table, tp)
         except Exception, e:
             print(e)
+            return False
+        else:
+            return True
 
     def get(self, table_name, row_key, family=None, qualifier=None):
         if not self._status:

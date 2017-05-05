@@ -4,7 +4,7 @@ Created on 2017年4月12日
 
 @author: chenyitao
 '''
-from base.task.task import Task
+from base.models.task import Task
 
 class ParseTask(Task):
 

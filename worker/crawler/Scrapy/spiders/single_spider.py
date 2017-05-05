@@ -6,11 +6,13 @@ Created on 2015年12月28日
 '''
 
 import urlparse
+from scrapy.spidermiddlewares import httperror
 from scrapy import signals
 import scrapy
 from scrapy.exceptions import DontCloseSpider
 from scrapy.http import Request
 from common.queues import UNUSEFUL_PROXY_FEEDBACK_QUEUE
+from base.models.task import Task
 
 SIGNAL_STORAGE = object()
 
@@ -40,7 +42,11 @@ class SingleSpider(scrapy.Spider):
         print('Add New Task: ' + task.url)
         url = task.url
         url_info = urlparse.urlparse(url)
-        headers_data = {'Cookie': task.cookie,
+        headers_data = {'Host': 'www.cheok.com',
+                        'Upgrade-Insecure-Requests': 1,
+                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                        'Accept-Encoding': 'gzip, deflate, sdch',
+                        'Cookie': None,
                         'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8',
                         'Referer': url_info[0]+'://'+url_info[1]}
         req = Request(url,
@@ -54,22 +60,23 @@ class SingleSpider(scrapy.Spider):
 
     def error_back(self, response):
         task = response.request.meta['item']
-        proxy = response.request.meta.get('proxy', None)
-#         print('Proxy Info: ' + proxy)
         print('Failed: [%s][%s] . Will Retry After While' % (task.platform, task.row_key))
         self.add_task(task)
+        proxy = response.request.meta.get('proxy', None)
+        if response.type == httperror.HttpError:
+            status = response.value.response.status
+            if status >= 500:
+                return
         proxy = proxy.split('//')[1]
         UNUSEFUL_PROXY_FEEDBACK_QUEUE.put([task.platform, proxy])
         
     def parse(self, response):
-        global SIGNAL_STORAGE
         task = response.request.meta.get('item')
-        item = {'url': task.url,
-                'content': response.body}
+        rsp_info = {'rsp': [response.url, response.status],
+                    'content': response.body}
         if self.signals_callback:
-            self.signals_callback(self, SIGNAL_STORAGE, [task, item])
-#         print('Proxy Info: ' + response.request.meta.get('proxy', None))
-        print('Success: [%s][%s]' % (task.platform, task.row_key))
+            task.status = Task.Status.CRAWL_SUCCESS
+            self.signals_callback(self, SIGNAL_STORAGE, [task, rsp_info])
 
     def signal_dispatcher(self, signal):
         '''

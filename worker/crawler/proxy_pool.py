@@ -13,28 +13,27 @@ from common.queues import PLATFORM_PROXY_QUEUES, UNUSEFUL_PROXY_FEEDBACK_QUEUE
 from plugins.rsm.redis_manager.ip_pool import IPPool
 from conf.proxy_checker_site import PROXY_PUBSUB_PATTERN,\
     PLATFORM_PROXY_SET_BASE_KEY
-import threading
+from worker.crawler.Scrapy.contrib.ip_cooling_pool import IPCoolingPoll
 
-class CrawlerProxyManager(object):
+IP_COOLING_POOL = IPCoolingPoll()
+
+class CrawlProxyPool(object):
     '''
     classdocs
     '''
 
-    def __init__(self, callback=None):
+    def __init__(self):
         '''
         Constructor
         '''
-        self._callback = callback
+        print('-->Crawl Proxy Pool Is Starting.')
         self._ip_pool = IPPool()
         self._init_proxy()
         gevent.spawn(self._subscribe)
         gevent.sleep()
         gevent.spawn(self._proxy_unuseful_feedback, self._ip_pool)
         gevent.sleep()
-        
-    def _ready(self):
-        if self._callback:
-            self._callback(self)
+        print('-->Crawl Proxy Pool Was Ready.')
     
     def _init_proxy(self):
         s = self._ip_pool.scan(PLATFORM_PROXY_SET_BASE_KEY + '*')
@@ -48,10 +47,9 @@ class CrawlerProxyManager(object):
     
     def _subscribe(self):
         items = self._ip_pool.psubscribe(PROXY_PUBSUB_PATTERN)
-        self._ready()
         for item in items:
             if item.get('type') == 'psubscribe':
-                print('---->Subscribe: %s' % item.get('channel'))
+                print('--->Subscribe: %s' % item.get('channel'))
                 continue
             platform = item.get('channel', '').split(':')[-1]
             data = item.get('data')
@@ -60,23 +58,17 @@ class CrawlerProxyManager(object):
             PLATFORM_PROXY_QUEUES[platform].add(data)
     
     def _proxy_unuseful_feedback(self, ip_pool):
-        lock = threading.Lock()
         while STATUS:
-            if lock.acquire():
-                try:
-                    platform, proxy = UNUSEFUL_PROXY_FEEDBACK_QUEUE.get()
-                    PLATFORM_PROXY_QUEUES[platform].remove(proxy)
-                    ip_pool.remove(PLATFORM_PROXY_SET_BASE_KEY+platform, proxy.encode('utf-8'))
-                except Exception, e:
-                    print('========>',e)
-                finally:
-                    lock.release()
-        
-        
+            platform, proxy = UNUSEFUL_PROXY_FEEDBACK_QUEUE.get()
+            if proxy in PLATFORM_PROXY_QUEUES.get(platform, set()): 
+                PLATFORM_PROXY_QUEUES[platform].remove(proxy)
+                ip_pool.remove(PLATFORM_PROXY_SET_BASE_KEY+platform, proxy.encode('utf-8'))
+
+
 def main():
     import gevent.monkey
     gevent.monkey.patch_all()
-    cpm = CrawlerProxyManager()
+    cpm = CrawlProxyPool()
 
     def test():
         import random

@@ -10,6 +10,9 @@ from common.define import WorkerModel
 # Test
 TEST = True
 
+#Client ID
+CLIENT_ID = 1
+
 PLATFORM_SUFFIX = '_test' if TEST else ''
 
 # Client Status
