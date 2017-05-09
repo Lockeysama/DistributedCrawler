@@ -14,7 +14,7 @@ from common.queues import HTTP_SOURCE_PROXY_QUEUE, HTTPS_SOURCE_PROXY_QUEUE,\
     USEFUL_PROXY_QUEUE
 
 from worker.proxy_checker.models.IPInfo import IPInfo
-from plugins.rsm.redis_manager.ip_pool import IPPool
+from base.proxy.ip_pool import IPPool
 
 
 class ProxyManager(object):

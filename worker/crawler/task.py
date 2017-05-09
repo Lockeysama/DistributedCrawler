@@ -8,9 +8,9 @@ Created on 2017年4月14日
 import json
 import gevent
 
-from base.models.task import Task
+from common.models.task import Task
 from base.task.task_manager_base import TaskManagerBase
-from common.queues import PARSE_QUEUE, CRAWL_QUEUE
+from common.queues import PARSE_QUEUE, CRAWL_QUEUE, TASK_STATUS_QUEUE, TASK_STATUS_REMOVE_QUEUE
 from conf.base_site import STATUS, PARSE_TOPIC_NAME, CRAWL_TOPIC_NAME
 from conf.crawler_site import CRAWLER_CONCURRENT, CRAWL_TOPIC_GROUP
 from plugins.mq.kafka_manager.kafka_helper import KafkaHelper
@@ -42,33 +42,53 @@ class CrawlTaskManager(TaskManagerBase):
 
     def _fetch_crawl_task(self):
         print('--->Crawl Task Consumer Was Ready.')
+        pause = False
         while STATUS:
-            if not CRAWL_QUEUE.qsize() < CRAWLER_CONCURRENT / 2:
+            if CRAWL_QUEUE.qsize() > CRAWLER_CONCURRENT / 4:
+                if not pause:
+                    self._crawl_task_consumer.commit()
+                    self._crawl_task_consumer.unsubscribe()
+                    pause = True
+                    print('Crawl Task Consumer Was Paused.')
                 gevent.sleep(1)
-            for record in self._crawl_task_consumer:
-                try:
-                    item = json.loads(record.value)
-                except Exception, e:
-                    self._consume_msg_exp('CRAWL_TASK_JSON_ERR', record.value, e)
-                else:
-                    if item and isinstance(item, dict) and item.get('url', None):
-                        task = Task(**item)
-                        CRAWL_QUEUE.put(task)
-                        if CRAWL_QUEUE.qsize() >= CRAWLER_CONCURRENT:
-                            break
-                    else:
-                        self._consume_msg_exp('CRAWL_TASK_ERR', item) 
-            
+                continue
+            if pause:
+                self._crawl_task_consumer.subscribe(CRAWL_TOPIC_NAME)
+                pause = False
+                print('Crawl Task Consumer Was Resumed.')
+            partition_records = self._crawl_task_consumer.poll(2000, 16)
+            if not len(partition_records):
+                gevent.sleep(1)
+                continue
+            for _, records in partition_records.items():
+                for record in records:
+                    self._record_proc(record)
+    
+    def _record_proc(self, record):
+        try:
+            item = json.loads(record.value)
+        except Exception, e:
+            self._consume_msg_exp('CRAWL_TASK_JSON_ERR', record.value, e)
+        else:
+            if item and isinstance(item, dict) and item.get('url', None):
+                task = Task(**item)
+                task.status = Task.Status.WAIT_CRAWL
+                CRAWL_QUEUE.put(task)
+                TASK_STATUS_QUEUE.put(task)
+            else:
+                self._consume_msg_exp('CRAWL_TASK_ERR', item)
+    
     def _push_parse_task(self):
         print('--->Parse Task Producer Was Ready.')
         while STATUS:
             task = PARSE_QUEUE.get()
-            try:
-                msg = json.dumps(task.__dict__)
-                if msg:
-                    self._producer.send(PARSE_TOPIC_NAME, msg)
-            except Exception, e:
-                print(e)
+            if not isinstance(task, Task):
+                print('_push_parse_task', task)
+                continue
+            if not self._push_task(PARSE_TOPIC_NAME, task):
+                print('_push_parse_task', task)
+            else:
+                TASK_STATUS_REMOVE_QUEUE.put(task)
 
 
 def main():

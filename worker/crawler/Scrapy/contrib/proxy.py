@@ -24,7 +24,7 @@ class ProxyMiddleware(object):
             proxy = request.meta.get('proxy')
             if proxy:
                 return
-            task = request.meta.get('item')
+            task,_ = request.meta.get('item')
             proxies = PLATFORM_PROXY_QUEUES.get(task.platform)
             while not proxies or not len(proxies):
                 gevent.sleep(0.5)

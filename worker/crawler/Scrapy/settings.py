@@ -25,6 +25,14 @@ USER_AGENT = [('Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gec
               ('User-Agent    Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/602.1.50 (KHTML, like Gecko) '
                'Version/10.0 Safari/602.1.50')]
 
+DEFAULT_REQUEST_HEADERS = {
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+    'Accept-Encoding': 'gzip, deflate, sdch',
+    'Accept-Language': 'zh-CN,zh;q=0.8,en;q=0.6',
+    'Upgrade-Insecure-Requests': 1,
+    'DNT': 1
+}
+
 CONCURRENT_REQUESTS = CRAWLER_CONCURRENT
 
 DOWNLOAD_TIMEOUT = 10

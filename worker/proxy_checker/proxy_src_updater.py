@@ -8,7 +8,7 @@ Created on 2017年4月17日
 import requests
 import socket
 import gevent.pool
-from plugins.rsm.redis_manager.ip_pool import IPPool
+from base.proxy.ip_pool import IPPool
 
 from conf.base_site import STATUS
 import json

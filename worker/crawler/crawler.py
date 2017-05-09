@@ -51,7 +51,7 @@ class Crawler(object):
     
     def _task_dispatch(self):
         while STATUS:
-            if self._get_spider_mqs_size() < CRAWLER_CONCURRENT/2:
+            if self._get_spider_mqs_size() < CRAWLER_CONCURRENT / 4:
                 while True:
                     task = CRAWL_QUEUE.get()
                     self._spider.add_task(task)

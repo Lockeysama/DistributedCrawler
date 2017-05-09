@@ -9,31 +9,21 @@ import gevent
 
 from conf.base_site import STATUS, PLATFORM_SUFFIX
 from common.queues import STORAGE_QUEUE, PARSE_QUEUE
-from plugins.db.db_manager import DBManager
+from base.storage.storager_base import StoragerBase
 
 
-class CrawlStorager(object):
+class CrawlStorager(StoragerBase):
     '''
     classdocs
     '''
-
-    def __init__(self):
-        '''
-        Constructor
-        '''
-        print('-->Crawl Storager Is Starting.')
-        gevent.spawn(self._push)
-        gevent.sleep()
-        print('-->Crawl Storager Was Ready.')
         
     def _push(self):
-        _db = DBManager('Push')
         while STATUS:
             try:
                 task, rsp_info = STORAGE_QUEUE.get()
                 items = {'source': rsp_info,
                          'task': {'task': task.to_json()}}
-                if _db.hbase_instance().put(task.platform + PLATFORM_SUFFIX, task.row_key, items):
+                if self._db.put_to_hbase(task.platform + PLATFORM_SUFFIX, task.row_key, items):
                     PARSE_QUEUE.put(task)
                 else:
                     STORAGE_QUEUE.put(task)

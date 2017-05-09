@@ -11,8 +11,8 @@ from scrapy import signals
 import scrapy
 from scrapy.exceptions import DontCloseSpider
 from scrapy.http import Request
-from common.queues import UNUSEFUL_PROXY_FEEDBACK_QUEUE
-from base.models.task import Task
+from common.queues import UNUSEFUL_PROXY_FEEDBACK_QUEUE, TASK_STATUS_REMOVE_QUEUE
+from common.models.task import Task
 
 SIGNAL_STORAGE = object()
 
@@ -38,40 +38,59 @@ class SingleSpider(scrapy.Spider):
         super(SingleSpider, self).__init__()
         self.signals_callback = callback
 
-    def add_task(self, task):
-        print('Add New Task: ' + task.url)
-        url = task.url
-        url_info = urlparse.urlparse(url)
-        headers_data = {'Host': 'www.cheok.com',
-                        'Upgrade-Insecure-Requests': 1,
-                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-                        'Accept-Encoding': 'gzip, deflate, sdch',
-                        'Cookie': None,
-                        'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8',
-                        'Referer': url_info[0]+'://'+url_info[1]}
-        req = Request(url,
-                      method=task.method,
+    def _init_request_headers(self, task):
+        iheaders = {}
+        if not task.headers:
+            url_info = urlparse.urlparse(task.url)
+            task.headers = {'Host': url_info[1]}
+        for k, v in task.headers.items():
+            if not v:
+                if k == 'Host':
+                    url_info = urlparse.urlparse(task.url)
+                    iheaders[k] = url_info[1]
+                continue
+            iheaders[k] = v
+        return iheaders
+
+    def add_task(self, task, is_retry=False, times=1):
+        if not is_retry:
+            print('Add New Task: ' + task.url)
+        headers_data = self._init_request_headers(task)
+        req = Request(task.url,
+                      method=task.method if task.method else 'GET',
                       headers=headers_data,
                       callback=self.parse,
                       errback=self.error_back,
-                      meta={'item': task},
+                      meta={'item': [task, times]},
                       dont_filter=True)
         self.crawler.engine.schedule(req, self)
 
     def error_back(self, response):
-        task = response.request.meta['item']
-        print('Failed: [%s][%s] . Will Retry After While' % (task.platform, task.row_key))
-        self.add_task(task)
-        proxy = response.request.meta.get('proxy', None)
+        task, times = response.request.meta['item']
         if response.type == httperror.HttpError:
             status = response.value.response.status
             if status >= 500:
+                print('Failed: [%s][%s] . Will Retry After While' % (task.platform, task.row_key))
+                self.add_task(task, True)
                 return
+            elif status == 404:
+                retry_times = task.retry if task.retry else 3
+                if times >= retry_times:
+                    # TODO Exception
+                    TASK_STATUS_REMOVE_QUEUE.put(task)
+                    return
+                times += 1
+                print('Failed: [%s][%s] . Will Retry After While' % (task.platform, task.row_key))
+                self.add_task(task, True, times)
+                return
+        proxy = response.request.meta.get('proxy', None)
         proxy = proxy.split('//')[1]
         UNUSEFUL_PROXY_FEEDBACK_QUEUE.put([task.platform, proxy])
+        print('Failed: [%s][%s] . Will Retry After While' % (task.platform, task.row_key))
+        self.add_task(task, True, times)
         
     def parse(self, response):
-        task = response.request.meta.get('item')
+        task,_ = response.request.meta.get('item')
         rsp_info = {'rsp': [response.url, response.status],
                     'content': response.body}
         if self.signals_callback:

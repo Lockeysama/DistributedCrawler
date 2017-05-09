@@ -50,6 +50,7 @@ class IPCoolingPoll(object):
         '''
         Constructor
         '''
+        self._cur_timestamp = 0
         self._ip_cooling_pool = CoolingQueue()
         self.cooldown = cooldown
         gevent.spawn(self.run)
@@ -66,21 +67,24 @@ class IPCoolingPoll(object):
     
     def run(self):
         times = 0
+        time_space = 0.5
         while STATUS:
-            gevent.sleep(0.5)
-            self._ip_cooling_pool.cur_timestamp += 0.5
-            times += 1
+            gevent.sleep(time_space)
+            self._ip_cooling_pool.cur_timestamp += time_space
             if times % 10 == 0:
-                self._ip_cooling_pool.cur_timestamp = time.time()
+                self._cur_timestamp = time.time()
+                self._ip_cooling_pool.cur_timestamp = self._cur_timestamp
+            times += 1
             ip_pool = self._ip_cooling_pool.qlist()[:]
             if not len(ip_pool):
                 continue
-            cur_time = time.time()
+            self._cur_timestamp += time_space
+            random_time = random.uniform(-1, 2)
             for i in range(0, len(ip_pool)):
                 info = ip_pool[i]
                 ip, platform = info.keys()[0]
                 use_timestamp = info[(ip, platform)]
-                if cur_time - use_timestamp >= (self.cooldown) + random.uniform(-1, 2):
+                if self._cur_timestamp - use_timestamp >= (self.cooldown) + random_time:
                     self._ip_cooling_pool.pop(info)
                     PLATFORM_PROXY_QUEUES.get(platform, set()).add(ip)
 

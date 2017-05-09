@@ -10,12 +10,13 @@ import gevent
 from conf.base_site import STATUS
 from common.queues import PLATFORM_PROXY_QUEUES, UNUSEFUL_PROXY_FEEDBACK_QUEUE
 
-from plugins.rsm.redis_manager.ip_pool import IPPool
+from base.proxy.ip_pool import IPPool
 from conf.proxy_checker_site import PROXY_PUBSUB_PATTERN,\
     PLATFORM_PROXY_SET_BASE_KEY
 from worker.crawler.Scrapy.contrib.ip_cooling_pool import IPCoolingPoll
 
 IP_COOLING_POOL = IPCoolingPoll()
+
 
 class CrawlProxyPool(object):
     '''
@@ -49,7 +50,7 @@ class CrawlProxyPool(object):
         items = self._ip_pool.psubscribe(PROXY_PUBSUB_PATTERN)
         for item in items:
             if item.get('type') == 'psubscribe':
-                print('--->Subscribe: %s' % item.get('channel'))
+                print('---->Subscribe: %s' % item.get('channel'))
                 continue
             platform = item.get('channel', '').split(':')[-1]
             data = item.get('data')

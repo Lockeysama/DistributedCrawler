@@ -14,7 +14,7 @@ logging.basicConfig(filename='crawler.log')
 from twisted.internet import reactor
 
 from worker.crawler.exception import ExceptionCollection
-from worker.crawler.storage import CrawlStorager
+from worker.crawler.storager import CrawlStorager
 from worker.crawler.proxy_pool import CrawlProxyPool
 from worker.crawler.task import CrawlTaskManager
 from worker.crawler.crawler import Crawler

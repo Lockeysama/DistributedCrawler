@@ -11,7 +11,7 @@ from common.decorator import singleton
 from plugins.mq.kafka_manager.kafka_helper import KafkaHelper
 from conf.event_site import EVENT_TOPIC, EVENT_TOPIC_GROUP
 import json
-from base.models.event import Event
+from common.models.event import Event
 from conf.base_site import STATUS
 
 

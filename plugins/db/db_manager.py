@@ -37,6 +37,14 @@ class DBManager(object):
             print('HBase Is Not Ready.')
             return None
         
+    def put_to_hbase(self, table, row_key, items):
+        if self.hbase_instance():
+            try:
+                return self.hbase_instance().put(table, row_key, items)
+            except Exception, e:
+                print('put_to_hbase', e)
+            return False
+
 
 def main():
     pass

@@ -7,7 +7,7 @@ Created on 2017年4月25日
 
 import csv
 
-from plugins.rsm.redis_manager.ip_pool import IPPool
+from base.proxy.ip_pool import IPPool
 import time
 
 def main():

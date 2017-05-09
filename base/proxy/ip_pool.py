@@ -63,7 +63,7 @@ class IPPool(object):
     def psubscribe(self, pattern):
         ps = self._rdm.pubsub()
         ps.psubscribe(pattern)
-        print('-->Pubsub Was Ready.')
+        print('--->Pubsub Was Ready.')
         for item in ps.listen():
             yield item
             if not STATUS:

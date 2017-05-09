@@ -24,6 +24,12 @@ PARSE_QUEUE = gevent.queue.Queue()
 # Waiting For Storage Queue
 STORAGE_QUEUE = gevent.queue.Queue()
 
+# Task Status Queue
+TASK_STATUS_QUEUE = gevent.queue.Queue()
+
+# Task Status Remove Queue
+TASK_STATUS_REMOVE_QUEUE = gevent.queue.Queue()
+
 # Rules Moulds Update Queue
 RULES_MOULDS_UPDATE_QUEUE = gevent.queue.Queue()
 
