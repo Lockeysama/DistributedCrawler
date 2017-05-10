@@ -7,44 +7,41 @@ Created on 2017年4月12日
 
 import gevent
 
-from conf.base_site import PLATFORM_SUFFIX
+from conf.base_site import PLATFORM_SUFFIX, HBASE_HOST_PORTS
 from common.queues import PARSE_QUEUE, WAITING_PARSE_QUEUE,\
     STORAGE_QUEUE
-from plugins.db.db_manager import DBManager
-from worker.parser.models.parse_task import ParseTask
+from plugins import DBManager
+from common import TDDCLogging
 
-SIGNAL_DB_READY = object()
 
 class ParseDBManager(object):
     '''
     classdocs
     '''
 
-    def __init__(self, callback=None):
+    def __init__(self):
         '''
         Constructor
         '''
-        print('-->Parse DB Manager Is Starting.')
-        self._callback = callback
+        TDDCLogging.info('-->Parse DB Manager Is Starting.')
         gevent.spawn(self._push)
         gevent.sleep()
         gevent.spawn(self._fetch)
         gevent.sleep()
-        self._parse_db_manager_was_ready()
+        TDDCLogging.info('-->Parse DB Manager Was Ready.')
         
-    def _parse_db_manager_was_ready(self):
-        print('-->Parse DB Manager Was Ready.')
-        if self._callback:
-            self._callback(self, SIGNAL_DB_READY, None)
-
     def _push(self):
-        _db = DBManager('Push')
+        _db = DBManager('Push', HBASE_HOST_PORTS)
         while True:
             task, items = STORAGE_QUEUE.get()
-            _db.hbase_instance().put(task.platform + PLATFORM_SUFFIX, task.row_key, task, items, 'valuable')
+            _db.hbase_instance().put(task.platform + PLATFORM_SUFFIX,
+                                     task.row_key,
+                                     task,
+                                     items,
+                                     'valuable')
 
     def _fetch(self):
-        _db = DBManager('Fetch')
+        _db = DBManager('Fetch', HBASE_HOST_PORTS)
         while True:
             task = PARSE_QUEUE.get()
             if task:
@@ -56,8 +53,7 @@ class ParseDBManager(object):
                     continue
                 for cv in ret.columnValues:
                     if cv.qualifier == 'content':
-                        parse_task = ParseTask(task, {'body': cv.value})
-                        WAITING_PARSE_QUEUE.put(parse_task)
+                        WAITING_PARSE_QUEUE.put((task, cv.value))
                         break
             
 

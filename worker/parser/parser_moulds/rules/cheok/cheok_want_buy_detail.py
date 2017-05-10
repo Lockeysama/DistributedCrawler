@@ -4,8 +4,9 @@ Created on 2017年4月18日
 
 @author: chenyitao
 '''
+
 from worker.parser.models.parse_rule_base import ParseRuleBase
-from worker.crawler.models.crawl_task import CrawlTask
+
 
 class CheokWantBuyDetail(ParseRuleBase):
     '''
@@ -27,7 +28,8 @@ class CheokWantBuyDetail(ParseRuleBase):
 
 
 def main():
-    task = CrawlTask()
+    from common.models import Task
+    task = Task()
     with open('cheok_detail.html', 'r') as f:
         task.__dict__ = {'body': f.read()}
     CheokWantBuyDetail(task)

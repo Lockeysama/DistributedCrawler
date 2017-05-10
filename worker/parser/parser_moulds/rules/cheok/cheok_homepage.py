@@ -7,8 +7,8 @@ Created on 2017年4月13日
 
 import time
 
-from worker.crawler.models.crawl_task import CrawlTask
 from worker.parser.models.parse_rule_base import ParseRuleBase
+from common.models import Task
 
 class CheokHomepage(ParseRuleBase):
     '''
@@ -32,7 +32,7 @@ class CheokHomepage(ParseRuleBase):
             tmp = list()
             for page_number in range(1, last_page_number+1):
                 url = base_url % (page_number, cur_time)
-                task = CrawlTask()
+                task = Task()
                 task.url = url
                 task.platform = self.platform
                 task.feature = 'cheok.want_buy_list'
@@ -45,7 +45,7 @@ class CheokHomepage(ParseRuleBase):
 
 
 def main():
-    task = CrawlTask()
+    task = Task()
     with open('cheok.html', 'r') as f:
         task.__dict__ = {'body': f.read()}
     ret = CheokHomepage(task)

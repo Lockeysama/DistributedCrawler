@@ -34,8 +34,8 @@ class TaskManagerBase(object):
     def _timer(self):
         while True:
             gevent.sleep(60)
-            TDDCLogging.info('Crawled Status: [All=%d] [Pre Minute:%d]' % (self._successed_num,
-                                                                           self._successed_pre_min))
+            TDDCLogging.info('Successed Status: [All=%d] [Pre Minute:%d]' % (self._successed_num,
+                                                                             self._successed_pre_min))
             self._successed_pre_min = 0
 
     def _push_task(self, topic, task, times=0):

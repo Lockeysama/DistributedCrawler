@@ -10,44 +10,32 @@ import json
 import gevent
 
 from common.queues import EVENT_QUEUE, PARSER_RULES_MOULDS_UPDATE_QUEUE
-from plugins.db.db_manager import DBManager
+from plugins import DBManager
 from conf.parser_site import PARSE_RULES_HBASE_TABLE, PARSE_RULES_HBASE_FAMILY, PARSE_RULES_HBASE_INDEX_QUALIFIER
-from common.models.rule import Rule
+from common.models import Rule
+from conf.base_site import HBASE_HOST_PORTS
+from common import TDDCLogging
 
-SIGNAL_RULES_UPDATER_READY = object()
 
 class ParserRulesUpdater(object):
     '''
     classdocs
     '''
 
-    def __init__(self, callback=None):
+    def __init__(self):
         '''
         Constructor
         '''
-        print('-->Parser Rules Updater Is Starting.')
-        self._callback = callback
-        self._db = None
+        TDDCLogging.info('-->Parser Rules Updater Is Starting.')
+        self._db = DBManager('Rules Updater', HBASE_HOST_PORTS)
         self._idle = 0
         gevent.spawn(self._event)
         gevent.sleep()
-        self._ready()
-        
-    def _ready(self):
-        if self._callback:
-            self._callback(self, SIGNAL_RULES_UPDATER_READY, None)
+        TDDCLogging.info('-->Parser Rules Updater Was Ready.')
     
     def _event(self):
-        print('-->Parser Rules Updater Was Ready.')
         while True:
             if not EVENT_QUEUE.empty():
-                if not self._db:
-                    self._wait = True
-                    def _db_ready(params=None):
-                        self._wait = False
-                    self._db = DBManager('Rules Updater', _db_ready)
-                    while self._wait:
-                        gevent.sleep(0.2)
                 event = EVENT_QUEUE.get()
                 if not event:
                     print('Update Rules Event Exception.')
@@ -136,6 +124,7 @@ class ParserRulesUpdater(object):
             return
         self._update_moulds(event, _update_list)
         self._save_local_info(event, _local_confs, _remote_confs)
+
 
 def main():
     ParserRulesUpdater()

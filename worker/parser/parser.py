@@ -1,81 +1,132 @@
 # -*- coding: utf-8 -*-
 '''
-Created on 2017年4月14日
+Created on 2017年4月11日
 
 @author: chenyitao
 '''
 
-import setproctitle
-import logging
-from worker.parser.parse_rules_updater import SIGNAL_RULES_UPDATER_READY,\
-    ParserRulesUpdater
-logging.basicConfig(filename='tddc_p.log')
+import os
+import json
 import gevent
-from gevent import monkey
-monkey.patch_all(socket=False)
+import importlib
 
-from worker.parser.parser_manager import SIGNAL_PARSER_READY, ParserManager
-from worker.parser.parse_task_manager import ParseTaskManager,\
-    SIGNAL_TASK_MANAGER_READY
-from worker.parser.parse_db_manager import ParseDBManager, SIGNAL_DB_READY
+from common.queues import WAITING_PARSE_QUEUE, STORAGE_QUEUE, \
+    PARSER_RULES_MOULDS_UPDATE_QUEUE,CRAWL_QUEUE
+from common import TDDCLogging
 
 
 class Parser(object):
+    '''
+    classdocs
+    '''
+
+    def __init__(self, concurrent=8):
+        '''
+        Constructor
+        '''
+        TDDCLogging.info('-->Parser Is Starting.')
+        self._init_rules()
+        self._no_match_rules_task_queue = gevent.queue.Queue()
+        gevent.spawn(self._rules_update)
+        gevent.sleep()
+        for i in range(concurrent):
+            gevent.spawn(self._parse, i)
+            gevent.sleep()
+        TDDCLogging.info('-->Parser Was Ready.')
     
-    def __init__(self):
-        print('->Client Is Starting')
-        self._signals_list = {SIGNAL_PARSER_READY: self._parser_ready,
-                              SIGNAL_DB_READY: self._db_ready,
-                              SIGNAL_TASK_MANAGER_READY: self._task_manager_ready,
-                              SIGNAL_RULES_UPDATER_READY: self._parser_rules_updater_ready}
-        self._parser_tag = 1
-        self._db_tag = 2
-        self._rules_updater_tag = 3
-        self._tags_num = 1 + 2 + 3
-        self._cur_tags_num = 0
-        self._task_manager = None
-        self._parser_manager = ParserManager(self._parser_signals)
-        self._parse_db_manager = ParseDBManager(self._parser_signals)
-        self._parser_rules_updater = ParserRulesUpdater(self._parser_signals)
+    def _init_rules(self):
+        base_path = './conf/parse_rule_index/'
+        self._rules_moulds = {}
+        indexs = os.listdir(base_path)
+        for index in indexs:
+            path = base_path + index
+            with open(path, 'r') as f:
+                conf = json.loads(f.read())
+            if not isinstance(conf, dict):
+                continue
+            for k, v in conf.items():
+                module = importlib.import_module(k)
+                moulds = v.get('moulds', None)
+                if not isinstance(moulds, list):
+                    continue
+                for mould in moulds:
+                    cls = getattr(module, mould)
+                    if not cls:
+                        continue
+                    feature = cls.__dict__.get('feature', None)
+                    if not feature:
+                        continue
+                    platform = index.split('.')[0]
+                    if not self._rules_moulds.get(platform, None):
+                        self._rules_moulds[platform] = {}
+                    self._rules_moulds[platform][feature] = cls
     
-    @staticmethod
-    def start():
-        setproctitle.setproctitle("TDDC_PARSER")
-        Parser()
+    def _rules_update(self):
         while True:
-            gevent.sleep(15)
+            rule = PARSER_RULES_MOULDS_UPDATE_QUEUE.get()
+            TDDCLogging.info(rule.platform + rule.package + rule.moulds)
+            for cls_name in rule.moulds:
+                molule = importlib.import_module(rule.package)
+                cls = getattr(molule, cls_name)
+                feature = cls.__dict__.get('feature', None)
+                if not feature:
+                    TDDCLogging.warning('Exception: import rule failed: ' + cls_name)
+                    continue
+                platform = rule.platform
+                if not self._rules_moulds.get(platform, None):
+                    self._rules_moulds[rule.platform] = {}
+                self._rules_moulds[rule.platform][feature] = cls
+            while not self._no_match_rules_task_queue.empty():
+                WAITING_PARSE_QUEUE.put(self._no_match_rules_task_queue.get())
+    
+    def _parse(self, tag):
+        while True:
+            task, body = WAITING_PARSE_QUEUE.get()
+            platform = self._rules_moulds.get(task.platform, None)
+            no_match = True
+            if platform:
+                cls = platform.get(task.feature, None)
+                if cls:
+                    ret = cls(task, body)
+                    if len(ret.items):
+                        self._storage(task, ret.items)
+                    self._new_task_push(ret.tasks)
+                    fmt = 'Parse: [{platform}:{row_key}:{feature}][S:{items}][N:{tasks}]'
+                    print(fmt.format(platform=task.platform,
+                                     feature=task.feature,
+                                     row_key=task.row_key,
+                                     items=len(ret.items),
+                                     tasks=len(ret.tasks)))
+                    no_match = False
+            if no_match:
+                self._no_match_rules_task_queue.put(task)
+                fmt = 'Parse No Match: [P:{platform}][F:{feature}][K:{row_key}]'
+                TDDCLogging.warning(fmt.format(platform=task.platform,
+                                               feature=task.feature,
+                                               row_key=task.row_key))
+
+    def _storage(self, task, items):
+        STORAGE_QUEUE.put([task, items])
+    
+    def _new_task_push(self, tasks):
+        for task in tasks:
+            CRAWL_QUEUE.put(task)
+    
         
-    def _parser_signals(self, instance, signal, params=None):
-        if signal not in self._signals_list.keys():
-            return
-        func = self._signals_list[signal]
-        if func:
-            func(params)
-
-    def _start_task_manager(self, tag):
-        self._cur_tags_num += tag
-        if self._cur_tags_num == self._tags_num:
-            self._task_manager = ParseTaskManager(self._parser_signals)
-
-    def _parser_ready(self, parser):
-        self._start_task_manager(self._parser_tag)
-    
-    def _db_ready(self, db):
-        self._start_task_manager(self._db_tag)
-    
-    def _parser_rules_updater_ready(self, updater):
-        self._start_task_manager(self._rules_updater_tag)
-        
-    def _task_manager_ready(self, task_manager):
-        print('->Client Was Ready.')
-    
-    def __del__(self):
-        print('del', self.__class__)
-
-
 def main():
-    setproctitle.setproctitle("TDDC_PARSER")
-    Parser.start()
+    from common.models import Task
+    Parser()
+    cnt = 100
+    gevent.sleep(3)
+    while True:
+        if cnt > 0:
+            parser_task = Task(parse_info_dict={'id': '%d' % cnt, 'status': 3, 'body': 'hello'})
+            WAITING_PARSE_QUEUE.put(parser_task)
+            cnt -= 1
+            if cnt == 0:
+                print('Done')
+        gevent.sleep(0.01)
     
+
 if __name__ == '__main__':
     main()

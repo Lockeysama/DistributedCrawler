@@ -14,8 +14,8 @@ from conf.base_site import WorkerModel, MODEL
 
 def main():
     if MODEL == WorkerModel.Parser:
-        from worker.parser.parser import Parser
-        Parser.start()
+        from worker import ParserManager
+        ParserManager.start()
     elif MODEL == WorkerModel.Crawler:
         from worker import CrawlerManager
         CrawlerManager.start()

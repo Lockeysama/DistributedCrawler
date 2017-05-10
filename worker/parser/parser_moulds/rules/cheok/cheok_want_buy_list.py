@@ -5,8 +5,8 @@ Created on 2017年4月18日
 @author: chenyitao
 '''
 
-from worker.crawler.models.crawl_task import CrawlTask
 from worker.parser.models.parse_rule_base import ParseRuleBase
+from common.models import Task
 
 class CheokWantBuyList(ParseRuleBase):
     '''
@@ -33,7 +33,7 @@ class CheokWantBuyList(ParseRuleBase):
             for info in objs:
                 url = base_url.format(cityAcronym=info.get('cityAcronym'),
                                       carSourceNo=info.get('carSourceNo'))
-                task = CrawlTask()
+                task = Task()
                 task.url = url
                 task.platform = self.platform
                 task.feature = 'cheok.want_buy_detail'
@@ -43,7 +43,7 @@ class CheokWantBuyList(ParseRuleBase):
       
         
 def main():
-    task = CrawlTask()
+    task = Task()
     with open('cheok_list.html', 'r') as f:
         task.__dict__ = {'body': f.read()}
     CheokWantBuyList(task)

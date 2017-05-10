@@ -6,11 +6,9 @@ Created on 2017年4月14日
 '''
 
 import setproctitle
-from common import TDDCLogging
-import logging
-logging.basicConfig(filename='crawler_other.log')
-
 from twisted.internet import reactor
+
+from common import TDDCLogging
 
 from .exception import ExceptionCollection
 from .storager import CrawlStorager
@@ -36,7 +34,7 @@ class CrawlerManager(object):
         self._task_manager = CrawlTaskManager()
         self._proxy_pool = CrawlProxyPool()
         TDDCLogging.info('->Crawler Was Ready.')
-        
+
     @staticmethod
     def start():
         reactor.__init__()  # @UndefinedVariable

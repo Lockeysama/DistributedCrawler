@@ -24,9 +24,3 @@ PARSE_TOPIC_GROUP = 'tddc.p.parser'
 # Parser Concurrent
 PARSER_CONCURRENT = 8
 
-# DB Fetch Concurrent
-DB_FETCH_CONCURRENT = 8
-
-# DB Push Concurrent
-DB_PUSH_CONCURRENT = 2
-

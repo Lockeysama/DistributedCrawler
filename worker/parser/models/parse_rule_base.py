@@ -23,7 +23,7 @@ class ParseRuleBase(object):
 
     feature = ''
 
-    def __init__(self, task):
+    def __init__(self, task, body):
         '''
         Constructor
         '''
@@ -33,15 +33,15 @@ class ParseRuleBase(object):
         self.items = dict()
         self.tasks = list()
         self._md5_mk = hashlib.md5()
-        if task.body[0] == '{' and task.body[-1] == '}' or task.body[0] == '[' and task.body[-1] == ']':
+        if body[0] == '{' and body[-1] == '}' or body[0] == '[' and body[-1] == ']':
             try:
-                self._json_dict = json.loads(task.body)
+                self._json_dict = json.loads(body)
             except Exception, e:
                 print(e)
             else:
                 self._body_type = self.JSON
         else:
-            self._doc = html.document_fromstring(task.body)
+            self._doc = html.document_fromstring(body)
             self._body_type = self.HTML
         self._parse()
         
