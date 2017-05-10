@@ -5,8 +5,8 @@ Created on 2017年4月12日
 @author: chenyitao
 '''
 
-from conf.base_site import HBASE_HOST_PORTS
-from plugins.db.hbase_manager.hbase_manager import HBaseManager
+from .hbase_manager.hbase_manager import HBaseManager
+from common import TDDCLogging
 
 
 class DBManager(object):
@@ -14,18 +14,18 @@ class DBManager(object):
     classdocs
     '''
 
-    def __init__(self, tag, callback=None):
+    def __init__(self, tag, host_ports=None, callback=None):
         '''
         Constructor
         '''
         self._tag = tag
-        print('---->DB Manager(%s) Is Starting.' % self._tag)
+        TDDCLogging.info('---->DB Manager(%s) Is Starting.' % self._tag)
         self._hbase_status = False
         self._callback =callback
-        self._hbase_manager = HBaseManager(HBASE_HOST_PORTS, self._db_manager_was_ready)
+        self._hbase_manager = HBaseManager(host_ports, self._db_manager_was_ready)
         
     def _db_manager_was_ready(self):
-        print('---->DB Manager(%s) Was Ready.' % self._tag)
+        TDDCLogging.info('---->DB Manager(%s) Was Ready.' % self._tag)
         self._hbase_status = True
         if self._callback:
             self._callback()
@@ -34,7 +34,7 @@ class DBManager(object):
         if self._hbase_status:
             return self._hbase_manager
         else:
-            print('HBase Is Not Ready.')
+            TDDCLogging.warning('HBase Is Not Ready.')
             return None
         
     def put_to_hbase(self, table, row_key, items):
@@ -42,7 +42,7 @@ class DBManager(object):
             try:
                 return self.hbase_instance().put(table, row_key, items)
             except Exception, e:
-                print('put_to_hbase', e)
+                TDDCLogging.warning('put_to_hbase', e)
             return False
 
 

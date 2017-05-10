@@ -7,10 +7,11 @@ Created on 2017年5月5日
 
 import gevent
 
-from conf.base_site import STATUS, EXCEPTION_TOPIC_NAME
+from conf.base_site import EXCEPTION_TOPIC_NAME, KAFKA_HOST_PORT
+from common import TDDCLogging
 from common.queues import EXCEPTION_QUEUE
 
-from plugins.mq.kafka_manager.kafka_helper import KafkaHelper
+from plugins import KafkaHelper
 
 
 class ExceptionCollection(object):
@@ -22,14 +23,14 @@ class ExceptionCollection(object):
         '''
         Constructor
         '''
-        print('-->Exception Manager Is Starting.')
+        TDDCLogging.info('-->Exception Manager Is Starting.')
+        self._exception_producer = KafkaHelper.make_producer(KAFKA_HOST_PORT)
         gevent.spawn(self._send)
         gevent.sleep()
-        print('-->Exception Manager Was Ready.')
+        TDDCLogging.info('-->Exception Manager Was Ready.')
 
     def _send(self):
-        self._exception_producer = KafkaHelper.make_producer()
-        while STATUS:
+        while True:
             exception = EXCEPTION_QUEUE.get()
             self._exception_producer.send(EXCEPTION_TOPIC_NAME,
                                           exception.to_json())

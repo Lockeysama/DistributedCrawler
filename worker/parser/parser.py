@@ -14,7 +14,6 @@ import gevent
 from gevent import monkey
 monkey.patch_all(socket=False)
 
-from conf.base_site import STATUS
 from worker.parser.parser_manager import SIGNAL_PARSER_READY, ParserManager
 from worker.parser.parse_task_manager import ParseTaskManager,\
     SIGNAL_TASK_MANAGER_READY
@@ -43,7 +42,7 @@ class Parser(object):
     def start():
         setproctitle.setproctitle("TDDC_PARSER")
         Parser()
-        while STATUS:
+        while True:
             gevent.sleep(15)
         
     def _parser_signals(self, instance, signal, params=None):

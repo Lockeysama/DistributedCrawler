@@ -8,20 +8,18 @@ Created on 2017年4月14日
 import gevent
 
 from scrapy.utils.project import get_project_settings
-from worker.crawler.event import EventManagre, TDDCEvent
-import logging
 settings = get_project_settings()
 from scrapy import signals
 from scrapy.crawler import CrawlerProcess
-from Scrapy.spiders.single_spider import SingleSpider, SIGNAL_STORAGE
-
-from conf.base_site import STATUS
-from conf.crawler_site import CRAWLER_CONCURRENT
-from common.queues import CRAWL_QUEUE, STORAGE_QUEUE
-
-
 crawler_process = CrawlerProcess(settings)
 crawler_process.join()
+
+from conf.crawler_site import CRAWLER_CONCURRENT
+from common.queues import CRAWL_QUEUE, STORAGE_QUEUE
+from common import TDDCLogging
+
+from .event import EventManagre, TDDCEvent
+from .Scrapy.spiders.single_spider import SingleSpider, SIGNAL_STORAGE
 
 
 class Crawler(object):
@@ -33,7 +31,7 @@ class Crawler(object):
         '''
         Constructor
         '''
-        print('-->Spider Is Starting.')
+        TDDCLogging.info('-->Spider Is Starting.')
         self._spider = None
         self._signals_list = {signals.spider_opened: self._spider_opened,
                               SIGNAL_STORAGE: self._storage}
@@ -50,7 +48,7 @@ class Crawler(object):
         return mqs_count
     
     def _task_dispatch(self):
-        while STATUS:
+        while True:
             if self._get_spider_mqs_size() < CRAWLER_CONCURRENT / 4:
                 while True:
                     task = CRAWL_QUEUE.get()
@@ -72,8 +70,7 @@ class Crawler(object):
             self._spider = spider
             gevent.spawn(self._task_dispatch)
             gevent.sleep()
-            print('-->Spider Was Ready.')
-            logging.getLogger().setLevel(logging.WARNING)
+            TDDCLogging.info('-->Spider Was Ready.')
 
     def _storage(self, items=None):
         STORAGE_QUEUE.put(items)

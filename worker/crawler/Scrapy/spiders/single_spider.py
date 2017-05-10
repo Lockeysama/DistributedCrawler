@@ -12,7 +12,10 @@ import scrapy
 from scrapy.exceptions import DontCloseSpider
 from scrapy.http import Request
 from common.queues import UNUSEFUL_PROXY_FEEDBACK_QUEUE, TASK_STATUS_REMOVE_QUEUE
-from common.models.task import Task
+from common.models import Task
+from common import TDDCLogging
+import twisted.internet.error as internet_err
+import twisted.web._newclient as newclient_err
 
 SIGNAL_STORAGE = object()
 
@@ -54,7 +57,7 @@ class SingleSpider(scrapy.Spider):
 
     def add_task(self, task, is_retry=False, times=1):
         if not is_retry:
-            print('Add New Task: ' + task.url)
+            TDDCLogging.debug('Add New Task: ' + task.url)
         headers_data = self._init_request_headers(task)
         req = Request(task.url,
                       method=task.method if task.method else 'GET',
@@ -70,7 +73,10 @@ class SingleSpider(scrapy.Spider):
         if response.type == httperror.HttpError:
             status = response.value.response.status
             if status >= 500:
-                print('Failed: [%s][%s] . Will Retry After While' % (task.platform, task.row_key))
+                fmt = '[%s][%s] Crawled Failed(%d). Will Retry After While.'
+                TDDCLogging.warning(fmt % (task.platform,
+                                           task.url,
+                                           status))
                 self.add_task(task, True)
                 return
             elif status == 404:
@@ -78,15 +84,34 @@ class SingleSpider(scrapy.Spider):
                 if times >= retry_times:
                     # TODO Exception
                     TASK_STATUS_REMOVE_QUEUE.put(task)
+                    fmt = '[%s:%s] Crawled Failed(404). Not Retry.'
+                    TDDCLogging.warning(fmt % (task.platform,
+                                               task.url))
                     return
                 times += 1
-                print('Failed: [%s][%s] . Will Retry After While' % (task.platform, task.row_key))
+                fmt = '[%s:%s] Crawled Failed(%d). Will Retry After While.'
+                TDDCLogging.warning(fmt % (task.platform,
+                                           task.url,
+                                           status))
                 self.add_task(task, True, times)
                 return
+        elif response.type == internet_err.TimeoutError:
+            err_msg = 'TimeoutError'
+        elif response.type in [internet_err.ConnectionRefusedError,
+                               internet_err.TCPTimedOutError]:
+            err_msg = '%d:%s' % (response.value.osError, response.value.message)
+        elif response.type == newclient_err.ResponseNeverReceived:
+            err_msg = 'ResponseNeverReceived'
+        else:
+            err_msg = '%s' % (response.value)
+            
         proxy = response.request.meta.get('proxy', None)
         proxy = proxy.split('//')[1]
         UNUSEFUL_PROXY_FEEDBACK_QUEUE.put([task.platform, proxy])
-        print('Failed: [%s][%s] . Will Retry After While' % (task.platform, task.row_key))
+        fmt = '[%s][%s] Crawled Failed(%s). Will Retry After While.'
+        TDDCLogging.warning(fmt % (task.platform,
+                                   task.url,
+                                   err_msg))
         self.add_task(task, True, times)
         
     def parse(self, response):

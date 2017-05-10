@@ -5,19 +5,21 @@ Created on 2017年4月14日
 @author: chenyitao
 '''
 
-from conf.base_site import MODEL
-from common.define import WorkerModel
 import multiprocessing
+import gevent.monkey
+gevent.monkey.patch_all()
+
+from conf.base_site import WorkerModel, MODEL
 
 
 def main():
-    if MODEL == WorkerModel.PARSER:
+    if MODEL == WorkerModel.Parser:
         from worker.parser.parser import Parser
         Parser.start()
-    elif MODEL == WorkerModel.CRAWLER:
-        from worker.crawler.crawler_manager import CrawlerManager
+    elif MODEL == WorkerModel.Crawler:
+        from worker import CrawlerManager
         CrawlerManager.start()
-    elif MODEL == WorkerModel.PROXY_CHECKER:
+    elif MODEL == WorkerModel.ProxyChecker:
         from worker.proxy_checker.proxy_checker import ProxyChecker
         from worker.proxy_checker.proxy_src_updater import ProxySourceUpdater
         def update_ip_source():

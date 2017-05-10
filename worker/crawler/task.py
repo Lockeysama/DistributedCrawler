@@ -8,12 +8,14 @@ Created on 2017年4月14日
 import json
 import gevent
 
-from common.models.task import Task
-from base.task.task_manager_base import TaskManagerBase
+from common.models import Task
 from common.queues import PARSE_QUEUE, CRAWL_QUEUE, TASK_STATUS_QUEUE, TASK_STATUS_REMOVE_QUEUE
-from conf.base_site import STATUS, PARSE_TOPIC_NAME, CRAWL_TOPIC_NAME
+from conf.base_site import PARSE_TOPIC_NAME, CRAWL_TOPIC_NAME, KAFKA_HOST_PORT
 from conf.crawler_site import CRAWLER_CONCURRENT, CRAWL_TOPIC_GROUP
-from plugins.mq.kafka_manager.kafka_helper import KafkaHelper
+
+from . import TaskManagerBase
+from plugins import KafkaHelper
+from common import TDDCLogging
 
 
 class CrawlTaskManager(TaskManagerBase):
@@ -27,35 +29,36 @@ class CrawlTaskManager(TaskManagerBase):
         '''
         Constructor
         '''
-        print('-->Task Manager Is Starting.')
+        TDDCLogging.info('-->Task Manager Is Starting.')
         super(CrawlTaskManager, self).__init__()
         self._start_mq_server()
-        print('-->Task Manager Was Ready.')
+        TDDCLogging.info('-->Task Manager Was Ready.')
 
     def _start_mq_server(self):
         gevent.spawn(self._push_parse_task)
         gevent.sleep()
-        self._crawl_task_consumer = KafkaHelper.make_consumer(CRAWL_TOPIC_NAME,
+        self._crawl_task_consumer = KafkaHelper.make_consumer(KAFKA_HOST_PORT,
+                                                              CRAWL_TOPIC_NAME,
                                                               CRAWL_TOPIC_GROUP)
         gevent.spawn(self._fetch_crawl_task)
         gevent.sleep()
 
     def _fetch_crawl_task(self):
-        print('--->Crawl Task Consumer Was Ready.')
+        TDDCLogging.info('--->Crawl Task Consumer Was Ready.')
         pause = False
-        while STATUS:
+        while True:
             if CRAWL_QUEUE.qsize() > CRAWLER_CONCURRENT / 4:
                 if not pause:
                     self._crawl_task_consumer.commit()
                     self._crawl_task_consumer.unsubscribe()
                     pause = True
-                    print('Crawl Task Consumer Was Paused.')
+                    TDDCLogging.info('Crawl Task Consumer Was Paused.')
                 gevent.sleep(1)
                 continue
             if pause:
                 self._crawl_task_consumer.subscribe(CRAWL_TOPIC_NAME)
                 pause = False
-                print('Crawl Task Consumer Was Resumed.')
+                TDDCLogging.info('Crawl Task Consumer Was Resumed.')
             partition_records = self._crawl_task_consumer.poll(2000, 16)
             if not len(partition_records):
                 gevent.sleep(1)
@@ -79,16 +82,21 @@ class CrawlTaskManager(TaskManagerBase):
                 self._consume_msg_exp('CRAWL_TASK_ERR', item)
     
     def _push_parse_task(self):
-        print('--->Parse Task Producer Was Ready.')
-        while STATUS:
-            task = PARSE_QUEUE.get()
+        TDDCLogging.info('--->Parse Task Producer Was Ready.')
+        while True:
+            task, status = PARSE_QUEUE.get()
             if not isinstance(task, Task):
-                print('_push_parse_task', task)
+                TDDCLogging.error('')
                 continue
             if not self._push_task(PARSE_TOPIC_NAME, task):
-                print('_push_parse_task', task)
+                TDDCLogging.error('')
             else:
                 TASK_STATUS_REMOVE_QUEUE.put(task)
+                TDDCLogging.debug('[%s:%s] Crawled Successed(%d).' % (task.platform,
+                                                                      task.url,
+                                                                      status))
+                self._successed_num += 1
+                self._successed_pre_min += 1
 
 
 def main():
@@ -96,7 +104,7 @@ def main():
     gevent.monkey.patch_all()
     
     CrawlTaskManager()
-    while STATUS:
+    while True:
         gevent.sleep(1)
 
 if __name__ == '__main__':

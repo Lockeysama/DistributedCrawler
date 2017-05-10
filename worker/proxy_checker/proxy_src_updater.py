@@ -10,7 +10,6 @@ import socket
 import gevent.pool
 from base.proxy.ip_pool import IPPool
 
-from conf.base_site import STATUS
 import json
 
 
@@ -34,7 +33,7 @@ class ProxySourceUpdater(object):
                            'parse_mould': self._parse_kuaidaili}]
         
     def start(self):
-        while STATUS:
+        while True:
             for infos in self._src_apis:
                 try:
                     platform = infos.get('platform')

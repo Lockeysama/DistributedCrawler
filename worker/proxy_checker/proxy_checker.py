@@ -14,7 +14,6 @@ import gevent
 from gevent import monkey
 monkey.patch_all()
 
-from conf.base_site import STATUS
 
 from worker.proxy_checker.proxy_rules_updater import ProxyCheckerRulesUpdater
 from worker.proxy_checker.proxy_mq_manager import ProxyMQManager
@@ -63,7 +62,7 @@ class ProxyChecker(object):
     @staticmethod
     def start():
         ProxyChecker()
-        while STATUS:
+        while True:
             gevent.sleep(15)
 
 

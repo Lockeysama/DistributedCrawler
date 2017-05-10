@@ -5,7 +5,9 @@ Created on 2017年4月12日
 @author: chenyitao
 '''
 
-from common.define import WorkerModel
+from enum import Enum
+
+WorkerModel = Enum('WorkerModel', ('Crawler', 'Parser', 'ProxyChecker'))
 
 # Test
 TEST = True
@@ -19,7 +21,7 @@ PLATFORM_SUFFIX = '_test' if TEST else ''
 STATUS = True
 
 # Worker Model
-MODEL = WorkerModel.CRAWLER
+MODEL = WorkerModel.Crawler
 # MODEL = WorkerModel.PARSER
 # MODEL = WorkerModel.PROXY_CHECKER
 
@@ -27,8 +29,7 @@ MODEL = WorkerModel.CRAWLER
 ZK_HOST_PORTS = ['72.127.2.48:2181']
 
 # Kafka Info
-KAFKA_HOST = '72.127.2.48'
-KAFKA_PORT = 9092
+KAFKA_HOST_PORT = '72.127.2.48:9092'
 
 # HBase Info
 HBASE_HOST_PORTS = ['72.127.2.48:9090']
@@ -57,10 +58,3 @@ EXCEPTION_TOPIC_NAME = 'tddc_exception'
 
 # Task Status HSet
 TASK_STATUS_HSET = 'tddc.task.status'
-
-
-def main():
-    pass
-
-if __name__ == '__main__':
-    main()

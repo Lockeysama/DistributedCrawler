@@ -13,8 +13,8 @@ from thrift.transport import TTransport
 from hbase import THBaseService  
 from hbase.ttypes import TColumnValue, TPut, TGet, TColumn
 from thrift.transport.TTransport import TTransportException
-from conf.base_site import STATUS
 from thrift.protocol.TCompactProtocol import TCompactProtocol
+from common import TDDCLogging
 
 
 class HBaseManager(object):
@@ -48,17 +48,17 @@ class HBaseManager(object):
             current_host_port = ':'.join(self._current_host_port)
             self._host_ports_pool.remove(current_host_port)
             if len(self._host_ports_pool) > 0:
-                print('HBase Server Exception. Now Is Reconnecting.')
+                TDDCLogging.warning('HBase Server Exception. Now Is Reconnecting.')
             else:
-                print('HBase Server Fatal Error. Please Check It.')
+                TDDCLogging.warning('HBase Server Fatal Error. Please Check It.')
                 gevent.sleep(30)
                 self._host_ports_pool = list(self._host_ports)
-                print('Retry Connecting HHase.')
+                TDDCLogging.warning('Retry Connecting HHase.')
             self._reconnect()
         else:
             self._host_ports_pool = list(self._host_ports)
             self._status = True
-            print('----->HBase Is Connected.(%s)' % ':'.join(self._current_host_port))
+            TDDCLogging.info('----->HBase Is Connected.(%s)' % ':'.join(self._current_host_port))
             self._hbase_was_ready()
 
     def _hbase_was_ready(self):
@@ -66,7 +66,7 @@ class HBaseManager(object):
             self._callback()
         
     def _keep_alive(self):
-        while STATUS:
+        while True:
             try:
                 if self._status:
                     if not self.get('keep_alive', 'ping'):
@@ -89,7 +89,7 @@ class HBaseManager(object):
 
     def put(self, table, row_key, items=None):
         if not self._status:
-            print('[Put Operation Was Failed] HBase Server Is Exception.')
+            TDDCLogging.warning('[Put Operation Was Failed] HBase Server Is Exception.')
             return False
         cvs = []
         for family, info in items.items():
@@ -111,7 +111,7 @@ class HBaseManager(object):
 
     def get(self, table_name, row_key, family=None, qualifier=None):
         if not self._status:
-            print('[Get Operation Was Failed] HBase Server Is Exception.')
+            TDDCLogging.warning('[Get Operation Was Failed] HBase Server Is Exception.')
             return None
         get = TGet()
         get.row = row_key

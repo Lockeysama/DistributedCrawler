@@ -13,7 +13,6 @@ import importlib
 
 from common.queues import WAITING_PARSE_QUEUE, STORAGE_QUEUE, \
     PARSER_RULES_MOULDS_UPDATE_QUEUE,CRAWL_QUEUE
-from conf.base_site import STATUS
 
 SIGNAL_PARSER_READY = object()
 
@@ -65,7 +64,7 @@ class ParserManager(object):
                     self._rules_moulds[platform][feature] = cls
     
     def _rules_update(self):
-        while STATUS:
+        while True:
             rule = PARSER_RULES_MOULDS_UPDATE_QUEUE.get()
             print(rule.platform, rule.package, rule.moulds)
             for cls_name in rule.moulds:
@@ -83,7 +82,7 @@ class ParserManager(object):
                 WAITING_PARSE_QUEUE.put(self._no_match_rules_task_queue.get())
     
     def _parse(self, tag):
-        while STATUS:
+        while True:
             task = WAITING_PARSE_QUEUE.get()
             platform = self._rules_moulds.get(task.platform, None)
             no_match = True

@@ -8,7 +8,6 @@ Created on 2017年4月17日
 import requests
 from lxml import html
 
-from conf.base_site import STATUS
 
 class CheokProxyChecker(object):
     '''
@@ -75,7 +74,7 @@ def main():
         gevent.spawn(test)
         gevent.sleep()
         
-    while STATUS:
+    while True:
         gevent.sleep(10)
     
     

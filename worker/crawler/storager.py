@@ -7,9 +7,10 @@ Created on 2017年4月14日
 
 import gevent
 
-from conf.base_site import STATUS, PLATFORM_SUFFIX
+from conf.base_site import PLATFORM_SUFFIX
 from common.queues import STORAGE_QUEUE, PARSE_QUEUE
-from base.storage.storager_base import StoragerBase
+
+from . import StoragerBase
 
 
 class CrawlStorager(StoragerBase):
@@ -18,15 +19,15 @@ class CrawlStorager(StoragerBase):
     '''
         
     def _push(self):
-        while STATUS:
+        while True:
             try:
                 task, rsp_info = STORAGE_QUEUE.get()
                 items = {'source': rsp_info,
                          'task': {'task': task.to_json()}}
                 if self._db.put_to_hbase(task.platform + PLATFORM_SUFFIX, task.row_key, items):
-                    PARSE_QUEUE.put(task)
+                    PARSE_QUEUE.put((task, rsp_info.get('rsp')[1] if rsp_info.get('rsp') else None))
                 else:
-                    STORAGE_QUEUE.put(task)
+                    STORAGE_QUEUE.put((task, rsp_info))
                     gevent.sleep(1)
             except Exception, e:
                 print(e)

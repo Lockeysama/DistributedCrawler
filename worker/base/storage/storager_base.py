@@ -7,7 +7,9 @@ Created on 2017年5月8日
 
 import gevent
 
-from plugins.db.db_manager import DBManager
+from plugins import DBManager
+from common import TDDCLogging
+from conf.base_site import HBASE_HOST_PORTS
 
 
 class StoragerBase(object):
@@ -19,13 +21,13 @@ class StoragerBase(object):
         '''
         Constructor
         '''
-        print('-->Storager Manager Is Starting.')
-        self._db = DBManager(tag)
+        TDDCLogging.info('-->Storager Manager Is Starting.')
+        self._db = DBManager(tag, HBASE_HOST_PORTS)
         gevent.spawn(self._push)
         gevent.sleep()
         gevent.spawn(self._pull)
         gevent.sleep()
-        print('-->Storager Manager Was Ready.')
+        TDDCLogging.info('-->Storager Manager Was Ready.')
 
     def _push(self):
         pass

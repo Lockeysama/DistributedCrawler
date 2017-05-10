@@ -9,7 +9,7 @@ import threading
 import time
 import random
 import gevent
-from conf.base_site import STATUS
+
 from common.queues import PLATFORM_PROXY_QUEUES
 
 
@@ -68,7 +68,7 @@ class IPCoolingPoll(object):
     def run(self):
         times = 0
         time_space = 0.5
-        while STATUS:
+        while True:
             gevent.sleep(time_space)
             self._ip_cooling_pool.cur_timestamp += time_space
             if times % 10 == 0:

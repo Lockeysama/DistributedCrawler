@@ -9,10 +9,10 @@ import os
 import json
 import gevent
 
-from conf.base_site import STATUS
 from common.queues import RULES_MOULDS_UPDATE_QUEUE, EVENT_QUEUE
-from common.models.rule import Rule
-from plugins.db.db_manager import DBManager
+from common.models import Rule
+from plugins import DBManager
+from conf.base_site import HBASE_HOST_PORTS
 
 
 class RulesUpdater(object):
@@ -35,13 +35,13 @@ class RulesUpdater(object):
 
     def _event(self):
         print('-->Rules Updater Was Ready.')
-        while STATUS:
+        while True:
             if not EVENT_QUEUE.empty():
                 if not self._db:
                     self._wait = True
                     def _db_ready(params=None):
                         self._wait = False
-                    self._db = DBManager('Rules Updater', _db_ready)
+                    self._db = DBManager('Rules Updater', HBASE_HOST_PORTS, _db_ready)
                     while self._wait:
                         gevent.sleep(0.2)
                 event = EVENT_QUEUE.get()

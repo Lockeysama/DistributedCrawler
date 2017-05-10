@@ -9,7 +9,6 @@ import os
 import json
 import gevent
 
-from conf.base_site import STATUS
 from common.queues import EVENT_QUEUE, PARSER_RULES_MOULDS_UPDATE_QUEUE
 from plugins.db.db_manager import DBManager
 from conf.parser_site import PARSE_RULES_HBASE_TABLE, PARSE_RULES_HBASE_FAMILY, PARSE_RULES_HBASE_INDEX_QUALIFIER
@@ -40,7 +39,7 @@ class ParserRulesUpdater(object):
     
     def _event(self):
         print('-->Parser Rules Updater Was Ready.')
-        while STATUS:
+        while True:
             if not EVENT_QUEUE.empty():
                 if not self._db:
                     self._wait = True

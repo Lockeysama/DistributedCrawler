@@ -6,7 +6,7 @@ Created on 2017年4月10日
 '''
 
 from rediscluster import StrictRedisCluster
-from conf.base_site import REDIS_NODES
+
 
 class RedisClient(object):
     '''
@@ -19,7 +19,7 @@ class RedisClient(object):
         '''
         self._nodes = nodes
         if not self._nodes:
-            self._nodes = REDIS_NODES
+            self._nodes = [{'host': '127.0.0.1', 'port': '6281'}]
         self._rdm = StrictRedisCluster(startup_nodes=self._nodes, decode_responses=True)
         
             

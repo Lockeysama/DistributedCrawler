@@ -6,7 +6,6 @@ Created on 2017年4月17日
 '''
 import gevent
 
-from conf.base_site import STATUS
 from conf.proxy_checker_site import PLATFORM_PROXY_SET_BASE_KEY,\
     HTTP_SOURCE_PROXY_SET_KEY, HTTPS_SOURCE_PROXY_SET_KEY, PROXY_PUBSUB_PATTERN, PROXY_CHECKER_CONCURRENT
 
@@ -39,13 +38,13 @@ class ProxyManager(object):
             self._callback()
             
     def _useful_push(self):
-        while STATUS:
+        while True:
             info = USEFUL_PROXY_QUEUE.get()
             if self._ip_pool.add(PLATFORM_PROXY_SET_BASE_KEY + info.platform, info.ip_port):
                 self._ip_pool.publish(PROXY_PUBSUB_PATTERN[:-1] + info.platform, info.ip_port)
 
     def _src_ip_fetch(self):
-        while STATUS:
+        while True:
             if HTTP_SOURCE_PROXY_QUEUE.qsize() < PROXY_CHECKER_CONCURRENT / 2:
                 ret = self._ip_pool.mspop(HTTP_SOURCE_PROXY_SET_KEY, PROXY_CHECKER_CONCURRENT * 2)
                 ret = [item for item in ret if item]
@@ -63,7 +62,7 @@ class ProxyManager(object):
 
 def main():
     ProxyManager()
-    while STATUS:
+    while True:
         info = HTTP_SOURCE_PROXY_QUEUE.get()
         print(info.ip_port, info.http_or_https)
 #         info.platform = 'test'

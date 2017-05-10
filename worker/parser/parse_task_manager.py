@@ -8,7 +8,7 @@ Created on 2017年4月12日
 import json
 import gevent
 
-from conf.base_site import STATUS, PARSE_TOPIC_NAME, CRAWL_TOPIC_NAME
+from conf.base_site import PARSE_TOPIC_NAME, CRAWL_TOPIC_NAME
 from conf.parser_site import PARSE_TOPIC_GROUP, PARSE_EVENT_TOPIC_NAME,\
     PARSE_EVENT_TOPIC_GROUP
 from common.queues import PARSE_QUEUE, CRAWL_QUEUE
@@ -74,7 +74,7 @@ class ParseTaskManager(TaskManagerBase):
     def _fetch_parse_task(self):
         print('--->Parsing Task Consumer Was Ready.')
         self._ready(self._parse_task_consumer_tag)
-        while STATUS:
+        while True:
             for msg in self._parse_task_consumer:
                 try:
                     item = json.loads(msg.value)
@@ -95,7 +95,7 @@ class ParseTaskManager(TaskManagerBase):
     def _push_crawl_task(self):
         print('--->Crawl Task Producer Was Ready.')
         self._ready(self._crawl_task_producer_tag)
-        while STATUS:
+        while True:
             task = CRAWL_QUEUE.get()
             msg = json.dumps(task.__dict__)
             if msg:
@@ -118,7 +118,7 @@ def main():
             
     ParseTaskManager(test)
     
-    while STATUS:
+    while True:
         gevent.sleep(60)
 
 if __name__ == '__main__':

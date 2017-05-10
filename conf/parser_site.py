@@ -4,7 +4,7 @@ Created on 2017年4月12日
 
 @author: chenyitao
 '''
-from common.simple_tools import get_mac_address
+from common import get_mac_address
 
 # Parser ID
 PARSER_ID = 1

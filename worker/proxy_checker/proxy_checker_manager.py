@@ -9,7 +9,6 @@ import os
 import json
 import importlib
 
-from conf.base_site import STATUS
 from conf.proxy_checker_site import PROXY_CHECKER_CONCURRENT
 from common.queues import HTTP_SOURCE_PROXY_QUEUE, HTTPS_SOURCE_PROXY_QUEUE,\
     USEFUL_PROXY_QUEUE, RULES_MOULDS_UPDATE_QUEUE
@@ -62,7 +61,7 @@ class CheckerManager(object):
                     self._rules_moulds[cls.proxy_type][platform] = cls
     
     def _rules_update(self):
-        while STATUS:
+        while True:
             rule = RULES_MOULDS_UPDATE_QUEUE.get()
             print(rule.platform, rule.package, rule.moulds)
             for cls_name in rule.moulds:
@@ -74,7 +73,7 @@ class CheckerManager(object):
                 self._rules_moulds[cls.proxy_type][cls.proxy_type] = cls
     
     def _checker(self, tag, proxy_type, src_queue):
-        while STATUS:
+        while True:
             if not len(self._rules_moulds[proxy_type]):
                 gevent.sleep(10)
                 continue
@@ -88,7 +87,7 @@ class CheckerManager(object):
 
 def main():
     CheckerManager()
-    while STATUS:
+    while True:
         gevent.sleep(60)
     
 if __name__ == '__main__':

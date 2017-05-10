@@ -5,9 +5,9 @@ Created on 2017年4月19日
 @author: chenyitao
 '''
 
-from conf.base_site import STATUS
-
-from plugins.rsm.redis_manager.remote_shared_memory import RedisClient
+from plugins import RedisClient
+from common import TDDCLogging
+from conf.base_site import REDIS_NODES
 
 
 class IPPool(object):
@@ -16,7 +16,7 @@ class IPPool(object):
         self._redis_client = redis_client
         self._callback = callback
         if not redis_client:
-            self._redis_client = RedisClient()
+            self._redis_client = RedisClient(REDIS_NODES)
         self._rdm = self._redis_client._rdm
         self._ready()
     
@@ -63,13 +63,11 @@ class IPPool(object):
     def psubscribe(self, pattern):
         ps = self._rdm.pubsub()
         ps.psubscribe(pattern)
-        print('--->Pubsub Was Ready.')
+        TDDCLogging.info('--->Pubsub Was Ready.')
         for item in ps.listen():
             yield item
-            if not STATUS:
-                ps.unsubscribe('spub')
-                break
-        print('-->Pubsub Is Exit.')
+        ps.unsubscribe('spub')
+        TDDCLogging.info('-->Pubsub Is Exit.')
 
 
 def main():

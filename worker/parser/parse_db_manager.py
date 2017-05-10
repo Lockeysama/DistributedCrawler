@@ -7,7 +7,7 @@ Created on 2017年4月12日
 
 import gevent
 
-from conf.base_site import STATUS, PLATFORM_SUFFIX
+from conf.base_site import PLATFORM_SUFFIX
 from common.queues import PARSE_QUEUE, WAITING_PARSE_QUEUE,\
     STORAGE_QUEUE
 from plugins.db.db_manager import DBManager
@@ -39,13 +39,13 @@ class ParseDBManager(object):
 
     def _push(self):
         _db = DBManager('Push')
-        while STATUS:
+        while True:
             task, items = STORAGE_QUEUE.get()
             _db.hbase_instance().put(task.platform + PLATFORM_SUFFIX, task.row_key, task, items, 'valuable')
 
     def _fetch(self):
         _db = DBManager('Fetch')
-        while STATUS:
+        while True:
             task = PARSE_QUEUE.get()
             if task:
                 if not task.platform or not task.row_key:

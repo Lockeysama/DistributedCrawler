@@ -4,11 +4,14 @@ Created on 2017年5月8日
 
 @author: chenyitao
 '''
-from plugins.rsm.redis_manager.remote_shared_memory import RedisClient
-import gevent
-from conf.base_site import STATUS, TASK_STATUS_HSET
-from common.queues import TASK_STATUS_QUEUE, TASK_STATUS_REMOVE_QUEUE
+
 import time
+import gevent
+
+from conf.base_site import TASK_STATUS_HSET, REDIS_NODES
+from common.queues import TASK_STATUS_QUEUE, TASK_STATUS_REMOVE_QUEUE
+
+from plugins import RedisClient
 
 class TaskStatusUpdater(object):
     '''
@@ -21,7 +24,7 @@ class TaskStatusUpdater(object):
         '''
         self._redis_client = redis_client
         if not redis_client:
-            self._redis_client = RedisClient()
+            self._redis_client = RedisClient(REDIS_NODES)
         self._rdm = self._redis_client._rdm
         gevent.spawn(self._update_task_status)
         gevent.sleep()
@@ -29,7 +32,7 @@ class TaskStatusUpdater(object):
         gevent.sleep()
 
     def _update_task_status(self):
-        while STATUS:
+        while True:
             task = TASK_STATUS_QUEUE.get()
             try:
                 self._update(task)
@@ -42,7 +45,7 @@ class TaskStatusUpdater(object):
         return self._rdm.hset(TASK_STATUS_HSET, task.url, '%d,%d' % (task.status, time.time()))
     
     def _remove_task_status(self):
-        while STATUS:
+        while True:
             task = TASK_STATUS_REMOVE_QUEUE.get()
             try:
                 self._remove(task)

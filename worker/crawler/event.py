@@ -6,14 +6,14 @@ Created on 2017年5月5日
 '''
 
 import gevent.queue
-
-from common.decorator import singleton
-from plugins.mq.kafka_manager.kafka_helper import KafkaHelper
-from conf.event_site import EVENT_TOPIC, EVENT_TOPIC_GROUP
 import json
-from common.models.event import Event
-from conf.base_site import STATUS
 
+from conf.base_site import KAFKA_HOST_PORT
+from conf.event_site import EVENT_TOPIC, EVENT_TOPIC_GROUP
+from common import singleton, TDDCLogging
+from common.models import Event
+
+from plugins import KafkaHelper
 
 class TDDCEvent(object):
     RULE_UPDATE = 0
@@ -31,21 +31,23 @@ class EventManagre(object):
         '''
         Constructor
         '''
-        print('-->Event Manager Is Starting.')
+        TDDCLogging.info('-->Event Manager Is Starting.')
+        self._event_consumer = KafkaHelper.make_consumer(KAFKA_HOST_PORT,
+                                                         EVENT_TOPIC,
+                                                         EVENT_TOPIC_GROUP)
         self._event_queue = gevent.queue.Queue()
         self._event_call = {}
         gevent.spawn(self._recv)
         gevent.sleep()
         gevent.spawn(self._dispatch)
         gevent.sleep()
-        print('-->Event Manager Was Ready.')
+        TDDCLogging.info('-->Event Manager Was Ready.')
 
     def register(self, event_type, callback):
         self._event_call[event_type] = callback
 
     def _recv(self):
-        self._event_consumer = KafkaHelper.make_consumer(EVENT_TOPIC, EVENT_TOPIC_GROUP)
-        while STATUS:
+        while True:
             for record in self._event_consumer:
                 try:
                     item = json.loads(record.value)
@@ -60,7 +62,7 @@ class EventManagre(object):
             gevent.sleep(5)
     
     def _dispatch(self):
-        while STATUS:
+        while True:
             event = self._event_queue.get()
             callback = self._event_call.get(event.e_type, None)
             if callback:

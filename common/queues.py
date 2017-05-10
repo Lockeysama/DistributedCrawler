@@ -5,58 +5,51 @@ Created on 2017年4月12日
 @author: chenyitao
 '''
 
-import gevent.queue
+from gevent.queue import Queue
 
-from .define import WorkerModel
-from conf.base_site import MODEL
+# Event Queue
+EVENT_QUEUE = Queue()
 
-
-EVENT_QUEUE = gevent.queue.Queue()
 # Exception Queue
-EXCEPTION_QUEUE = gevent.queue.Queue()
+EXCEPTION_QUEUE = Queue()
 
 # Waiting For Crawl Queue
-CRAWL_QUEUE = gevent.queue.Queue()
+CRAWL_QUEUE = Queue()
 
 # Crawled Queue
-PARSE_QUEUE = gevent.queue.Queue()
+PARSE_QUEUE = Queue()
 
 # Waiting For Storage Queue
-STORAGE_QUEUE = gevent.queue.Queue()
+STORAGE_QUEUE = Queue()
 
 # Task Status Queue
-TASK_STATUS_QUEUE = gevent.queue.Queue()
+TASK_STATUS_QUEUE = Queue()
 
 # Task Status Remove Queue
-TASK_STATUS_REMOVE_QUEUE = gevent.queue.Queue()
+TASK_STATUS_REMOVE_QUEUE = Queue()
 
 # Rules Moulds Update Queue
-RULES_MOULDS_UPDATE_QUEUE = gevent.queue.Queue()
+RULES_MOULDS_UPDATE_QUEUE = Queue()
 
-if MODEL == WorkerModel.CRAWLER:
-    # Task Base Info Update Queue
-    TASK_BASE_INFO_UPDATE_QUEUE = gevent.queue.Queue()
-    # Proxy IP Platform Queue 
-    PROXY_IP_PLATFORM_QUEUE = gevent.queue.Queue()
-    # Platform Proxy Queues
-    PLATFORM_PROXY_QUEUES = dict()
-    # Unuseful Proxy Feedback Queue
-    UNUSEFUL_PROXY_FEEDBACK_QUEUE = gevent.queue.Queue()
-elif MODEL == WorkerModel.PARSER:
-    # Parser Rules Moulds Update Queue
-    PARSER_RULES_MOULDS_UPDATE_QUEUE = gevent.queue.Queue()
-    # Waiting For Parse Queue
-    WAITING_PARSE_QUEUE = gevent.queue.Queue()
-elif MODEL == WorkerModel.PROXY_CHECKER:
-    # Useful Proxy Queue
-    USEFUL_PROXY_QUEUE = gevent.queue.Queue()
-    # Source Proxy Queue
-    HTTP_SOURCE_PROXY_QUEUE = gevent.queue.Queue()
-    HTTPS_SOURCE_PROXY_QUEUE = gevent.queue.Queue()
+## Crawler
+# Task Base Info Update Queue
+TASK_BASE_INFO_UPDATE_QUEUE = Queue()
+# Proxy IP Platform Queue 
+PROXY_IP_PLATFORM_QUEUE = Queue()
+# Platform Proxy Queues
+PLATFORM_PROXY_QUEUES = dict()
+# Unuseful Proxy Feedback Queue
+UNUSEFUL_PROXY_FEEDBACK_QUEUE = Queue()
 
+## Parser
+# Parser Rules Moulds Update Queue
+PARSER_RULES_MOULDS_UPDATE_QUEUE = Queue()
+# Waiting For Parse Queue
+WAITING_PARSE_QUEUE = Queue()
 
-def main():
-    pass
-
-if __name__ == '__main__':
-    main()
+## Proxy Checker
+# Useful Proxy Queue
+USEFUL_PROXY_QUEUE = Queue()
+# Source Proxy Queue
+HTTP_SOURCE_PROXY_QUEUE = Queue()
+HTTPS_SOURCE_PROXY_QUEUE = Queue()

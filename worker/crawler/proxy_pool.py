@@ -7,14 +7,12 @@ Created on 2017年4月14日
 
 import gevent
 
-from conf.base_site import STATUS
+from conf.proxy_checker_site import PROXY_PUBSUB_PATTERN, PLATFORM_PROXY_SET_BASE_KEY
+from common import TDDCLogging
 from common.queues import PLATFORM_PROXY_QUEUES, UNUSEFUL_PROXY_FEEDBACK_QUEUE
 
-from base.proxy.ip_pool import IPPool
-from conf.proxy_checker_site import PROXY_PUBSUB_PATTERN,\
-    PLATFORM_PROXY_SET_BASE_KEY
-from worker.crawler.Scrapy.contrib.ip_cooling_pool import IPCoolingPoll
-
+from . import IPPool
+from .Scrapy.contrib.ip_cooling_pool import IPCoolingPoll
 IP_COOLING_POOL = IPCoolingPoll()
 
 
@@ -27,14 +25,14 @@ class CrawlProxyPool(object):
         '''
         Constructor
         '''
-        print('-->Crawl Proxy Pool Is Starting.')
+        TDDCLogging.info('-->Crawl Proxy Pool Is Starting.')
         self._ip_pool = IPPool()
         self._init_proxy()
         gevent.spawn(self._subscribe)
         gevent.sleep()
         gevent.spawn(self._proxy_unuseful_feedback, self._ip_pool)
         gevent.sleep()
-        print('-->Crawl Proxy Pool Was Ready.')
+        TDDCLogging.info('-->Crawl Proxy Pool Was Ready.')
     
     def _init_proxy(self):
         s = self._ip_pool.scan(PLATFORM_PROXY_SET_BASE_KEY + '*')
@@ -50,7 +48,7 @@ class CrawlProxyPool(object):
         items = self._ip_pool.psubscribe(PROXY_PUBSUB_PATTERN)
         for item in items:
             if item.get('type') == 'psubscribe':
-                print('---->Subscribe: %s' % item.get('channel'))
+                TDDCLogging.info('---->Subscribe: %s' % item.get('channel'))
                 continue
             platform = item.get('channel', '').split(':')[-1]
             data = item.get('data')
@@ -59,7 +57,7 @@ class CrawlProxyPool(object):
             PLATFORM_PROXY_QUEUES[platform].add(data)
     
     def _proxy_unuseful_feedback(self, ip_pool):
-        while STATUS:
+        while True:
             platform, proxy = UNUSEFUL_PROXY_FEEDBACK_QUEUE.get()
             if proxy in PLATFORM_PROXY_QUEUES.get(platform, set()): 
                 PLATFORM_PROXY_QUEUES[platform].remove(proxy)
@@ -73,7 +71,7 @@ def main():
 
     def test():
         import random
-        while STATUS:
+        while True:
             if PLATFORM_PROXY_QUEUES.get('cheok'):
                 ip = random.choice(list(PLATFORM_PROXY_QUEUES['cheok']))
                 UNUSEFUL_PROXY_FEEDBACK_QUEUE.put(['cheok', ip])

@@ -6,18 +6,17 @@ Created on 2017年4月14日
 '''
 
 import setproctitle
-from gevent import monkey
-monkey.patch_all()
+from common import TDDCLogging
 import logging
-logging.basicConfig(filename='crawler.log')
+logging.basicConfig(filename='crawler_other.log')
 
 from twisted.internet import reactor
 
-from worker.crawler.exception import ExceptionCollection
-from worker.crawler.storager import CrawlStorager
-from worker.crawler.proxy_pool import CrawlProxyPool
-from worker.crawler.task import CrawlTaskManager
-from worker.crawler.crawler import Crawler
+from .exception import ExceptionCollection
+from .storager import CrawlStorager
+from .proxy_pool import CrawlProxyPool
+from .task import CrawlTaskManager
+from .crawler import Crawler
 
 
 class CrawlerManager(object):
@@ -30,13 +29,13 @@ class CrawlerManager(object):
         Constructor
         '''
         setproctitle.setproctitle("TDDC_CRAWLER")
-        print('->Crawler Starting.')
+        TDDCLogging.info('->Crawler Starting.')
         self._exception_collection = ExceptionCollection()
         self._crawler = Crawler()
         self._storager = CrawlStorager()
-        self._proxy_pool = CrawlProxyPool()
         self._task_manager = CrawlTaskManager()
-        print('->Crawler Was Ready.')
+        self._proxy_pool = CrawlProxyPool()
+        TDDCLogging.info('->Crawler Was Ready.')
         
     @staticmethod
     def start():
