@@ -67,6 +67,7 @@ class HBaseManager(object):
         
     def _keep_alive(self):
         while True:
+            gevent.sleep(5)
             try:
                 if self._status:
                     if not self.get('keep_alive', 'ping'):
@@ -80,9 +81,9 @@ class HBaseManager(object):
                     self._reconnect()
             except Exception, e:
                 print(e)
-                gevent.sleep(10)
+                gevent.sleep(5)
             else:
-                gevent.sleep(30)
+                gevent.sleep(25)
                 
     def _reconnect(self):
         self._connect()

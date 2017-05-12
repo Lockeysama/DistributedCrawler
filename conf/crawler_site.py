@@ -12,7 +12,7 @@ CRAWLER_ID = 1
 CRAWL_TOPIC_GROUP = 'tddc.crawler'
 
 # Crawler Concurrent
-CRAWLER_CONCURRENT = 64
+CRAWLER_CONCURRENT = 100
 
 # Storage Family
 STORAGE_FAMILY = ''

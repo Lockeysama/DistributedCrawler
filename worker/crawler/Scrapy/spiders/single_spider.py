@@ -11,11 +11,12 @@ from scrapy import signals
 import scrapy
 from scrapy.exceptions import DontCloseSpider
 from scrapy.http import Request
+import twisted.internet.error as internet_err
+import twisted.web._newclient as newclient_err
+
 from common.queues import UNUSEFUL_PROXY_FEEDBACK_QUEUE, TASK_STATUS_REMOVE_QUEUE
 from common.models import Task
 from common import TDDCLogging
-import twisted.internet.error as internet_err
-import twisted.web._newclient as newclient_err
 
 SIGNAL_STORAGE = object()
 
@@ -70,10 +71,11 @@ class SingleSpider(scrapy.Spider):
 
     def error_back(self, response):
         task, times = response.request.meta['item']
+        proxy = response.request.meta.get('proxy', None)
         if response.type == httperror.HttpError:
             status = response.value.response.status
             if status >= 500:
-                fmt = '[%s][%s] Crawled Failed(%d). Will Retry After While.'
+                fmt = '[%s][%s] Crawled Failed(%d | %s). Will Retry After While.' % proxy
                 TDDCLogging.warning(fmt % (task.platform,
                                            task.url,
                                            status))
@@ -84,12 +86,12 @@ class SingleSpider(scrapy.Spider):
                 if times >= retry_times:
                     # TODO Exception
                     TASK_STATUS_REMOVE_QUEUE.put(task)
-                    fmt = '[%s:%s] Crawled Failed(404). Not Retry.'
+                    fmt = '[%s:%s] Crawled Failed(404 | %s). Not Retry.' % proxy
                     TDDCLogging.warning(fmt % (task.platform,
                                                task.url))
                     return
                 times += 1
-                fmt = '[%s:%s] Crawled Failed(%d). Will Retry After While.'
+                fmt = '[%s:%s] Crawled Failed(%d | %s). Will Retry After While.' % proxy
                 TDDCLogging.warning(fmt % (task.platform,
                                            task.url,
                                            status))
@@ -104,11 +106,10 @@ class SingleSpider(scrapy.Spider):
             err_msg = 'ResponseNeverReceived'
         else:
             err_msg = '%s' % (response.value)
-            
-        proxy = response.request.meta.get('proxy', None)
-        proxy = proxy.split('//')[1]
-        UNUSEFUL_PROXY_FEEDBACK_QUEUE.put([task.platform, proxy])
-        fmt = '[%s][%s] Crawled Failed(%s). Will Retry After While.'
+        if proxy:
+            proxy = proxy.split('//')[1]
+            UNUSEFUL_PROXY_FEEDBACK_QUEUE.put([task.platform, proxy])
+        fmt = '[%s][%s] Crawled Failed(%s | %s). Will Retry After While.' % proxy
         TDDCLogging.warning(fmt % (task.platform,
                                    task.url,
                                    err_msg))

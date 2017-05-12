@@ -19,7 +19,7 @@ class RedisClient(object):
         '''
         self._nodes = nodes
         if not self._nodes:
-            self._nodes = [{'host': '127.0.0.1', 'port': '6281'}]
+            self._nodes = [{'host': 'localhost', 'port': '6281'}]
         self._rdm = StrictRedisCluster(startup_nodes=self._nodes, decode_responses=True)
         
             

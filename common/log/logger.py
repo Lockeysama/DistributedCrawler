@@ -15,7 +15,8 @@ class TDDCLogger(object):
     
     def __init__(self):
         from conf.base_site import MODEL
-        FORMAT = '[%(levelname)s] [%(asctime)s] [%(filename)s/:%(module)s:%(funcName)s:%(lineno)d] => %(message)s'
+        FORMAT = ('[%(levelname)s] [%(asctime)s] '
+                  '[%(filename)s/:%(module)s:%(funcName)s:%(lineno)d] => %(message)s')
         logging.basicConfig(format=FORMAT, filename=MODEL.name+'.log') # @UndefinedVariable
         self._log = logging.getLogger(MODEL.name) # @UndefinedVariable
         self._init_logger()
@@ -24,7 +25,8 @@ class TDDCLogger(object):
         self._log.setLevel(logging.DEBUG)
         stream = logging.StreamHandler()
         stream.setLevel(logging.DEBUG)
-        fm_stream = logging.Formatter('\033[%(mytp)s;%(myfc)s;%(mybc)sm[%(levelname)s] [%(asctime)s] %(mypath)s => %(message)s\033[0m')
+        fm_stream = logging.Formatter('\033[%(mytp)s;%(myfc)s;%(mybc)sm[%(levelname)s]'
+                                      ' [%(asctime)s] %(mypath)s => %(message)s\033[0m')
         stream.setFormatter(fm_stream)
         self._log.addHandler(stream)
  
