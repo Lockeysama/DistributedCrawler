@@ -42,8 +42,8 @@ class ProxyMiddleware(object):
             ip, port = ip_port.split(':')
             proxy = '%s://%s:%s' % (task.proxy_type, ip, port)
             request.meta['proxy'] = proxy
-            request.headers['X-Forwarded-For'] = ip_port
-            request.headers['X-Real-IP'] = ip_port
+            request.headers['X-Forwarded-For'] = '10.10.10.10:80'
+            request.headers['X-Real-IP'] = '10.10.10.10:80'
         except Exception, e:
             print(e)
 

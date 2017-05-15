@@ -31,8 +31,8 @@ class CrawlerManager(object):
         self._exception_collection = ExceptionCollection()
         self._crawler = Crawler()
         self._storager = CrawlStorager()
-        self._task_manager = CrawlTaskManager()
         self._proxy_pool = CrawlProxyPool()
+        self._task_manager = CrawlTaskManager()
         TDDCLogging.info('->Crawler Was Ready.')
 
     @staticmethod

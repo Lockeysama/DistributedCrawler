@@ -77,6 +77,7 @@ class ParseTaskManager(TaskManagerBase):
                 task.status = Task.Status.WAIT_PARSE
                 PARSE_QUEUE.put(task)
                 TASK_STATUS_QUEUE.put(task)
+                TDDCLogging.info('msg')
             else:
                 self._consume_msg_exp('PARSE_TASK_ERR', item)
 

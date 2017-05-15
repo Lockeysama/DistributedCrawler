@@ -75,10 +75,11 @@ class SingleSpider(scrapy.Spider):
         if response.type == httperror.HttpError:
             status = response.value.response.status
             if status >= 500:
-                fmt = '[%s][%s] Crawled Failed(%d | %s). Will Retry After While.' % proxy
+                fmt = '[%s][%s] Crawled Failed(%d | %s). Will Retry After While.'
                 TDDCLogging.warning(fmt % (task.platform,
                                            task.url,
-                                           status))
+                                           status,
+                                           proxy))
                 self.add_task(task, True)
                 return
             elif status == 404:
@@ -86,15 +87,17 @@ class SingleSpider(scrapy.Spider):
                 if times >= retry_times:
                     # TODO Exception
                     TASK_STATUS_REMOVE_QUEUE.put(task)
-                    fmt = '[%s:%s] Crawled Failed(404 | %s). Not Retry.' % proxy
+                    fmt = '[%s:%s] Crawled Failed(404 | %s). Not Retry.'
                     TDDCLogging.warning(fmt % (task.platform,
-                                               task.url))
+                                               task.url,
+                                               proxy))
                     return
                 times += 1
-                fmt = '[%s:%s] Crawled Failed(%d | %s). Will Retry After While.' % proxy
+                fmt = '[%s:%s] Crawled Failed(%d | %s). Will Retry After While.'
                 TDDCLogging.warning(fmt % (task.platform,
                                            task.url,
-                                           status))
+                                           status,
+                                           proxy))
                 self.add_task(task, True, times)
                 return
         elif response.type == internet_err.TimeoutError:
@@ -109,10 +112,11 @@ class SingleSpider(scrapy.Spider):
         if proxy:
             proxy = proxy.split('//')[1]
             UNUSEFUL_PROXY_FEEDBACK_QUEUE.put([task.platform, proxy])
-        fmt = '[%s][%s] Crawled Failed(%s | %s). Will Retry After While.' % proxy
+        fmt = '[%s][%s] Crawled Failed(%s | %s). Will Retry After While.'
         TDDCLogging.warning(fmt % (task.platform,
                                    task.url,
-                                   err_msg))
+                                   err_msg,
+                                   proxy))
         self.add_task(task, True, times)
         
     def parse(self, response):

@@ -21,8 +21,8 @@ PLATFORM_SUFFIX = '_test' if TEST else ''
 STATUS = True
 
 # Worker Model
-MODEL = WorkerModel.Crawler
-# MODEL = WorkerModel.Parser
+# MODEL = WorkerModel.Crawler
+MODEL = WorkerModel.Parser
 # MODEL = WorkerModel.PROXY_CHECKER
 
 # ZK info

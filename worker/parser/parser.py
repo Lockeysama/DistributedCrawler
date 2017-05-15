@@ -29,9 +29,8 @@ class Parser(object):
         self._no_match_rules_task_queue = gevent.queue.Queue()
         gevent.spawn(self._rules_update)
         gevent.sleep()
-        for i in range(concurrent):
-            gevent.spawn(self._parse, i)
-            gevent.sleep()
+        gevent.spawn(self._parse)
+        gevent.sleep()
         TDDCLogging.info('-->Parser Was Ready.')
     
     def _init_rules(self):
@@ -45,21 +44,30 @@ class Parser(object):
             if not isinstance(conf, dict):
                 continue
             for k, v in conf.items():
-                module = importlib.import_module(k)
-                moulds = v.get('moulds', None)
-                if not isinstance(moulds, list):
+                self._load_moulds(k, v)
+    
+    def _load_moulds(self, platform, moulds_info):
+        rules_path_base = 'worker.parser.parser_moulds.rules'
+        for mould_info in moulds_info:
+            package = mould_info.get('package', None)
+            moulds = mould_info.get('moulds', None)
+            if not package or not moulds or not isinstance(moulds, list):
+                continue
+            module = importlib.import_module('{base}.{platform}.{package}'.format(base=rules_path_base,
+                                                                                  platform=platform,
+                                                                                  package=package))
+            if not module:
+                continue 
+            for mould in moulds:
+                cls = getattr(module, mould)
+                if not cls:
                     continue
-                for mould in moulds:
-                    cls = getattr(module, mould)
-                    if not cls:
-                        continue
-                    feature = cls.__dict__.get('feature', None)
-                    if not feature:
-                        continue
-                    platform = index.split('.')[0]
-                    if not self._rules_moulds.get(platform, None):
-                        self._rules_moulds[platform] = {}
-                    self._rules_moulds[platform][feature] = cls
+                feature = cls.__dict__.get('feature', None)
+                if not feature:
+                    continue
+                if not self._rules_moulds.get(platform, None):
+                    self._rules_moulds[platform] = {}
+                self._rules_moulds[platform][feature] = cls
     
     def _rules_update(self):
         while True:
@@ -79,7 +87,7 @@ class Parser(object):
             while not self._no_match_rules_task_queue.empty():
                 WAITING_PARSE_QUEUE.put(self._no_match_rules_task_queue.get())
     
-    def _parse(self, tag):
+    def _parse(self):
         while True:
             task, body = WAITING_PARSE_QUEUE.get()
             platform = self._rules_moulds.get(task.platform, None)
@@ -112,7 +120,7 @@ class Parser(object):
         for task in tasks:
             CRAWL_QUEUE.put(task)
     
-        
+    
 def main():
     from common.models import Task
     Parser()
