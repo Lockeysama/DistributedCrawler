@@ -34,7 +34,7 @@ class CrawlerManager(object):
         self._proxy_pool = CrawlProxyPool()
         self._task_manager = CrawlTaskManager()
         TDDCLogging.info('->Crawler Was Ready.')
-
+        
     @staticmethod
     def start():
         reactor.__init__()  # @UndefinedVariable

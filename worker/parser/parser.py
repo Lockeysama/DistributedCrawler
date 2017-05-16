@@ -11,7 +11,7 @@ import gevent
 import importlib
 
 from common.queues import WAITING_PARSE_QUEUE, STORAGE_QUEUE, \
-    PARSER_RULES_MOULDS_UPDATE_QUEUE,CRAWL_QUEUE
+    PARSER_RULES_MOULDS_UPDATE_QUEUE,CRAWL_QUEUE, TASK_STATUS_QUEUE
 from common import TDDCLogging
 
 
@@ -96,15 +96,14 @@ class Parser(object):
                 cls = platform.get(task.feature, None)
                 if cls:
                     ret = cls(task, body)
-                    if len(ret.items):
-                        self._storage(task, ret.items)
+                    self._storage(task, ret.items)
                     self._new_task_push(ret.tasks)
                     fmt = 'Parse: [{platform}:{row_key}:{feature}][S:{items}][N:{tasks}]'
-                    print(fmt.format(platform=task.platform,
-                                     feature=task.feature,
-                                     row_key=task.row_key,
-                                     items=len(ret.items),
-                                     tasks=len(ret.tasks)))
+                    TDDCLogging.info(fmt.format(platform=task.platform,
+                                                feature=task.feature,
+                                                row_key=task.row_key,
+                                                items=len(ret.items),
+                                                tasks=len(ret.tasks)))
                     no_match = False
             if no_match:
                 self._no_match_rules_task_queue.put(task)
@@ -112,9 +111,12 @@ class Parser(object):
                 TDDCLogging.warning(fmt.format(platform=task.platform,
                                                feature=task.feature,
                                                row_key=task.row_key))
+            else:
+                TASK_STATUS_QUEUE.put(task)
 
     def _storage(self, task, items):
-        STORAGE_QUEUE.put([task, items])
+        if len(items):
+            STORAGE_QUEUE.put([task, items])
     
     def _new_task_push(self, tasks):
         for task in tasks:

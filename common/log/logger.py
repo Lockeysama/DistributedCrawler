@@ -15,9 +15,8 @@ class TDDCLogger(object):
     
     def __init__(self):
         from conf.base_site import MODEL
-        FORMAT = ('[%(levelname)s] [%(asctime)s] '
-                  '[%(filename)s/:%(module)s:%(funcName)s:%(lineno)d] => %(message)s')
-        logging.basicConfig(format=FORMAT, filename=MODEL.name+'.log') # @UndefinedVariable
+        _format = '[%(levelname)s] [%(asctime)s] => %(message)s'
+        logging.basicConfig(format=_format, filename=MODEL.name+'.log') # @UndefinedVariable
         self._log = logging.getLogger(MODEL.name) # @UndefinedVariable
         self._init_logger()
     

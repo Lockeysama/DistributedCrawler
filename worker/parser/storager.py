@@ -22,11 +22,13 @@ class ParseDBManager(StoragerBase):
     def _push(self):
         while True:
             task, items = STORAGE_QUEUE.get()
-            self._db.hbase_instance().put(task.platform + PLATFORM_SUFFIX,
-                                          task.row_key,
-                                          task,
-                                          items,
-                                          'valuable')
+            if not self._db.hbase_instance().put(task.platform + PLATFORM_SUFFIX,
+                                                 task.row_key,
+                                                 task,
+                                                 items,
+                                                 'valuable'):
+                STORAGE_QUEUE.put((task, items))
+                gevent.sleep(1)
 
     def _pull(self):
         while True:
@@ -37,8 +39,14 @@ class ParseDBManager(StoragerBase):
                 TDDCLogging.error('Task Exception(Parse DB Manager): [%s:%s]' % (task.platform,
                                                                                  task.row_key))
                 continue
-            ret = self._db.hbase_instance().get(task.platform + PLATFORM_SUFFIX,
-                                                task.row_key)
+            success, ret = self._db.get_from_hbase(task.platform + PLATFORM_SUFFIX,
+                                                   task.row_key,
+                                                   'source',
+                                                   'content')
+            if not success:
+                PARSE_QUEUE.put(task)
+                gevent.sleep(1)
+                continue
             if not ret:
                 continue
             for cv in ret.columnValues:

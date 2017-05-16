@@ -40,7 +40,7 @@ class ProxyMiddleware(object):
                     gevent.sleep(0.5)
             IP_COOLING_POOL.push((ip_port, task.platform))
             ip, port = ip_port.split(':')
-            proxy = '%s://%s:%s' % (task.proxy_type, ip, port)
+            proxy = '%s://%s:%s' % (task.proxy_type if task.proxy_type else 'http', ip, port)
             request.meta['proxy'] = proxy
             request.headers['X-Forwarded-For'] = '10.10.10.10:80'
             request.headers['X-Real-IP'] = '10.10.10.10:80'

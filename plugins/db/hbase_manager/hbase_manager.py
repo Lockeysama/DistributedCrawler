@@ -44,7 +44,7 @@ class HBaseManager(object):
             self._client = THBaseService.Client(self._protocol)
             self._transport.open()
         except Exception, e:
-            print(e)
+            TDDCLogging.error(e)
             current_host_port = ':'.join(self._current_host_port)
             self._host_ports_pool.remove(current_host_port)
             if len(self._host_ports_pool) > 0:
@@ -67,23 +67,20 @@ class HBaseManager(object):
         
     def _keep_alive(self):
         while True:
-            gevent.sleep(5)
+            gevent.sleep(15)
             try:
                 if self._status:
-                    if not self.get('keep_alive', 'ping'):
+                    if not self.get('keep_alive', 'ping')[0]:
                         raise TTransportException
             except TTransportException, e:
                 if not self._status:
                     return
-                print(e)
+                TDDCLogging.error(e)
                 self._status = False
                 if len(self._host_ports_pool):
                     self._reconnect()
             except Exception, e:
-                print(e)
-                gevent.sleep(5)
-            else:
-                gevent.sleep(25)
+                TDDCLogging.error(e)
                 
     def _reconnect(self):
         self._connect()
@@ -105,7 +102,7 @@ class HBaseManager(object):
         try:
             self._client.put(table, tp)
         except Exception, e:
-            print(e)
+            TDDCLogging.error(e)
             return False
         else:
             return True
@@ -113,7 +110,7 @@ class HBaseManager(object):
     def get(self, table_name, row_key, family=None, qualifier=None):
         if not self._status:
             TDDCLogging.warning('[Get Operation Was Failed] HBase Server Is Exception.')
-            return None
+            return False, None
         get = TGet()
         get.row = row_key
         if family:
@@ -126,8 +123,10 @@ class HBaseManager(object):
             ret = None
             ret = self._client.get(table_name, get)
         except Exception, e:
-            print(e)
-        return ret
+            TDDCLogging.error(e)
+            return False, None
+        else:
+            return True, ret
 
     def close(self):
         self._transport.close()

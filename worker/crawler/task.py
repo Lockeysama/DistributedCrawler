@@ -47,7 +47,7 @@ class CrawlTaskManager(TaskManagerBase):
         TDDCLogging.info('--->Crawl Task Consumer Was Ready.')
         pause = False
         while True:
-            if CRAWL_QUEUE.qsize() > CRAWLER_CONCURRENT / 4:
+            if CRAWL_QUEUE.qsize() > CRAWLER_CONCURRENT * 4:
                 if not pause:
                     self._crawl_task_consumer.commit()
                     self._crawl_task_consumer.unsubscribe()
@@ -55,7 +55,7 @@ class CrawlTaskManager(TaskManagerBase):
                     TDDCLogging.info('Crawl Task Consumer Was Paused.')
                 gevent.sleep(1)
                 continue
-            if pause:
+            if pause and CRAWL_QUEUE.qsize() < CRAWLER_CONCURRENT / 2:
                 self._crawl_task_consumer.subscribe(CRAWL_TOPIC_NAME)
                 pause = False
                 TDDCLogging.info('Crawl Task Consumer Was Resumed.')

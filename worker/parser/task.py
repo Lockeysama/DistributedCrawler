@@ -41,6 +41,8 @@ class ParseTaskManager(TaskManagerBase):
         gevent.sleep()
         gevent.spawn(self._push_new_crawl_task)
         gevent.sleep()
+        gevent.spawn(self._task_status_update)
+        gevent.sleep()
 
     def _fetch(self):
         TDDCLogging.info('--->Parsing Task Consumer Was Ready.')
@@ -77,7 +79,6 @@ class ParseTaskManager(TaskManagerBase):
                 task.status = Task.Status.WAIT_PARSE
                 PARSE_QUEUE.put(task)
                 TASK_STATUS_QUEUE.put(task)
-                TDDCLogging.info('msg')
             else:
                 self._consume_msg_exp('PARSE_TASK_ERR', item)
 
@@ -88,6 +89,14 @@ class ParseTaskManager(TaskManagerBase):
             msg = json.dumps(task.__dict__)
             if msg:
                 self._push_task(CRAWL_TOPIC_NAME, task, msg)
+    
+    def _task_status_update(self):
+        while True:
+            task = TASK_STATUS_QUEUE.get()
+            TDDCLogging.debug('[%s:%s] Parsed Successed.' % (task.platform,
+                                                             task.url))
+            self._successed_num += 1
+            self._successed_pre_min += 1
 
 
 def main():

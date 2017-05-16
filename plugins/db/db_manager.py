@@ -38,12 +38,14 @@ class DBManager(object):
             return None
         
     def put_to_hbase(self, table, row_key, items):
-        if self.hbase_instance():
-            try:
-                return self.hbase_instance().put(table, row_key, items)
-            except Exception, e:
-                TDDCLogging.warning('put_to_hbase', e)
+        if not self.hbase_instance():
             return False
+        return self.hbase_instance().put(table, row_key, items)
+
+    def get_from_hbase(self, table_name, row_key, family=None, qualifier=None):
+        if not self.hbase_instance():
+            return False, None
+        return self.hbase_instance().get(table_name, row_key, family, qualifier)
 
 
 def main():
