@@ -6,6 +6,7 @@ Created on 2017年4月12日
 '''
 
 from enum import Enum
+import random
 
 WorkerModel = Enum('WorkerModel', ('Crawler', 'Parser', 'ProxyChecker'))
 
@@ -21,8 +22,8 @@ PLATFORM_SUFFIX = '_test' if TEST else ''
 STATUS = True
 
 # Worker Model
-MODEL = WorkerModel.Crawler
-# MODEL = WorkerModel.Parser
+# MODEL = WorkerModel.Crawler
+MODEL = WorkerModel.Parser
 # MODEL = WorkerModel.PROXY_CHECKER
 
 # ZK info
@@ -33,6 +34,7 @@ KAFKA_HOST_PORT = '72.127.2.48:9092'
 
 # HBase Info
 HBASE_HOST_PORTS = ['72.127.2.48:9090']
+HBASE_HOST_PORT = random.choice(HBASE_HOST_PORTS)
 
 # Task Base Info Table Info
 TASK_BASE_INFO_HBASE_TABLE = 'tddc_task_base'

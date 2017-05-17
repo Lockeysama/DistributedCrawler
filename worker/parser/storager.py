@@ -22,11 +22,11 @@ class ParseDBManager(StoragerBase):
     def _push(self):
         while True:
             task, items = STORAGE_QUEUE.get()
-            if not self._db.hbase_instance().put(task.platform + PLATFORM_SUFFIX,
-                                                 task.row_key,
-                                                 task,
-                                                 items,
-                                                 'valuable'):
+            storage_items = {'valuable': items,
+                             'task': {'task': task.to_json()}}
+            if not self._db.put_to_hbase(task.platform + PLATFORM_SUFFIX, 
+                                         task.row_key,
+                                         storage_items):
                 STORAGE_QUEUE.put((task, items))
                 gevent.sleep(1)
 
@@ -49,10 +49,9 @@ class ParseDBManager(StoragerBase):
                 continue
             if not ret:
                 continue
-            for cv in ret.columnValues:
-                if cv.qualifier == 'content':
-                    WAITING_PARSE_QUEUE.put((task, cv.value))
-                    break
+            for _, value in ret.items():
+                WAITING_PARSE_QUEUE.put((task, value))
+                break
             
 
 def main():

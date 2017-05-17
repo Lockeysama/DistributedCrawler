@@ -13,7 +13,7 @@ from common.queues import EVENT_QUEUE, PARSER_RULES_MOULDS_UPDATE_QUEUE
 from plugins import DBManager
 from conf.parser_site import PARSE_RULES_HBASE_TABLE, PARSE_RULES_HBASE_FAMILY, PARSE_RULES_HBASE_INDEX_QUALIFIER
 from common.models import Rule
-from conf.base_site import HBASE_HOST_PORTS
+from conf.base_site import HBASE_HOST_PORT
 from common import TDDCLogging
 
 
@@ -27,7 +27,7 @@ class ParserRulesUpdater(object):
         Constructor
         '''
         TDDCLogging.info('-->Parser Rules Updater Is Starting.')
-        self._db = DBManager('Rules Updater', HBASE_HOST_PORTS)
+        self._db = DBManager('Rules Updater', HBASE_HOST_PORT)
         self._idle = 0
         gevent.spawn(self._event)
         gevent.sleep()

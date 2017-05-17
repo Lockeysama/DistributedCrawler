@@ -5,7 +5,9 @@ Created on 2017年4月12日
 @author: chenyitao
 '''
 
-from .hbase_manager.hbase_manager import HBaseManager
+import json
+import happybase
+
 from common import TDDCLogging
 
 
@@ -14,38 +16,70 @@ class DBManager(object):
     classdocs
     '''
 
-    def __init__(self, tag, host_ports=None, callback=None):
+    def __init__(self, tag, host_port=None):
         '''
         Constructor
         '''
-        self._tag = tag
         TDDCLogging.info('---->DB Manager(%s) Is Starting.' % self._tag)
-        self._hbase_status = False
-        self._callback =callback
-        self._hbase_manager = HBaseManager(host_ports, self._db_manager_was_ready)
-        
-    def _db_manager_was_ready(self):
+        self._tag = tag
+        self._tables = []
+        host, port = host_port.split(':')
+        self._hb_pool = happybase.ConnectionPool(size=2,
+                                                 host=host,
+                                                 port=int(port),
+                                                 transport='framed',
+                                                 protocol='compact')
         TDDCLogging.info('---->DB Manager(%s) Was Ready.' % self._tag)
-        self._hbase_status = True
-        if self._callback:
-            self._callback()
     
-    def hbase_instance(self):
-        if self._hbase_status:
-            return self._hbase_manager
-        else:
-            TDDCLogging.warning('HBase Is Not Ready.')
-            return None
-        
-    def put_to_hbase(self, table, row_key, items):
-        if not self.hbase_instance():
+    def create_table_to_hbase(self, table, families):
+        try:
+            with self._hb_pool.connection() as connection:
+                connection.create_table(table, families)
+        except Exception, e:
+            TDDCLogging.error(e)
             return False
-        return self.hbase_instance().put(table, row_key, items)
-
-    def get_from_hbase(self, table_name, row_key, family=None, qualifier=None):
-        if not self.hbase_instance():
+        else:
+            return True
+    
+    def put_to_hbase(self, table, row_key, items):
+        try:
+            with self._hb_pool.connection() as connection:
+                for cnt in range(2):
+                    if table not in self._tables:
+                        if cnt == 1:
+                            connection.create_table(table, items.keys())
+                            TDDCLogging.warning('Create New Table(%s) to HBase.' % table)
+                        self._tables = connection.tables()
+                    else:
+                        break
+                table = connection.table(table)
+                for family, data in items.items():
+                    cf_fmt = family + ':'
+                    values = {}
+                    for column, value in data.items():
+                        if isinstance(value, dict) or isinstance(value, list):
+                            value = json.dumps(value)
+                        values[cf_fmt + column] = value
+                    table.put(row_key, values) 
+                return True
+        except Exception, e:
+            TDDCLogging.error(e)
+            return False
+    
+    def get_from_hbase(self, table, row_key, family=None, qualifier=None):
+        try:
+            with self._hb_pool.connection() as connection:
+                table = connection.table(table)
+                if family and qualifier:
+                    cf = family + ':' + qualifier
+                elif family and not qualifier:
+                    cf = family
+                else:
+                    return False, None
+                return True, table.row(row_key, columns=[cf])
+        except Exception, e:
+            TDDCLogging.error(e)
             return False, None
-        return self.hbase_instance().get(table_name, row_key, family, qualifier)
 
 
 def main():

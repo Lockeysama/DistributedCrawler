@@ -21,13 +21,14 @@ class CheokHomepage(ParseRuleBase):
 
     def _parse(self):
         self._make_want_buy_list_urls()
-        self.tasks = self.tasks[:5]
+        self.tasks = self.tasks[10:15]
 
     def _make_want_buy_list_urls(self):
         page_numbers = self._doc.xpath('//*[@class="num"]/text()')
         if len(page_numbers):
             last_page_number = int(page_numbers[-1].encode('utf-8'))
             cur_time = time.time() * 1000
+#             cur_time = 1494926880 * 1000
             base_url = 'http://www.cheok.com/interfaces/0/0/0/0/cp_%d?bust=%d'
             tmp = list()
             for page_number in range(1, last_page_number+1):

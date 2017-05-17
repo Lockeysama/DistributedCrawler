@@ -15,6 +15,7 @@ from ..base import TaskManagerBase
 from common import TDDCLogging
 from plugins import KafkaHelper
 from common.models import Task
+from ..base import BloomFilter
 
 SIGNAL_TASK_MANAGER_READY = object()
 
@@ -30,6 +31,7 @@ class ParseTaskManager(TaskManagerBase):
         '''
         TDDCLogging.info('-->Task Manager Is Starting.')
         super(ParseTaskManager, self).__init__()
+        self._filter = BloomFilter()
         self._start_mq_server()
         TDDCLogging.info('-->Task Manager Was Ready.')
 
@@ -86,6 +88,9 @@ class ParseTaskManager(TaskManagerBase):
         TDDCLogging.info('--->Parser Task Producer Was Ready.')
         while True:
             task = CRAWL_QUEUE.get()
+#             if not self._filter.setget(task.url):
+#                 TDDCLogging.debug('New Task [%s:%s] Was Filter.' % (task.platform, task.url))
+#                 continue
             msg = json.dumps(task.__dict__)
             if msg:
                 self._push_task(CRAWL_TOPIC_NAME, task, msg)
