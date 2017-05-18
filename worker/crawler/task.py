@@ -66,7 +66,7 @@ class CrawlTaskManager(TaskManagerBase):
             for _, records in partition_records.items():
                 for record in records:
                     self._record_proc(record)
-    
+
     def _record_proc(self, record):
         try:
             item = json.loads(record.value)
@@ -85,15 +85,17 @@ class CrawlTaskManager(TaskManagerBase):
         TDDCLogging.info('--->Parse Task Producer Was Ready.')
         while True:
             task, status = PARSE_QUEUE.get()
+            tmp = Task(**task.__dict__)
+            task.status = Task.Status.CRAWL_SUCCESS
             if not isinstance(task, Task):
                 TDDCLogging.error('')
                 continue
-            if not self._push_task(PARSE_TOPIC_NAME, task):
+            if not self._push_task(PARSE_TOPIC_NAME, tmp):
                 TDDCLogging.error('')
             else:
-                TASK_STATUS_REMOVE_QUEUE.put(task)
+                TASK_STATUS_REMOVE_QUEUE.put(tmp)
                 TDDCLogging.debug('[%s:%s] Crawled Successed(%d).' % (task.platform,
-                                                                      task.url,
+                                                                      task.row_key,
                                                                       status))
                 self._successed_num += 1
                 self._successed_pre_min += 1

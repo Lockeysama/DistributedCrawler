@@ -28,10 +28,10 @@ class TaskManagerBase(object):
         self._task_status_updater = TaskStatusUpdater()
         self._successed_num = 0
         self._successed_pre_min = 0
-        gevent.spawn(self._timer)
+        gevent.spawn(self._status_printer)
         gevent.sleep()
 
-    def _timer(self):
+    def _status_printer(self):
         while True:
             gevent.sleep(60)
             TDDCLogging.info('Successed Status: [All=%d] [Pre Minute:%d]' % (self._successed_num,
@@ -39,6 +39,8 @@ class TaskManagerBase(object):
             self._successed_pre_min = 0
 
     def _push_task(self, topic, task, times=0):
+        if not task:
+            return False
         msg = json.dumps(task.__dict__)
         if msg:
             try:

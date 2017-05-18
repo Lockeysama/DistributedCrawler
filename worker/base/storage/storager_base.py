@@ -17,12 +17,12 @@ class StoragerBase(object):
     classdocs
     '''
 
-    def __init__(self, tag=''):
+    def __init__(self):
         '''
         Constructor
         '''
         TDDCLogging.info('-->Storager Manager Is Starting.')
-        self._db = DBManager(tag, HBASE_HOST_PORT)
+        self._db = DBManager(HBASE_HOST_PORT)
         gevent.spawn(self._push)
         gevent.sleep()
         gevent.spawn(self._pull)

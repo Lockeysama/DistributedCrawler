@@ -6,8 +6,6 @@ Created on 2017年4月12日
 '''
 
 from gevent.queue import Queue
-import multiprocessing
-import gevent
 
 # Event Queue
 EVENT_QUEUE = Queue()
@@ -16,13 +14,16 @@ EVENT_QUEUE = Queue()
 EXCEPTION_QUEUE = Queue()
 
 # Waiting For Crawl Queue
-CRAWL_QUEUE = gevent.queue.JoinableQueue()
+CRAWL_QUEUE = Queue()
 
 # Crawled Queue
 PARSE_QUEUE = Queue()
 
+# Exception Task Queue
+EXCEPTION_TASK_QUEUE = Queue()
+
 # Waiting For Storage Queue
-STORAGE_QUEUE = gevent.queue.JoinableQueue()
+STORAGE_QUEUE = Queue()
 
 # Task Status Queue
 TASK_STATUS_QUEUE = Queue()

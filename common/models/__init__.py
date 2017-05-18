@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 
 from .event import Event
-from .exception import TDDCException
+from .exception import TDDCException, TDDCExceptionType
 from .rule import Rule
 from .task import Task
 

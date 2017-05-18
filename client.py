@@ -26,6 +26,9 @@ def main():
             ProxySourceUpdater().start()
         multiprocessing.Process(target=update_ip_source).start()
         ProxyChecker.start()
+    elif MODEL == WorkerModel.Monitor:
+        from worker.monitor.monitor_manager import MonitorManager
+        MonitorManager.start()
         
         
 if __name__ == '__main__':

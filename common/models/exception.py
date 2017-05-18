@@ -7,7 +7,10 @@ Created on 2017年5月5日
 
 import copy
 import json
+from enum import Enum
 
+
+TDDCExceptionType = Enum('TDDCExceptionType', ('CrawlerTask404', 'Other'))
 
 class TDDCException(object):
     '''
@@ -31,7 +34,10 @@ class TDDCException(object):
 
 
 def main():
-    pass
+    e = TDDCException(name='Crawl Task 404',
+                      e_type=TDDCExceptionType.CrawlerTask404,
+                      detail='{"url": "http://a.com"}')
+    print(e)
 
 if __name__ == '__main__':
     main()

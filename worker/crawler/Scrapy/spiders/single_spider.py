@@ -6,17 +6,19 @@ Created on 2015年12月28日
 '''
 
 import urlparse
+from string import upper
 from scrapy.spidermiddlewares import httperror
 from scrapy import signals
 import scrapy
 from scrapy.exceptions import DontCloseSpider
-from scrapy.http import Request
+from scrapy.http import Request, FormRequest
 import twisted.internet.error as internet_err
 import twisted.web._newclient as newclient_err
 
-from common.queues import UNUSEFUL_PROXY_FEEDBACK_QUEUE, TASK_STATUS_REMOVE_QUEUE
-from common.models import Task
+from common.queues import UNUSEFUL_PROXY_FEEDBACK_QUEUE, TASK_STATUS_REMOVE_QUEUE, EXCEPTION_QUEUE
 from common import TDDCLogging
+from common.models import TDDCException
+from common.models.exception import TDDCExceptionType
 
 SIGNAL_STORAGE = object()
 
@@ -59,15 +61,31 @@ class SingleSpider(scrapy.Spider):
     def add_task(self, task, is_retry=False, times=1):
         if not is_retry:
             TDDCLogging.debug('Add New Task: ' + task.url)
-        headers_data = self._init_request_headers(task)
+        headers = self._init_request_headers(task)
+        req = (self._make_get_request(task, headers, times) 
+               if not task.method or upper(task.method) == 'GET' 
+               else self._make_post_request(task, headers, times))
+        self.crawler.engine.schedule(req, self)
+        
+    def _make_get_request(self, task, headers, times):
         req = Request(task.url,
-                      method=task.method if task.method else 'GET',
-                      headers=headers_data,
+                      headers=headers,
                       callback=self.parse,
                       errback=self.error_back,
                       meta={'item': [task, times]},
                       dont_filter=True)
-        self.crawler.engine.schedule(req, self)
+        return req
+    
+    def _make_post_request(self, task, headers, times):
+        form_data = {'params': headers.get('post_params', None)}
+        req = FormRequest(task.url,
+                          formdata=form_data,
+                          headers=headers,
+                          callback=self.parse,
+                          errback=self.error_back,
+                          meta={'item': [task, times]},
+                          dont_filter=True)
+        return req
 
     def error_back(self, response):
         task, times = response.request.meta['item']
@@ -85,7 +103,10 @@ class SingleSpider(scrapy.Spider):
             elif status == 404:
                 retry_times = task.retry if task.retry else 3
                 if times >= retry_times:
-                    # TODO Exception
+                    exception = TDDCException(name='Crawl Task 404',
+                                              e_type=TDDCExceptionType.CrawlerTask404,
+                                              detail=task.to_json())
+                    EXCEPTION_QUEUE.put(exception)
                     TASK_STATUS_REMOVE_QUEUE.put(task)
                     fmt = '[%s:%s] Crawled Failed(404 | %s). Not Retry.'
                     TDDCLogging.warning(fmt % (task.platform,
@@ -124,7 +145,6 @@ class SingleSpider(scrapy.Spider):
         rsp_info = {'rsp': [response.url, response.status],
                     'content': response.body}
         if self.signals_callback:
-            task.status = Task.Status.CRAWL_SUCCESS
             self.signals_callback(self, SIGNAL_STORAGE, [task, rsp_info])
 
     def signal_dispatcher(self, signal):

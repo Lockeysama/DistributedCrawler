@@ -38,7 +38,7 @@ class TDDCLogger(object):
         kwargs['extra']['mybc'] = bc
         kwargs['extra']['mypath'] = path
     
-    def get_cur_info(self):
+    def _get_cur_info(self):
         infos = sys._getframe()
         return (infos.f_back.f_back.f_code.co_filename,
 #                 infos.f_back.f_back.f_code.co_name,
@@ -57,7 +57,7 @@ class TDDCLogger(object):
         self._log.warning(msg, *args, **kwargs)
  
     def error(self, msg, *args, **kwargs):
-        self._update_kwargs(kwargs, '5', '37', '41', '[%s:%d]' % self.get_cur_info())
+        self._update_kwargs(kwargs, '5', '37', '41', '[%s:%d]' % self._get_cur_info())
         self._log.error(msg, *args, **kwargs)
  
     def critical(self, msg, *args, **kwargs):

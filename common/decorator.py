@@ -14,6 +14,7 @@ def singleton(cls, *args, **kw):
         return instances[cls]
     return _singleton
 
+
 def main():
     pass
 

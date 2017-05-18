@@ -6,74 +6,17 @@ Created on 2017年4月19日
 '''
 
 from plugins import RedisClient
-from common import TDDCLogging
-from conf.base_site import REDIS_NODES
 
 
-class IPPool(object):
-    
-    def __init__(self, redis_client=None, callback=None):
-        self._redis_client = redis_client
-        self._callback = callback
-        if not redis_client:
-            self._redis_client = RedisClient(REDIS_NODES)
-        self._rdm = self._redis_client._rdm
-        self._ready()
-    
-    def _ready(self):
-        if self._callback:
-            self._callback()
-        
-    def get(self, item):
-        return self._rdm.get(item)
-    
-    def add(self, name, *values): 
-        return self._rdm.sadd(name, *values)
-        
-    def msadd(self, name, values): 
-        ppl = self._rdm.pipeline()
-        for value in values:
-            ppl.sadd(name, value)
-        return ppl.execute()
-    
-    def randmember(self, name, count=1):
-        return self._rdm.srandmember(name, count)
-     
-    def members(self, name):
-        return self._rdm.smembers(name)
-    
-    def mspop(self, name, count):
-        ppl = self._rdm.pipeline()
-        for _ in xrange(count):
-            ppl.spop(name)
-        return ppl.execute()
-
-    def remove(self, name, *values):
-        self._rdm.srem(name, *values)
-
-    def delete(self, *names):
-        self._rdm.delete(*names)
-        
-    def scan(self, match):
-        return self._rdm.scan_iter(match)
-
-    def publish(self, channel, message):
-        self._rdm.publish(channel, message)
-
-    def psubscribe(self, pattern):
-        ps = self._rdm.pubsub()
-        ps.psubscribe(pattern)
-        TDDCLogging.info('--->Pubsub Was Ready.')
-        for item in ps.listen():
-            yield item
-        ps.unsubscribe('spub')
-        TDDCLogging.info('-->Pubsub Is Exit.')
+class IPPool(RedisClient):
+    pass
 
 
 def main():
+    from conf.base_site import REDIS_NODES
     import gevent.monkey
     gevent.monkey.patch_all()
-    ip_pool = IPPool()
+    ip_pool = IPPool(REDIS_NODES)
     
     rets = ip_pool.mspop('tddc:test:proxy:ip_src:http', 2)
     print(rets) 

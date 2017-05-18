@@ -5,10 +5,11 @@ Created on 2017年4月12日
 @author: chenyitao
 '''
 
-from enum import Enum
 import random
+from enum import Enum
 
-WorkerModel = Enum('WorkerModel', ('Crawler', 'Parser', 'ProxyChecker'))
+
+WorkerModel = Enum('WorkerModel', ('Crawler', 'Parser', 'ProxyChecker', 'Monitor'))
 
 # Test
 TEST = True
@@ -22,9 +23,10 @@ PLATFORM_SUFFIX = '_test' if TEST else ''
 STATUS = True
 
 # Worker Model
-# MODEL = WorkerModel.Crawler
-MODEL = WorkerModel.Parser
+MODEL = WorkerModel.Crawler
+# MODEL = WorkerModel.Parser
 # MODEL = WorkerModel.PROXY_CHECKER
+# MODEL = WorkerModel.Monitor
 
 # ZK info
 ZK_HOST_PORTS = ['72.127.2.48:2181']

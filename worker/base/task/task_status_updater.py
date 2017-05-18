@@ -5,7 +5,6 @@ Created on 2017年5月8日
 @author: chenyitao
 '''
 
-import time
 import gevent
 
 from conf.base_site import TASK_STATUS_HSET, REDIS_NODES
@@ -13,19 +12,17 @@ from common.queues import TASK_STATUS_QUEUE, TASK_STATUS_REMOVE_QUEUE
 
 from plugins import RedisClient
 
-class TaskStatusUpdater(object):
+
+class TaskStatusUpdater(RedisClient):
     '''
     classdocs
     '''
 
-    def __init__(self, redis_client=None):
+    def __init__(self):
         '''
         Constructor
         '''
-        self._redis_client = redis_client
-        if not redis_client:
-            self._redis_client = RedisClient(REDIS_NODES)
-        self._rdm = self._redis_client._rdm
+        super(TaskStatusUpdater, self).__init__(REDIS_NODES)
         gevent.spawn(self._update_task_status)
         gevent.sleep()
         gevent.spawn(self._remove_task_status)
@@ -42,8 +39,10 @@ class TaskStatusUpdater(object):
                 gevent.sleep(1)
 
     def _update(self, task):
-        return self._rdm.hset(TASK_STATUS_HSET, task.url, '%d,%d' % (task.status, time.time()))
-    
+        return self.hset(TASK_STATUS_HSET + '.%s.%d' % (task.platform, task.status),
+                         task.url,
+                         task.to_json())
+
     def _remove_task_status(self):
         while True:
             task = TASK_STATUS_REMOVE_QUEUE.get()
@@ -55,9 +54,10 @@ class TaskStatusUpdater(object):
                 gevent.sleep(1)
 
     def _remove(self, task):
-        return self._rdm.hdel(TASK_STATUS_HSET, task.url)
-    
-            
+        return self.hdel(TASK_STATUS_HSET + '.%s.%d' % (task.platform, task.status),
+                         task.url)
+
+
 def main():
     pass
 

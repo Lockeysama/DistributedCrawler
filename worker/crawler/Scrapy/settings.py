@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 from conf.crawler_site import CRAWLER_CONCURRENT
 
 BOT_NAME = 'Scrapy'
@@ -37,9 +38,11 @@ CONCURRENT_REQUESTS = CRAWLER_CONCURRENT
 
 DOWNLOAD_TIMEOUT = 10
 
-COOKIES_ENABLED=False
+COOKIES_ENABLED = True
 
-RETRY_ENABLED=False
+COOKIES_DEBUG = False
+
+RETRY_ENABLED = False
 
 DOWNLOADER_MIDDLEWARES = {
     'worker.crawler.Scrapy.contrib.user_agent.CustomUserAgent': 543,

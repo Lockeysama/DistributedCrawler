@@ -16,12 +16,15 @@ class DBManager(object):
     classdocs
     '''
 
-    def __init__(self, tag, host_port=None):
+    def __init__(self, host_port=None):
         '''
         Constructor
+        params:
+            host_port:
+                EXP: 'localhost:8888'
+                DES: HBase的IP、PORT
         '''
-        TDDCLogging.info('---->DB Manager(%s) Is Starting.' % self._tag)
-        self._tag = tag
+        TDDCLogging.info('---->DB Manager Is Starting.')
         self._tables = []
         host, port = host_port.split(':')
         self._hb_pool = happybase.ConnectionPool(size=2,
@@ -29,7 +32,8 @@ class DBManager(object):
                                                  port=int(port),
                                                  transport='framed',
                                                  protocol='compact')
-        TDDCLogging.info('---->DB Manager(%s) Was Ready.' % self._tag)
+        TDDCLogging.info('----->HBase(%s:%s) Was Ready.' % (host, port))
+        TDDCLogging.info('---->DB Manager Was Ready.')
     
     def create_table_to_hbase(self, table, families):
         try:
@@ -41,17 +45,58 @@ class DBManager(object):
         else:
             return True
     
-    def put_to_hbase(self, table, row_key, items):
+    def _auto_create_table(self, connection, table):
+        for cnt in range(2):
+            if table not in self._tables:
+                if cnt == 1:
+                    connection.create_table(table, {k:{} for k in ['source', 'valuable', 'task']})
+                    TDDCLogging.warning('Create New Table(%s) to HBase.' % table)
+                self._tables = connection.tables()
+            else:
+                break
+    
+    def puts_to_hbase(self, table_rows):
+        '''
+        批量存储
+        params:
+            table_rows:
+                EXP: {'platformxxx': {'row_key1': {'familyxxx': {'column': data},
+                                                  {'familyooo': {'column': data}},
+                                     {'row_key2': {'familyxxx': {'column': data},
+                                                  {'familyooo': {'column': data}}}}
+        '''
         try:
             with self._hb_pool.connection() as connection:
-                for cnt in range(2):
-                    if table not in self._tables:
-                        if cnt == 1:
-                            connection.create_table(table, items.keys())
-                            TDDCLogging.warning('Create New Table(%s) to HBase.' % table)
-                        self._tables = connection.tables()
-                    else:
-                        break
+                for table, rows in table_rows.items():
+                    self._auto_create_table(connection, table)
+                    table = connection.table(table)
+                    b = table.batch()
+                    for row_key, items in rows.items():
+                        for family, data in items.items():
+                            cf_fmt = family + ':'
+                            values = {}
+                            for column, value in data.items():
+                                if isinstance(value, dict) or isinstance(value, list):
+                                    value = json.dumps(value)
+                                values[cf_fmt + column] = value
+                            b.put(row_key, values)
+                    b.send()
+                return True
+        except Exception, e:
+            TDDCLogging.error(e)
+            return False
+    
+    def put_to_hbase(self, table, row_key, items):
+        '''
+        单个存储
+        params:
+            items:
+                EXP: {'familyxxx': {'column': data},
+                      'familyooo': {'column': data}}
+        '''
+        try:
+            with self._hb_pool.connection() as connection:
+                self._auto_create_table(connection, table)
                 table = connection.table(table)
                 for family, data in items.items():
                     cf_fmt = family + ':'
