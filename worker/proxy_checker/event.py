@@ -5,19 +5,17 @@ Created on 2017年4月20日
 @author: chenyitao
 '''
 
-from base import TaskManagerBase
-from conf.proxy_checker_site import PROXY_CHECKER_EVENT_TOPIC_NAME, PROXY_CHECKER_EVENT_TOPIC_GROUP
-
-SIGNAL_TASK_MANAGER_READY = object()
+from ..base import TaskManagerBase
+from conf import ProxyCheckerSite
 
 
 class ProxyMQManager(TaskManagerBase):
     '''
     classdocs
     '''
-    event_topic_name = PROXY_CHECKER_EVENT_TOPIC_NAME
+    event_topic_name = ProxyCheckerSite.EVENT_TOPIC
     
-    event_topic_group = PROXY_CHECKER_EVENT_TOPIC_GROUP
+    event_topic_group = ProxyCheckerSite.EVENT_TOPIC_GROUP
 
 
 def main():

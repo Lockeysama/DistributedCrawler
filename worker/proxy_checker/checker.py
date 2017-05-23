@@ -9,37 +9,34 @@ import os
 import json
 import importlib
 
-from conf.proxy_checker_site import PROXY_CHECKER_CONCURRENT
-from common.queues_define import HTTP_SOURCE_PROXY_QUEUE, HTTPS_SOURCE_PROXY_QUEUE,\
-    USEFUL_PROXY_QUEUE, RULES_MOULDS_UPDATE_QUEUE
+from conf import ProxyCheckerSite
+from common.queues import ProxyCheckerQueues
+from common import TDDCLogging
 
-class CheckerManager(object):
+
+class Checker(object):
     '''
     classdocs
     '''
 
-    def __init__(self, callback=None):
+    def __init__(self):
         '''
         Constructor
         '''
-        self._callback = callback
+        TDDCLogging.info('-->Checker Is Starting.')
         self._init_rules()
         gevent.spawn(self._rules_update)
         gevent.sleep()
-        for i in range(PROXY_CHECKER_CONCURRENT):
-            gevent.spawn(self._checker, i, 'http', HTTP_SOURCE_PROXY_QUEUE)
+        for i in range(ProxyCheckerSite.CONCURRENT):
+            gevent.spawn(self._check, i, 'http', ProxyCheckerQueues.HTTP_SOURCE_PROXY)
             gevent.sleep()
-        for i in range(PROXY_CHECKER_CONCURRENT):
-            gevent.spawn(self._checker, i, 'https', HTTPS_SOURCE_PROXY_QUEUE)
+        for i in range(ProxyCheckerSite.CONCURRENT):
+            gevent.spawn(self._check, i, 'https', ProxyCheckerQueues.HTTPS_SOURCE_PROXY)
             gevent.sleep()
-        self._ready()
-        
-    def _ready(self):
-        if self._callback:
-            self._callback()
-    
+        TDDCLogging.info('-->Checker Was Started.')
+
     def _init_rules(self):
-        base_path = './conf/proxy_checker_rule_index/'
+        base_path = ProxyCheckerSite.RULES_CONF_PATH_BASE
         self._rules_moulds = {'http': {}, 'https': {}}
         indexs = os.listdir(base_path)
         for index in indexs:
@@ -62,17 +59,17 @@ class CheckerManager(object):
     
     def _rules_update(self):
         while True:
-            rule = RULES_MOULDS_UPDATE_QUEUE.get()
+            rule = ProxyCheckerQueues.RULES_MOULDS_UPDATE.get()
             print(rule.platform, rule.package, rule.moulds)
             for cls_name in rule.moulds:
                 molule = importlib.import_module(rule.package)
                 cls = getattr(molule, cls_name)
                 if not cls:
-                    print('Exception: import rule failed: '+cls_name)
+                    TDDCLogging.error('Exception: import rule failed: '+cls_name)
                     continue
                 self._rules_moulds[cls.proxy_type][cls.proxy_type] = cls
     
-    def _checker(self, tag, proxy_type, src_queue):
+    def _check(self, tag, proxy_type, src_queue):
         while True:
             if not len(self._rules_moulds[proxy_type]):
                 gevent.sleep(10)
@@ -82,11 +79,11 @@ class CheckerManager(object):
                 ret = cls(info)
                 if ret.useful:
                     info.platform = platform
-                    USEFUL_PROXY_QUEUE.put(info)
+                    ProxyCheckerQueues.USEFUL_PROXY.put(info)
 
 
 def main():
-    CheckerManager()
+    Checker()
     while True:
         gevent.sleep(60)
     

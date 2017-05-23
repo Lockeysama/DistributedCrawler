@@ -9,44 +9,39 @@ import os
 import json
 import gevent
 
-from conf.base_site import HBASE_HOST_PORTS
+from conf.default import HBaseSite
 from common.models import Rule
 from common.queues import CrawlerQueues
+from common import TDDCLogging
 from plugins import DBManager
 
 
 class RulesUpdater(object):
 
-    def __init__(self, callback=None):
+    def __init__(self):
         '''
         Constructor
         '''
-        print('-->Rules Updater Is Starting.')
-        self._callback = callback
+        TDDCLogging.info('-->Rules Updater Is Starting.')
         self._db = None
         self._idle = 0
         gevent.spawn(self._event)
         gevent.sleep()
-        self._ready()
+        TDDCLogging.info('-->Rules Updater Was Started.')
         
-    def _ready(self):
-        if self._callback:
-            self._callback()
-
     def _event(self):
-        print('-->Rules Updater Was Ready.')
         while True:
             if not CrawlerQueues.EVENT.empty():
                 if not self._db:
                     self._wait = True
                     def _db_ready(params=None):
                         self._wait = False
-                    self._db = DBManager('Rules Updater', HBASE_HOST_PORTS, _db_ready)
+                    self._db = DBManager('Rules Updater', HBaseSite.HBASE_NODES, _db_ready)
                     while self._wait:
                         gevent.sleep(0.2)
                 event = CrawlerQueues.EVENT.get()
                 if not event:
-                    print('Update Rules Event Exception.')
+                    TDDCLogging.error('Update Rules Event Exception.')
                     continue
                 self._update(event)
             else:
@@ -104,7 +99,7 @@ class RulesUpdater(object):
             if not os.path.exists(_path):
                 os.mkdir(_path)
                 with open(_path+'__init__.py', 'a') as _:
-                    print('Make New Rules Package Success.')
+                    TDDCLogging.info('Make New Rules Package Success.')
 
     def _update_moulds(self, event, update_list):
         for item in update_list:
@@ -115,7 +110,7 @@ class RulesUpdater(object):
                                                 self.hbase_family,
                                                 _package.split('.')[-1])
             if not ret:
-                print('Rules Fetch Exception.')
+                TDDCLogging.error('Rules Fetch Exception.')
             self._create_package(_package)
             _file_path = './' + _package.replace('.', '/') + '.py'
             if os.path.exists(_file_path):

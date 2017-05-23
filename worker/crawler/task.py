@@ -8,14 +8,13 @@ Created on 2017年4月14日
 import json
 import gevent
 
+from conf import CrawlerSite
 from common.models import Task
 from common.queues import CrawlerQueues
-from conf.base_site import PARSE_TOPIC_NAME, CRAWL_TOPIC_NAME, KAFKA_HOST_PORT
-from conf.crawler_site import CRAWLER_CONCURRENT, CRAWL_TOPIC_GROUP
+from common import TDDCLogging
 
 from . import TaskManagerBase
 from plugins import KafkaHelper
-from common import TDDCLogging
 
 
 class CrawlTaskManager(TaskManagerBase):
@@ -37,9 +36,9 @@ class CrawlTaskManager(TaskManagerBase):
     def _start_mq_server(self):
         gevent.spawn(self._push_parse_task)
         gevent.sleep()
-        self._crawl_task_consumer = KafkaHelper.make_consumer(KAFKA_HOST_PORT,
-                                                              CRAWL_TOPIC_NAME,
-                                                              CRAWL_TOPIC_GROUP)
+        self._crawl_task_consumer = KafkaHelper.make_consumer(CrawlerSite.KAFKA_NODES,
+                                                              CrawlerSite.CRAWL_TOPIC,
+                                                              CrawlerSite.CRAWL_TOPIC_GROUP)
         gevent.spawn(self._fetch_crawl_task)
         gevent.sleep()
 
@@ -47,7 +46,7 @@ class CrawlTaskManager(TaskManagerBase):
         TDDCLogging.info('--->Crawl Task Consumer Was Ready.')
         pause = False
         while True:
-            if CrawlerQueues.CRAWL.qsize() > CRAWLER_CONCURRENT * 4:
+            if CrawlerQueues.CRAWL.qsize() > CrawlerSite.CONCURRENT * 4:
                 if not pause:
                     self._crawl_task_consumer.commit()
                     self._crawl_task_consumer.unsubscribe()
@@ -55,8 +54,8 @@ class CrawlTaskManager(TaskManagerBase):
                     TDDCLogging.info('Crawl Task Consumer Was Paused.')
                 gevent.sleep(1)
                 continue
-            if pause and CrawlerQueues.CRAWL.qsize() < CRAWLER_CONCURRENT / 2:
-                self._crawl_task_consumer.subscribe(CRAWL_TOPIC_NAME)
+            if pause and CrawlerQueues.CRAWL.qsize() < CrawlerSite.CONCURRENT / 2:
+                self._crawl_task_consumer.subscribe(CrawlerSite.CRAWL_TOPIC)
                 pause = False
                 TDDCLogging.info('Crawl Task Consumer Was Resumed.')
             partition_records = self._crawl_task_consumer.poll(2000, 16)
@@ -90,7 +89,7 @@ class CrawlTaskManager(TaskManagerBase):
             if not isinstance(task, Task):
                 TDDCLogging.error('')
                 continue
-            if not self._push_task(PARSE_TOPIC_NAME, tmp):
+            if not self._push_task(CrawlerSite.PARSE_TOPIC, tmp):
                 TDDCLogging.error('')
             else:
                 CrawlerQueues.TASK_STATUS_REMOVE.put(tmp)

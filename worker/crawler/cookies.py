@@ -8,10 +8,10 @@ Created on 2017年5月19日
 
 import random
 
-from conf.base_site import REDIS_NODES, COOKIES_HSET
-from worker.crawler.event import EventManagre, TDDCEvent
+from conf import CrawlerSite
 from common.queues import CrawlerQueues
 
+from worker.crawler.event import EventManagre, TDDCEvent
 from plugins import RedisClient
 
 
@@ -24,7 +24,7 @@ class CookiesManager(RedisClient):
         '''
         Constructor
         '''
-        super(CookiesManager, self).__init__(REDIS_NODES)
+        super(CookiesManager, self).__init__(CrawlerSite.REDIS_NODES)
         EventManagre().register(TDDCEvent.COOKIE_UPDATE, self._update_cookie)
 
     def _update_cookie(self, event):
@@ -32,7 +32,7 @@ class CookiesManager(RedisClient):
         platform = info.get('platform')
         if not platform:
             return
-        cookies = self.hget(COOKIES_HSET, platform)
+        cookies = self.hget(CrawlerSite.COOKIES_HSET, platform)
         CrawlerQueues.PLATFORM_COOKIES[platform] = cookies
 
     @staticmethod

@@ -7,7 +7,7 @@ Created on 2017年4月14日
 
 import gevent
 
-from conf.base_site import PLATFORM_SUFFIX
+from conf import CrawlerSite
 from common.queues import CrawlerQueues
 
 from . import StoragerBase
@@ -28,9 +28,9 @@ class CrawlStorager(StoragerBase):
                 task, rsp_info = CrawlerQueues.STORAGE.get()
                 items = {'source': rsp_info,
                          'task': {'task': task.to_json()}}
-                if not platform_rows.get(task.platform + PLATFORM_SUFFIX):
-                    platform_rows[task.platform + PLATFORM_SUFFIX] = {}
-                platform_rows[task.platform + PLATFORM_SUFFIX][task.row_key] = items
+                if not platform_rows.get(task.platform + CrawlerSite.PLATFORM_SUFFIX):
+                    platform_rows[task.platform + CrawlerSite.PLATFORM_SUFFIX] = {}
+                platform_rows[task.platform + CrawlerSite.PLATFORM_SUFFIX][task.row_key] = items
                 cnt += 1
                 gevent.sleep(0.05)
                 if CrawlerQueues.STORAGE.qsize() or not cnt % 5:

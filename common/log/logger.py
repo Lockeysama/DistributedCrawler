@@ -8,30 +8,17 @@ Created on 2017年5月9日
 import logging
 import sys
 
-from common import singleton
 
-
-@singleton
 class TDDCLogger(object):
 
     def __init__(self):
-        from conf.base_site import MODEL
+        from conf import BaseSite
         _format = '[%(levelname)s] [%(asctime)s] [%(filename)s:%(lineno)s] => %(message)s'
         logging.basicConfig(format=_format,
                             datefmt='%Y-%m-%d %H:%M:%S',
                             level=logging.DEBUG,
-                            filename=MODEL.name+'.log')  # @UndefinedVariable
-        self._log = logging.getLogger(MODEL.name)  # @UndefinedVariable
-        stream = logging.StreamHandler()
-        stream.setLevel(logging.DEBUG)
-        fm_stream = logging.Formatter(fmt=('\033[%(mytp)s;%(myfc)s;%(mybc)sm[%(levelname)s]'
-                                           ' [%(asctime)s] %(mypath)s => %(message)s\033[0m'),
-                                      datefmt='%Y-%m-%d %H:%M:%S')
-        stream.setFormatter(fm_stream)
-        self._log.addHandler(stream)
-
-    def _init_logger(self):
-        self._log.setLevel(logging.DEBUG)
+                            filename=BaseSite.WORKER.name+'.log')  # @UndefinedVariable
+        self._log = logging.getLogger(BaseSite.WORKER.name)  # @UndefinedVariable
         stream = logging.StreamHandler()
         stream.setLevel(logging.DEBUG)
         fm_stream = logging.Formatter(fmt=('\033[%(mytp)s;%(myfc)s;%(mybc)sm[%(levelname)s]'

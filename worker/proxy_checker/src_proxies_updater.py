@@ -8,9 +8,12 @@ Created on 2017年4月17日
 import requests
 import socket
 import gevent.pool
-from base.proxy.ip_pool import IPPool
-
 import json
+import setproctitle
+
+from conf.default import RedisSite
+from common import TDDCLogging
+from ..base import IPPool
 
 
 class ProxySourceUpdater(object):
@@ -22,7 +25,9 @@ class ProxySourceUpdater(object):
         '''
         Constructor
         '''
-        self._ip_pool = IPPool()
+        setproctitle.setproctitle("TDDC_PROXY_SOURCE_UPDATER")
+        TDDCLogging.info('->[TDDC_PROXY_SOURCE_UPDATER] Proxy Source Updater Is Starting.')
+        self._ip_pool = IPPool(RedisSite.REDIS_NODES)
         self._src_apis = [{'platform': 'kuaidaili',
                            'api':('http://dev.kuaidaili.com/api/getproxy/'
                                   '?orderid=999310215091675&num=100&'
@@ -31,6 +36,7 @@ class ProxySourceUpdater(object):
                                   'an_ha=1&sp1=1&sp2=1&sp3=1&f_pr=1'
                                   '&format=json&sep=1'),
                            'parse_mould': self._parse_kuaidaili}]
+        TDDCLogging.info('->[TDDC_PROXY_SOURCE_UPDATER] Proxy Source Updater Was Started.')
         
     def start(self):
         while True:
@@ -41,21 +47,21 @@ class ProxySourceUpdater(object):
                     parse_mould = infos.get('parse_mould')
                     rsp = requests.get(api)
                     if not rsp:
-                        print('Exception(%s): '%platform + api)
+                        TDDCLogging.error('[TDDC_PROXY_SOURCE_UPDATER] Exception(%s): ' % platform + api)
                         continue
                     if not parse_mould:
-                        print('Exception: parse_mould is None.')
+                        TDDCLogging.error('[TDDC_PROXY_SOURCE_UPDATER] Exception: parse_mould is None.')
                         continue
                     all_ips = parse_mould(rsp.text)
                     http_ips = self._proxy_active_check(all_ips.get('HTTP', []))
-                    self._ip_pool.msadd('tddc:test:proxy:ip_src:http', http_ips)
-                    print('Source IPS（HTTP） Growth：%d' % len(http_ips))
+                    self._ip_pool.smadd('tddc:test:proxy:ip_src:http', http_ips)
+                    TDDCLogging.info('[TDDC_PROXY_SOURCE_UPDATER] Source IPS（HTTP） Growth：%d' % len(http_ips))
                     https_ips = self._proxy_active_check(all_ips.get('HTTPS', []))
-                    self._ip_pool.msadd('tddc:test:proxy:ip_src:https', https_ips)
-                    self._ip_pool.msadd('tddc:test:proxy:ip_src:http', https_ips)
-                    print('Source IPS（HTTPS） Growth：%d' % len(https_ips))
+                    self._ip_pool.smadd('tddc:test:proxy:ip_src:https', https_ips)
+                    self._ip_pool.smadd('tddc:test:proxy:ip_src:http', https_ips)
+                    TDDCLogging.info('[TDDC_PROXY_SOURCE_UPDATER] Source IPS（HTTPS） Growth：%d' % len(https_ips))
                 except Exception, e:
-                    print('IP_SOURCE', e)
+                    TDDCLogging.error('[TDDC_PROXY_SOURCE_UPDATER] Exception[IP_SOURCE]:' + e)
             gevent.sleep(10)
     
     @staticmethod
@@ -101,29 +107,27 @@ def main():
 if __name__ == '__main__':
     main()
 
-'''
-self._src_apis = [{'platform': 'daili666',
-                   'api': ('http://xvre.daili666api.com/ip/?'
-                           'tid=558465838696598'
-                           '&num=100'
-                           '&foreign=all'
-                           '&filter=off'
-                           '&protocol=http'
-                           '&delay=5'
-                           '&category=2'
-                           '&longlife=3'),
-                   'parse_mould': self._parse_daili666,
-                   'type': 'http'},
-                  {'platform': 'daili666',
-                   'api': ('http://xvre.daili666api.com/ip/?'
-                           'tid=558465838696598'
-                           '&num=100'
-                           '&foreign=all'
-                           '&filter=off'
-                           '&protocol=https'
-                           '&delay=5'
-                           '&category=2'
-                           '&longlife=3'),
-                   'parse_mould': self._parse_daili666,
-                       'type': 'https'}]
-'''
+# self._src_apis = [{'platform': 'daili666',
+#                    'api': ('http://xvre.daili666api.com/ip/?'
+#                            'tid=558465838696598'
+#                            '&num=100'
+#                            '&foreign=all'
+#                            '&filter=off'
+#                            '&protocol=http'
+#                            '&delay=5'
+#                            '&category=2'
+#                            '&longlife=3'),
+#                    'parse_mould': self._parse_daili666,
+#                    'type': 'http'},
+#                   {'platform': 'daili666',
+#                    'api': ('http://xvre.daili666api.com/ip/?'
+#                            'tid=558465838696598'
+#                            '&num=100'
+#                            '&foreign=all'
+#                            '&filter=off'
+#                            '&protocol=https'
+#                            '&delay=5'
+#                            '&category=2'
+#                            '&longlife=3'),
+#                    'parse_mould': self._parse_daili666,
+#                        'type': 'https'}]

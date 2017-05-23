@@ -5,15 +5,22 @@ Created on 2017年4月14日
 @author: chenyitao
 '''
 
-# Crawler ID
-CRAWLER_ID = 1
+from .base_site import BaseSite
+from common import get_mac_address
 
-# Crawl Topic Info
-CRAWL_TOPIC_GROUP = 'tddc.crawler'
 
-# Crawler Concurrent
-CRAWLER_CONCURRENT = 100
+class CrawlerSite(BaseSite):
 
-# Storage Family
-STORAGE_FAMILY = ''
+    # Crawler ID
+    CLIENT_ID = 1
 
+    # Crawler Concurrent
+    CONCURRENT = 100
+    
+    # Crawler Topic Group
+    CRAWL_TOPIC_GROUP = 'tddc.crawler'
+    
+    # Proxy Checker Event Topic Info
+    EVENT_TOPIC = 'tddc_c_event'
+    EVENT_TOPIC_GROUP = 'tddc.pc.{mac}.{id}'.format(mac=get_mac_address(),
+                                                    id=CLIENT_ID) 

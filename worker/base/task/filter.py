@@ -7,7 +7,7 @@ Created on 2017年5月16日
 
 import hashlib
 from plugins import RedisClient
-from conf.base_site import REDIS_NODES
+from conf.default import RedisSite
 
 
 class SimpleHash(object):
@@ -34,7 +34,7 @@ class BloomFilter(object):
     def __init__(self, redis_cli=None):
         self.rdm = redis_cli
         if not redis_cli:
-            self.rdm = RedisClient(REDIS_NODES)._rdm
+            self.rdm = RedisClient(RedisSite.REDIS_NODES)._rdm
         self.bit_size = 1 << 31
         self.seeds = [5, 7, 11, 13, 31, 37, 61]
         self.key = 'bloomfilter_test'

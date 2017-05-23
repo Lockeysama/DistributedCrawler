@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from conf.crawler_site import CRAWLER_CONCURRENT
+from conf import CrawlerSite
 # import scrapy.settings.default_settings
 
 BOT_NAME = 'Scrapy'
@@ -37,7 +37,7 @@ DEFAULT_REQUEST_HEADERS = {
 
 REACTOR_THREADPOOL_MAXSIZE = 20
 
-CONCURRENT_REQUESTS = CRAWLER_CONCURRENT
+CONCURRENT_REQUESTS = CrawlerSite.CONCURRENT
 
 CONCURRENT_REQUESTS_PER_DOMAIN = 16
 

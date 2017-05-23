@@ -12,7 +12,7 @@ from common import TDDCLogging
 
 from .task_status_updater import TaskStatusUpdater
 from plugins.mq.kafka_manager.kafka_helper import KafkaHelper
-from conf.base_site import KAFKA_HOST_PORT
+from conf.default import KafkaSite
 
 
 class TaskManagerBase(object):
@@ -24,7 +24,7 @@ class TaskManagerBase(object):
         '''
         Constructor
         '''
-        self._producer = KafkaHelper.make_producer(KAFKA_HOST_PORT)
+        self._producer = KafkaHelper.make_producer(KafkaSite.KAFKA_NODES)
         self._task_status_updater = TaskStatusUpdater()
         self._successed_num = 0
         self._successed_pre_min = 0

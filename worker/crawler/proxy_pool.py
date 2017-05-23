@@ -8,8 +8,7 @@ Created on 2017年4月14日
 import gevent
 import random
 
-from conf.base_site import REDIS_NODES
-from conf.proxy_checker_site import PROXY_PUBSUB_PATTERN, PLATFORM_PROXY_SET_BASE_KEY
+from conf import CrawlerSite
 from common.queues import CrawlerQueues
 
 from common import TDDCLogging
@@ -29,7 +28,7 @@ class CrawlProxyPool(object):
         Constructor
         '''
         TDDCLogging.info('-->Crawl Proxy Pool Is Starting.')
-        self._ip_pool = IPPool(REDIS_NODES)
+        self._ip_pool = IPPool(CrawlerSite.REDIS_NODES)
         self._init_proxy()
         gevent.spawn(self._subscribe)
         gevent.sleep()
@@ -61,7 +60,7 @@ class CrawlProxyPool(object):
             return random.choice(list(proxies))
     
     def _init_proxy(self):
-        s = self._ip_pool.scan_iter(PLATFORM_PROXY_SET_BASE_KEY + '*')
+        s = self._ip_pool.scan_iter(CrawlerSite.PLATFORM_PROXY_SET_KEY_BASE + '*')
         for ret in s:
             key = ret.encode('utf-8')
             platform = key.split(':')[-1]
@@ -71,7 +70,7 @@ class CrawlProxyPool(object):
             CrawlerQueues.PLATFORM_PROXY[platform] |= set(ips)
     
     def _subscribe(self):
-        items = self._ip_pool.psubscribe(PROXY_PUBSUB_PATTERN)
+        items = self._ip_pool.psubscribe(CrawlerSite.PROXY_PUBSUB_PATTERN)
         for item in items:
             if item.get('type') == 'psubscribe':
                 TDDCLogging.info('---->Subscribe: %s' % item.get('channel'))
@@ -87,7 +86,7 @@ class CrawlProxyPool(object):
             platform, proxy = CrawlerQueues.UNUSEFUL_PROXY_FEEDBACK.get()
             if proxy in CrawlerQueues.PLATFORM_PROXY.get(platform, set()): 
                 CrawlerQueues.PLATFORM_PROXY[platform].remove(proxy)
-                self._ip_pool.srem(PLATFORM_PROXY_SET_BASE_KEY + platform,
+                self._ip_pool.srem(CrawlerSite.PLATFORM_PROXY_SET_KEY_BASE + platform,
                                    proxy.encode('utf-8'))
 
 
@@ -112,7 +111,10 @@ def main():
             ip_pool.add(channel, ip)
             ip_pool._rdm.publish(publish_channel, ip)
             gevent.sleep(1)
-    gevent.spawn(publish, cpm._ip_pool, PLATFORM_PROXY_SET_BASE_KEY + 'cheok', PROXY_PUBSUB_PATTERN[:-1] + 'cheok')
+    gevent.spawn(publish,
+                 cpm._ip_pool,
+                 CrawlerSite.PLATFORM_PROXY_SET_KEY_BASE + 'cheok',
+                 CrawlerSite.PROXY_PUBSUB_PATTERN[:-1] + 'cheok')
     gevent.sleep()
     while True:
         gevent.sleep(60)

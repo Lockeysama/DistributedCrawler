@@ -7,7 +7,7 @@ Created on 2017年5月8日
 
 import gevent
 
-from conf.base_site import TASK_STATUS_HSET_PREFIX, REDIS_NODES
+from conf.default import RedisSite, TaskSite
 from common.queues import CrawlerQueues
 
 from plugins import RedisClient
@@ -22,7 +22,7 @@ class TaskStatusUpdater(RedisClient):
         '''
         Constructor
         '''
-        super(TaskStatusUpdater, self).__init__(REDIS_NODES)
+        super(TaskStatusUpdater, self).__init__(RedisSite.REDIS_NODES)
         gevent.spawn(self._update_task_status)
         gevent.sleep()
         gevent.spawn(self._remove_task_status)
@@ -39,7 +39,7 @@ class TaskStatusUpdater(RedisClient):
                 gevent.sleep(1)
 
     def _update(self, task):
-        return self.hset(TASK_STATUS_HSET_PREFIX + '.%s.%d' % (task.platform, task.status),
+        return self.hset(TaskSite.STATUS_HSET_PREFIX + '.%s.%d' % (task.platform, task.status),
                          task.url,
                          task.to_json())
 
@@ -54,7 +54,7 @@ class TaskStatusUpdater(RedisClient):
                 gevent.sleep(1)
 
     def _remove(self, task):
-        return self.hdel(TASK_STATUS_HSET_PREFIX + '.%s.%d' % (task.platform, task.status),
+        return self.hdel(TaskSite.STATUS_HSET_PREFIX + '.%s.%d' % (task.platform, task.status),
                          task.url)
 
 

@@ -28,7 +28,7 @@ class RedisClient(StrictRedisCluster):
         '''
         批量sadd
         '''
-        ppl = self._rdm.pipeline()
+        ppl = self.pipeline()
         for value in values:
             ppl.sadd(name, value)
         return ppl.execute()
@@ -37,7 +37,7 @@ class RedisClient(StrictRedisCluster):
         '''
         批量spop
         '''
-        ppl = self._rdm.pipeline()
+        ppl = self.pipeline()
         for _ in xrange(count):
             ppl.spop(name)
         return ppl.execute()

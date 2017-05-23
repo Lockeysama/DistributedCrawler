@@ -8,12 +8,12 @@ Created on 2017年5月5日
 import gevent.queue
 import json
 
-from conf.base_site import KAFKA_HOST_PORT
-from conf.event_site import EVENT_TOPIC, EVENT_TOPIC_GROUP
+from conf import CrawlerSite
 from common import singleton, TDDCLogging
 from common.models import Event
 
 from plugins import KafkaHelper
+
 
 class TDDCEvent(object):
     RULE_UPDATE = 0
@@ -33,9 +33,9 @@ class EventManagre(object):
         Constructor
         '''
         TDDCLogging.info('-->Event Manager Is Starting.')
-        self._event_consumer = KafkaHelper.make_consumer(KAFKA_HOST_PORT,
-                                                         EVENT_TOPIC,
-                                                         EVENT_TOPIC_GROUP)
+        self._event_consumer = KafkaHelper.make_consumer(CrawlerSite.KAFKA_NODES,
+                                                         CrawlerSite.EVENT_TOPIC,
+                                                         CrawlerSite.EVENT_TOPIC_GROUP)
         self._event_queue = gevent.queue.Queue()
         self._event_call = {}
         gevent.spawn(self._recv)
@@ -69,7 +69,7 @@ class EventManagre(object):
             if callback:
                 callback(event)
             else:
-                print('Event Exception: %s Not Register.' % event.name)
+                TDDCLogging.warning('Event Exception: %s Not Register.' % event.name)
 
 
 def main():
@@ -89,10 +89,10 @@ def main():
     
     gevent.sleep(10)
     p = KafkaHelper.make_producer()
-    p.send(EVENT_TOPIC, json.dumps({'e_type': TDDCEvent.RULE_UPDATE,
-                                    'name': 'event_test',
-                                    'desc': 'no',
-                                    'detail': {'platform': 'cheok'}}))
+    p.send(CrawlerSite.EVENT_TOPIC, json.dumps({'e_type': TDDCEvent.RULE_UPDATE,
+                                                'name': 'event_test',
+                                                'desc': 'no',
+                                                'detail': {'platform': 'cheok'}}))
 
 if __name__ == '__main__':
     import gevent.monkey

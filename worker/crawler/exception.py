@@ -7,7 +7,7 @@ Created on 2017年5月5日
 
 import gevent
 
-from conf.base_site import EXCEPTION_TOPIC_NAME, KAFKA_HOST_PORT
+from conf import CrawlerSite
 from common import TDDCLogging
 from common.queues import CrawlerQueues
 
@@ -24,7 +24,7 @@ class ExceptionCollection(object):
         Constructor
         '''
         TDDCLogging.info('-->Exception Manager Is Starting.')
-        self._exception_producer = KafkaHelper.make_producer(KAFKA_HOST_PORT)
+        self._exception_producer = KafkaHelper.make_producer(CrawlerSite.KAFKA_NODES)
         gevent.spawn(self._send)
         gevent.sleep()
         TDDCLogging.info('-->Exception Manager Was Ready.')
@@ -32,7 +32,7 @@ class ExceptionCollection(object):
     def _send(self):
         while True:
             exception = CrawlerQueues.EXCEPTION.get()
-            self._exception_producer.send(EXCEPTION_TOPIC_NAME,
+            self._exception_producer.send(CrawlerSite.EXCEPTION_TOPIC,
                                           exception.to_json())
             
             

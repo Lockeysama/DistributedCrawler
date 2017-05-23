@@ -14,7 +14,7 @@ from scrapy.crawler import CrawlerProcess
 crawler_process = CrawlerProcess(settings)
 crawler_process.join()
 
-from conf.crawler_site import CRAWLER_CONCURRENT
+from conf import CrawlerSite
 from common.queues import CrawlerQueues
 from common import TDDCLogging
 
@@ -48,11 +48,11 @@ class Crawler(object):
     
     def _task_dispatch(self):
         while True:
-            if self._get_spider_mqs_size() < CRAWLER_CONCURRENT / 4:
+            if self._get_spider_mqs_size() < CrawlerSite.CONCURRENT / 4:
                 while True:
                     task = CrawlerQueues.CRAWL.get()
                     self._spider.add_task(task)
-                    if self._get_spider_mqs_size() >= CRAWLER_CONCURRENT:
+                    if self._get_spider_mqs_size() >= CrawlerSite.CONCURRENT:
                         break
             else:
                 gevent.sleep(1)

@@ -13,10 +13,10 @@ class IPPool(RedisClient):
 
 
 def main():
-    from conf.base_site import REDIS_NODES
+    from conf.default import RedisSite
     import gevent.monkey
     gevent.monkey.patch_all()
-    ip_pool = IPPool(REDIS_NODES)
+    ip_pool = IPPool(RedisSite.REDIS_NODES)
     
     rets = ip_pool.mspop('tddc:test:proxy:ip_src:http', 2)
     print(rets) 
