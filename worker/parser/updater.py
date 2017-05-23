@@ -9,12 +9,11 @@ import os
 import json
 import gevent
 
-from common.queues_define import EVENT_QUEUE, PARSER_RULES_MOULDS_UPDATE_QUEUE
-from plugins import DBManager
-from conf.parser_site import PARSE_RULES_HBASE_TABLE, PARSE_RULES_HBASE_FAMILY, PARSE_RULES_HBASE_INDEX_QUALIFIER
+from conf import ParserSite
+from common.queues import ParserQueues
 from common.models import Rule
-from conf.base_site import HBASE_HOST_PORT
 from common import TDDCLogging
+from plugins import DBManager
 
 
 class ParserRulesUpdater(object):
@@ -27,7 +26,7 @@ class ParserRulesUpdater(object):
         Constructor
         '''
         TDDCLogging.info('-->Parser Rules Updater Is Starting.')
-        self._db = DBManager('Rules Updater', HBASE_HOST_PORT)
+        self._db = DBManager(ParserSite.random_hbase_node())
         self._idle = 0
         gevent.spawn(self._event)
         gevent.sleep()
@@ -35,8 +34,8 @@ class ParserRulesUpdater(object):
     
     def _event(self):
         while True:
-            if not EVENT_QUEUE.empty():
-                event = EVENT_QUEUE.get()
+            if not ParserQueues.EVENT.empty():
+                event = ParserQueues.EVENT.get()
                 if not event:
                     print('Update Rules Event Exception.')
                     continue
@@ -72,10 +71,10 @@ class ParserRulesUpdater(object):
     def _get_update_list(self, event, local_confs):
         _update_list = []
         _remote_confs = None
-        ret = self._db.hbase_instance().get(PARSE_RULES_HBASE_TABLE,
+        ret = self._db.hbase_instance().get(ParserSite.RULES_TABLE,
                                             event.platform,
-                                            PARSE_RULES_HBASE_FAMILY,
-                                            PARSE_RULES_HBASE_INDEX_QUALIFIER)
+                                            ParserSite.RULES_FAMILY,
+                                            ParserSite.RULES_QUALIFIER)
         for column_value in ret.columnValues:
             _remote_confs = json.loads(column_value.value)
             for _remote_conf in _remote_confs:
@@ -102,9 +101,9 @@ class ParserRulesUpdater(object):
         for item in update_list:
             _package = item['package']
             _md5 = item['md5']
-            ret = self._db.hbase_instance().get(PARSE_RULES_HBASE_TABLE,
+            ret = self._db.hbase_instance().get(ParserSite.RULES_TABLE,
                                                 event.platform,
-                                                PARSE_RULES_HBASE_FAMILY,
+                                                ParserSite.RULES_FAMILY,
                                                 _package.split('.')[-1])
             if not ret:
                 print('Rules Fetch Exception.')
@@ -115,7 +114,7 @@ class ParserRulesUpdater(object):
             with open(_file_path, 'a') as f:
                 f.write(ret.columnValues[0].value)
             rule = Rule(event.platform, _package, item.get('moulds', None))
-            PARSER_RULES_MOULDS_UPDATE_QUEUE.put(rule)
+            ParserQueues.RULES_MOULDS_UPDATE.put(rule)
         
     def _update(self, event):
         _local_confs = self._get_local_conf(event) 

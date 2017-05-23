@@ -27,7 +27,7 @@ class DBManager(object):
         TDDCLogging.info('---->DB Manager Is Starting.')
         self._tables = []
         host, port = host_port.split(':')
-        self._hb_pool = happybase.ConnectionPool(size=2,
+        self._hb_pool = happybase.ConnectionPool(size=8,
                                                  host=host,
                                                  port=int(port),
                                                  transport='framed',

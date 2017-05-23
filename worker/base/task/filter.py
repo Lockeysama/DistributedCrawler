@@ -29,12 +29,10 @@ class SimpleHash(object):
         return (self.cap - 1) & ret
 
 
-class BloomFilter(object):
+class BloomFilter(RedisClient):
     
-    def __init__(self, redis_cli=None):
-        self.rdm = redis_cli
-        if not redis_cli:
-            self.rdm = RedisClient(RedisSite.REDIS_NODES)._rdm
+    def __init__(self):
+        super(BloomFilter, self).__init__(RedisSite.REDIS_NODES)
         self.bit_size = 1 << 31
         self.seeds = [5, 7, 11, 13, 31, 37, 61]
         self.key = 'bloomfilter_test'
@@ -51,7 +49,7 @@ class BloomFilter(object):
         name = self.key + str(int(md5_value[0:2], 16) % self.block_num)
         for f in self.hash_func:
             loc = f.hash(md5_value)
-            ret = ret & self.rdm.getbit(name, loc)
+            ret = ret & self.getbit(name, loc)
         return ret
 
     def insert(self, value):
@@ -61,15 +59,15 @@ class BloomFilter(object):
         name = self.key + str(int(md5_value[0:2], 16) % self.block_num)
         for f in self.hash_func:
             loc = f.hash(md5_value)
-            self.rdm.setbit(name , loc, 1)
+            self.setbit(name , loc, 1)
             
     def setget(self, value):
         if self.is_contains(value):
             return 0
         self.insert(value)
         return 1
-        
-        
+ 
+
 def main():
     import time
     bf = BloomFilter()

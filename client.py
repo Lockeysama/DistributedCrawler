@@ -15,10 +15,10 @@ from conf import Worker, BaseSite
 
 def main():
     if BaseSite.WORKER == Worker.Parser:
-        from worker.parser.parser_manager import ParserManager
+        from worker.parser.manager import ParserManager
         ParserManager.start()
     elif BaseSite.WORKER == Worker.Crawler:
-        from worker.crawler.crawler_manager import CrawlerManager
+        from worker.crawler.manager import CrawlerManager
         CrawlerManager.start()
     elif BaseSite.WORKER == Worker.ProxyChecker:
         from worker.proxy_checker.manager import ProxyCheckerManager

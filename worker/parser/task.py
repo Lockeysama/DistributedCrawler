@@ -8,16 +8,12 @@ Created on 2017年4月12日
 import json
 import gevent
 
-from conf.base_site import PARSE_TOPIC_NAME, CRAWL_TOPIC_NAME, KAFKA_HOST_PORT
-from conf.parser_site import PARSE_TOPIC_GROUP, PARSER_CONCURRENT
-from common.queues_define import PARSE_QUEUE, CRAWL_QUEUE, TASK_STATUS_QUEUE
-from ..base import TaskManagerBase
+from conf import ParserSite
+from common.queues import ParserQueues
 from common import TDDCLogging
-from plugins import KafkaHelper
 from common.models import Task
-from ..base import BloomFilter
-
-SIGNAL_TASK_MANAGER_READY = object()
+from plugins import KafkaHelper
+from ..base import BloomFilter, TaskManagerBase
 
 
 class ParseTaskManager(TaskManagerBase):
@@ -36,9 +32,9 @@ class ParseTaskManager(TaskManagerBase):
         TDDCLogging.info('-->Task Manager Was Ready.')
 
     def _start_mq_server(self):
-        self._consumer = KafkaHelper.make_consumer(KAFKA_HOST_PORT,
-                                                   PARSE_TOPIC_NAME,
-                                                   PARSE_TOPIC_GROUP)
+        self._consumer = KafkaHelper.make_consumer(ParserSite.KAFKA_NODES,
+                                                   ParserSite.PARSE_TOPIC,
+                                                   ParserSite.PARSE_TOPIC_GROUP)
         gevent.spawn(self._fetch)
         gevent.sleep()
         gevent.spawn(self._push_new_crawl_task)
@@ -50,7 +46,7 @@ class ParseTaskManager(TaskManagerBase):
         TDDCLogging.info('--->Parsing Task Consumer Was Ready.')
         pause = False
         while True:
-            if PARSE_QUEUE.qsize() > PARSER_CONCURRENT * 4:
+            if ParserQueues.PARSE.qsize() > ParserSite.FETCH_SOURCE_CONCURRENT * 4:
                 if not pause:
                     self._consumer.commit()
                     self._consumer.unsubscribe()
@@ -59,7 +55,7 @@ class ParseTaskManager(TaskManagerBase):
                 gevent.sleep(1)
                 continue
             if pause:
-                self._consumer.subscribe(PARSE_TOPIC_NAME)
+                self._consumer.subscribe(ParserSite.PARSE_TOPIC)
                 pause = False
                 TDDCLogging.info('Parsing Task Consumer Was Resumed.')
             partition_records = self._consumer.poll(2000, 16)
@@ -79,25 +75,25 @@ class ParseTaskManager(TaskManagerBase):
             if item and isinstance(item, dict) and item.get('url', None):
                 task = Task(**item)
                 task.status = Task.Status.WAIT_PARSE
-                PARSE_QUEUE.put(task)
-                TASK_STATUS_QUEUE.put(task)
+                ParserQueues.PARSE.put(task)
+                ParserQueues.TASK_STATUS.put(task)
             else:
                 self._consume_msg_exp('PARSE_TASK_ERR', item)
 
     def _push_new_crawl_task(self):
         TDDCLogging.info('--->Parser Task Producer Was Ready.')
         while True:
-            task = CRAWL_QUEUE.get()
+            task = ParserQueues.CRAWL.get()
 #             if not self._filter.setget(task.url):
 #                 TDDCLogging.debug('New Task [%s:%s] Was Filter.' % (task.platform, task.url))
 #                 continue
             msg = json.dumps(task.__dict__)
             if msg:
-                self._push_task(CRAWL_TOPIC_NAME, task, msg)
+                self._push_task(ParserSite.CRAWL_TOPIC, task, msg)
     
     def _task_status_update(self):
         while True:
-            task = TASK_STATUS_QUEUE.get()
+            task = ParserQueues.TASK_STATUS.get()
             TDDCLogging.debug('[%s:%s] Parsed Successed.' % (task.platform,
                                                              task.url))
             self._successed_num += 1
@@ -112,9 +108,9 @@ def main():
         cnt  = 0
         while cnt < 10:
             print('put: ', '{"test\":"'+'item, block, timeout'*30+"\"}")
-            CRAWL_QUEUE.put(json.loads('{"test\":"'+'item, block, timeout'*30+"\"}"))
+            ParserQueues.CRAWL.put(json.loads('{"test\":"'+'item, block, timeout'*30+"\"}"))
             cnt += 1
-            
+
     ParseTaskManager(test)
     
     while True:

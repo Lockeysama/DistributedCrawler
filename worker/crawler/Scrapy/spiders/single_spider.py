@@ -96,7 +96,7 @@ class SingleSpider(scrapy.Spider):
         if response.type == httperror.HttpError:
             status = response.value.response.status
             if status >= 500 or status == 408:
-                fmt = '[%s][%s] Crawled Failed(%d | %s). Will Retry After While.'
+                fmt = '[%s][%s] Crawled Failed(\033[0m %d | %s \033[1;37;43m). Will Retry After While.'
                 TDDCLogging.warning(fmt % (task.platform,
                                            task.url,
                                            status,
@@ -111,13 +111,13 @@ class SingleSpider(scrapy.Spider):
                                               detail=task.to_json())
                     CrawlerQueues.EXCEPTION.put(exception)
                     CrawlerQueues.TASK_STATUS_REMOVE.put(task)
-                    fmt = '[%s:%s] Crawled Failed(404 | %s). Not Retry.'
+                    fmt = '[%s:%s] Crawled Failed(\033[0m 404 | %s \033[1;37;43m). Not Retry.'
                     TDDCLogging.warning(fmt % (task.platform,
                                                task.url,
                                                proxy))
                     return
                 times += 1
-                fmt = '[%s:%s] Crawled Failed(%d | %s). Will Retry After While.'
+                fmt = '[%s:%s] Crawled Failed(\033[0m %d | %s \033[1;37;43m). Will Retry After While.'
                 TDDCLogging.warning(fmt % (task.platform,
                                            task.url,
                                            status,
@@ -136,7 +136,7 @@ class SingleSpider(scrapy.Spider):
         if proxy:
             proxy = proxy.split('//')[1]
             CrawlerQueues.UNUSEFUL_PROXY_FEEDBACK.put([task.platform, proxy])
-        fmt = '[%s][%s] Crawled Failed(%s | %s). Will Retry After While.'
+        fmt = '[%s][%s] Crawled Failed(\033[0m %s | %s \033[1;37;43m). Will Retry After While.'
         TDDCLogging.warning(fmt % (task.platform,
                                    task.url,
                                    err_msg,

@@ -10,8 +10,7 @@ import json
 import gevent
 import importlib
 
-from common.queues_define import WAITING_PARSE_QUEUE, STORAGE_QUEUE, \
-    PARSER_RULES_MOULDS_UPDATE_QUEUE,CRAWL_QUEUE, TASK_STATUS_QUEUE
+from common.queues import ParserQueues
 from common import TDDCLogging
 
 
@@ -71,7 +70,7 @@ class Parser(object):
     
     def _rules_update(self):
         while True:
-            rule = PARSER_RULES_MOULDS_UPDATE_QUEUE.get()
+            rule = ParserQueues.RULES_MOULDS_UPDATE.get()
             TDDCLogging.info(rule.platform + rule.package + rule.moulds)
             for cls_name in rule.moulds:
                 molule = importlib.import_module(rule.package)
@@ -85,11 +84,11 @@ class Parser(object):
                     self._rules_moulds[rule.platform] = {}
                 self._rules_moulds[rule.platform][feature] = cls
             while not self._no_match_rules_task_queue.empty():
-                WAITING_PARSE_QUEUE.put(self._no_match_rules_task_queue.get())
+                ParserQueues.WAITING_PARSE.put(self._no_match_rules_task_queue.get())
     
     def _parse(self):
         while True:
-            task, body = WAITING_PARSE_QUEUE.get()
+            task, body = ParserQueues.WAITING_PARSE.get()
             platform = self._rules_moulds.get(task.platform, None)
             no_match = True
             if platform:
@@ -112,15 +111,15 @@ class Parser(object):
                                                feature=task.feature,
                                                row_key=task.row_key))
             else:
-                TASK_STATUS_QUEUE.put(task)
+                ParserQueues.TASK_STATUS.put(task)
 
     def _storage(self, task, items):
         if len(items):
-            STORAGE_QUEUE.put([task, items])
+            ParserQueues.STORAGE.put([task, items])
     
     def _new_task_push(self, tasks):
         for task in tasks:
-            CRAWL_QUEUE.put(task)
+            ParserQueues.CRAWL.put(task)
     
     
 def main():
@@ -131,7 +130,7 @@ def main():
     while True:
         if cnt > 0:
             parser_task = Task(parse_info_dict={'id': '%d' % cnt, 'status': 3, 'body': 'hello'})
-            WAITING_PARSE_QUEUE.put(parser_task)
+            ParserQueues.WAITING_PARSE.put(parser_task)
             cnt -= 1
             if cnt == 0:
                 print('Done')

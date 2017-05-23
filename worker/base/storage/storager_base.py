@@ -23,7 +23,7 @@ class StoragerBase(object):
         Constructor
         '''
         TDDCLogging.info('-->Storager Manager Is Starting.')
-        self._db = DBManager(HBaseSite.random_node())
+        self._db = DBManager(HBaseSite.random_hbase_node())
         gevent.spawn(self._push)
         gevent.sleep()
         gevent.spawn(self._pull)

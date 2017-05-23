@@ -13,5 +13,5 @@ class HBaseSite(object):
     HBASE_NODES = ['72.127.2.48:9090']
     
     @staticmethod
-    def random_node():
+    def random_hbase_node():
         return random.choice(HBaseSite.HBASE_NODES)
