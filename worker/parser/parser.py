@@ -10,7 +10,7 @@ import json
 import gevent
 import importlib
 
-from common.queues import WAITING_PARSE_QUEUE, STORAGE_QUEUE, \
+from common.queues_define import WAITING_PARSE_QUEUE, STORAGE_QUEUE, \
     PARSER_RULES_MOULDS_UPDATE_QUEUE,CRAWL_QUEUE, TASK_STATUS_QUEUE
 from common import TDDCLogging
 

@@ -8,7 +8,7 @@ Created on 2017年5月17日
 import gevent
 
 from common.models import Task
-from common.queues import TASK_STATUS_REMOVE_QUEUE, EXCEPTION_TASK_QUEUE
+from common.queues_define import TASK_STATUS_REMOVE_QUEUE, EXCEPTION_TASK_QUEUE
 from conf.base_site import PARSE_TOPIC_NAME, CRAWL_TOPIC_NAME
 
 from .. import TaskManagerBase

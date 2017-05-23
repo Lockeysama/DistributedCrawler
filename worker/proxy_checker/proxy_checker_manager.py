@@ -10,7 +10,7 @@ import json
 import importlib
 
 from conf.proxy_checker_site import PROXY_CHECKER_CONCURRENT
-from common.queues import HTTP_SOURCE_PROXY_QUEUE, HTTPS_SOURCE_PROXY_QUEUE,\
+from common.queues_define import HTTP_SOURCE_PROXY_QUEUE, HTTPS_SOURCE_PROXY_QUEUE,\
     USEFUL_PROXY_QUEUE, RULES_MOULDS_UPDATE_QUEUE
 
 class CheckerManager(object):

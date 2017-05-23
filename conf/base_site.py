@@ -60,5 +60,8 @@ CRAWL_TOPIC_NAME = 'tddc_crawl'
 # Exception Task Topic Info
 EXCEPTION_TOPIC_NAME = 'tddc_exception'
 
-# Task Status HSet
-TASK_STATUS_HSET = 'tddc.task.status'
+# Task Status HSet Prefix
+TASK_STATUS_HSET_PREFIX = 'tddc.task.status'
+
+# Cookies HSet
+COOKIES_HSET = 'tddc.cookies'

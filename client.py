@@ -17,7 +17,7 @@ def main():
         from worker.parser.parser_manager import ParserManager
         ParserManager.start()
     elif MODEL == WorkerModel.Crawler:
-        from worker.crawler.crawler_manager import CrawlerManager        
+        from worker.crawler.crawler_manager import CrawlerManager
         CrawlerManager.start()
     elif MODEL == WorkerModel.ProxyChecker:
         from worker.proxy_checker.proxy_checker import ProxyChecker
@@ -29,7 +29,7 @@ def main():
     elif MODEL == WorkerModel.Monitor:
         from worker.monitor.monitor_manager import MonitorManager
         MonitorManager.start()
-        
-        
+
+
 if __name__ == '__main__':
     main()

@@ -15,6 +15,7 @@ from .storager import CrawlStorager
 from .proxy_pool import CrawlProxyPool
 from .task import CrawlTaskManager
 from .crawler import Crawler
+from .cookies import CookiesManager
 
 
 class CrawlerManager(object):
@@ -32,6 +33,7 @@ class CrawlerManager(object):
         self._crawler = Crawler()
         self._storager = CrawlStorager()
         self._proxy_pool = CrawlProxyPool()
+        self._cookies = CookiesManager()
         self._task_manager = CrawlTaskManager()
         TDDCLogging.info('->Crawler Was Ready.')
         

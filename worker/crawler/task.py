@@ -9,7 +9,7 @@ import json
 import gevent
 
 from common.models import Task
-from common.queues import PARSE_QUEUE, CRAWL_QUEUE, TASK_STATUS_QUEUE, TASK_STATUS_REMOVE_QUEUE
+from common.queues import CrawlerQueues
 from conf.base_site import PARSE_TOPIC_NAME, CRAWL_TOPIC_NAME, KAFKA_HOST_PORT
 from conf.crawler_site import CRAWLER_CONCURRENT, CRAWL_TOPIC_GROUP
 
@@ -47,7 +47,7 @@ class CrawlTaskManager(TaskManagerBase):
         TDDCLogging.info('--->Crawl Task Consumer Was Ready.')
         pause = False
         while True:
-            if CRAWL_QUEUE.qsize() > CRAWLER_CONCURRENT * 4:
+            if CrawlerQueues.CRAWL.qsize() > CRAWLER_CONCURRENT * 4:
                 if not pause:
                     self._crawl_task_consumer.commit()
                     self._crawl_task_consumer.unsubscribe()
@@ -55,7 +55,7 @@ class CrawlTaskManager(TaskManagerBase):
                     TDDCLogging.info('Crawl Task Consumer Was Paused.')
                 gevent.sleep(1)
                 continue
-            if pause and CRAWL_QUEUE.qsize() < CRAWLER_CONCURRENT / 2:
+            if pause and CrawlerQueues.CRAWL.qsize() < CRAWLER_CONCURRENT / 2:
                 self._crawl_task_consumer.subscribe(CRAWL_TOPIC_NAME)
                 pause = False
                 TDDCLogging.info('Crawl Task Consumer Was Resumed.')
@@ -76,15 +76,15 @@ class CrawlTaskManager(TaskManagerBase):
             if item and isinstance(item, dict) and item.get('url', None):
                 task = Task(**item)
                 task.status = Task.Status.WAIT_CRAWL
-                CRAWL_QUEUE.put(task)
-                TASK_STATUS_QUEUE.put(task)
+                CrawlerQueues.CRAWL.put(task)
+                CrawlerQueues.TASK_STATUS.put(task)
             else:
                 self._consume_msg_exp('CRAWL_TASK_ERR', item)
     
     def _push_parse_task(self):
         TDDCLogging.info('--->Parse Task Producer Was Ready.')
         while True:
-            task, status = PARSE_QUEUE.get()
+            task, status = CrawlerQueues.PARSE.get()
             tmp = Task(**task.__dict__)
             task.status = Task.Status.CRAWL_SUCCESS
             if not isinstance(task, Task):
@@ -93,7 +93,7 @@ class CrawlTaskManager(TaskManagerBase):
             if not self._push_task(PARSE_TOPIC_NAME, tmp):
                 TDDCLogging.error('')
             else:
-                TASK_STATUS_REMOVE_QUEUE.put(tmp)
+                CrawlerQueues.TASK_STATUS_REMOVE.put(tmp)
                 TDDCLogging.debug('[%s:%s] Crawled Successed(%d).' % (task.platform,
                                                                       task.row_key,
                                                                       status))

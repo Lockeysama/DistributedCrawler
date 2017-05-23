@@ -7,7 +7,7 @@ Created on 2015年8月26日
 
 import gevent
 
-from common.queues import PLATFORM_PROXY_QUEUES
+from common.queues import CrawlerQueues
 from worker.crawler.proxy_pool import CrawlProxyPool
 
 
@@ -52,10 +52,10 @@ class ProxyMiddlewareExtreme(object):
             self.set_proxy(task, request)
             return
         try:
-            proxies = PLATFORM_PROXY_QUEUES.get(task.platform)
+            proxies = CrawlerQueues.PLATFORM_PROXY.get(task.platform)
             while not proxies or not len(proxies):
                 gevent.sleep(0.5)
-                proxies = PLATFORM_PROXY_QUEUES.get(task.platform)
+                proxies = CrawlerQueues.PLATFORM_PROXY.get(task.platform)
             ip_port = proxies.pop()
             CURRENT_PROXY = ip_port
             self.set_proxy(task, request)

@@ -10,25 +10,36 @@ import sys
 
 from common import singleton
 
+
 @singleton
 class TDDCLogger(object):
-    
+
     def __init__(self):
         from conf.base_site import MODEL
-        _format = '[%(levelname)s] [%(asctime)s] => %(message)s'
-        logging.basicConfig(format=_format, filename=MODEL.name+'.log') # @UndefinedVariable
-        self._log = logging.getLogger(MODEL.name) # @UndefinedVariable
-        self._init_logger()
-    
+        _format = '[%(levelname)s] [%(asctime)s] [%(filename)s:%(lineno)s] => %(message)s'
+        logging.basicConfig(format=_format,
+                            datefmt='%Y-%m-%d %H:%M:%S',
+                            level=logging.DEBUG,
+                            filename=MODEL.name+'.log')  # @UndefinedVariable
+        self._log = logging.getLogger(MODEL.name)  # @UndefinedVariable
+        stream = logging.StreamHandler()
+        stream.setLevel(logging.DEBUG)
+        fm_stream = logging.Formatter(fmt=('\033[%(mytp)s;%(myfc)s;%(mybc)sm[%(levelname)s]'
+                                           ' [%(asctime)s] %(mypath)s => %(message)s\033[0m'),
+                                      datefmt='%Y-%m-%d %H:%M:%S')
+        stream.setFormatter(fm_stream)
+        self._log.addHandler(stream)
+
     def _init_logger(self):
         self._log.setLevel(logging.DEBUG)
         stream = logging.StreamHandler()
         stream.setLevel(logging.DEBUG)
-        fm_stream = logging.Formatter('\033[%(mytp)s;%(myfc)s;%(mybc)sm[%(levelname)s]'
-                                      ' [%(asctime)s] %(mypath)s => %(message)s\033[0m')
+        fm_stream = logging.Formatter(fmt=('\033[%(mytp)s;%(myfc)s;%(mybc)sm[%(levelname)s]'
+                                           ' [%(asctime)s] %(mypath)s => %(message)s\033[0m'),
+                                      datefmt='%Y-%m-%d %H:%M:%S')
         stream.setFormatter(fm_stream)
         self._log.addHandler(stream)
- 
+
     @staticmethod
     def _update_kwargs(kwargs, tp, fc, bc, path=''):
         if not 'extra' in kwargs:
@@ -37,31 +48,31 @@ class TDDCLogger(object):
         kwargs['extra']['myfc'] = fc
         kwargs['extra']['mybc'] = bc
         kwargs['extra']['mypath'] = path
-    
+
     def _get_cur_info(self):
         infos = sys._getframe()
         return (infos.f_back.f_back.f_code.co_filename,
 #                 infos.f_back.f_back.f_code.co_name,
                 infos.f_back.f_back.f_lineno)
-        
+
     def debug(self, msg, *args, **kwargs):
         self._update_kwargs(kwargs, '0', '31', '')
         self._log.debug(msg, *args, **kwargs)
- 
+
     def info(self, msg, *args, **kwargs):
         self._update_kwargs(kwargs, '0', '32', '')
         self._log.info(msg, *args, **kwargs)
- 
+
     def warning(self, msg, *args, **kwargs):
         self._update_kwargs(kwargs, '1', '37', '43')
         self._log.warning(msg, *args, **kwargs)
- 
+
     def error(self, msg, *args, **kwargs):
         self._update_kwargs(kwargs, '5', '37', '41', '[%s:%d]' % self._get_cur_info())
         self._log.error(msg, *args, **kwargs)
- 
+
     def critical(self, msg, *args, **kwargs):
-        self._update_kwargs(kwargs, '4', '37', '45', '[%(pathname)s/:%(lineno)d]')
+        self._update_kwargs(kwargs, '4', '37', '45', '[%s:%d]' % self._get_cur_info())
         self._log.critical(msg, *args, **kwargs)
 
 

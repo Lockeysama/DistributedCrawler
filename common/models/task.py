@@ -36,6 +36,7 @@ class Task(object):
                       'status': None,  # 任务状态
                       'retry': None,  # 任务重试次数；默认3次
                       'proxy_type': None,  # 代理类型：是否加代理
+                      'cookie': None,  # Cookie
                       'headers': None,  # HTTP请求头部；dict类型
                       'timestamp': None}  # 任务时间戳
 

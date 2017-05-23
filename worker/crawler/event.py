@@ -19,6 +19,7 @@ class TDDCEvent(object):
     RULE_UPDATE = 0
     EXCEPTION_PROC_UPDATE = 1
     PLATFORM_CONFIG_UPDATE = 2
+    COOKIE_UPDATE = 3
     
 
 @singleton

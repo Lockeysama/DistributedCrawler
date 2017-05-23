@@ -37,6 +37,8 @@ class CheokHomepage(ParseRuleBase):
                 task.url = url
                 task.platform = self.platform
                 task.feature = 'cheok.want_buy_list'
+                task.cookie = 'JSESSIONID=3A32AF91FE59B1F06A61954C280DFC12'
+                task.headers = {'Referer': 'http://www.cheok.com/car/cp_' + str(page_number - 1)}
                 self._md5_mk.update(url)
                 task.row_key = self._md5_mk.hexdigest()
                 tmp.append(task)

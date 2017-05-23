@@ -10,7 +10,7 @@ import gevent
 
 from conf.base_site import PARSE_TOPIC_NAME, CRAWL_TOPIC_NAME, KAFKA_HOST_PORT
 from conf.parser_site import PARSE_TOPIC_GROUP, PARSER_CONCURRENT
-from common.queues import PARSE_QUEUE, CRAWL_QUEUE, TASK_STATUS_QUEUE
+from common.queues_define import PARSE_QUEUE, CRAWL_QUEUE, TASK_STATUS_QUEUE
 from ..base import TaskManagerBase
 from common import TDDCLogging
 from plugins import KafkaHelper

@@ -71,21 +71,24 @@ class DBManager(object):
                     self._auto_create_table(connection, table)
                     table = connection.table(table)
                     b = table.batch()
-                    for row_key, items in rows.items():
-                        for family, data in items.items():
-                            cf_fmt = family + ':'
-                            values = {}
-                            for column, value in data.items():
-                                if isinstance(value, dict) or isinstance(value, list):
-                                    value = json.dumps(value)
-                                values[cf_fmt + column] = value
-                            b.put(row_key, values)
+                    self._puts(b, rows)
                     b.send()
                 return True
         except Exception, e:
             TDDCLogging.error(e)
             return False
     
+    def _puts(self, batch, rows):
+        for row_key, items in rows.items():
+            for family, data in items.items():
+                cf_fmt = family + ':'
+                values = {}
+                for column, value in data.items():
+                    if isinstance(value, dict) or isinstance(value, list):
+                        value = json.dumps(value)
+                    values[cf_fmt + column] = value
+                batch.put(row_key, values)
+ 
     def put_to_hbase(self, table, row_key, items):
         '''
         单个存储

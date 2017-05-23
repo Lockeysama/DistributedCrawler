@@ -8,7 +8,7 @@ Created on 2017年4月12日
 import gevent
 
 from conf.base_site import PLATFORM_SUFFIX
-from common.queues import PARSE_QUEUE, WAITING_PARSE_QUEUE,\
+from common.queues_define import PARSE_QUEUE, WAITING_PARSE_QUEUE,\
     STORAGE_QUEUE
 from common import TDDCLogging
 from . import StoragerBase

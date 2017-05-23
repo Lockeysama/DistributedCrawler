@@ -7,8 +7,8 @@ Created on 2017年5月8日
 
 import gevent
 
-from conf.base_site import TASK_STATUS_HSET, REDIS_NODES
-from common.queues import TASK_STATUS_QUEUE, TASK_STATUS_REMOVE_QUEUE
+from conf.base_site import TASK_STATUS_HSET_PREFIX, REDIS_NODES
+from common.queues import CrawlerQueues
 
 from plugins import RedisClient
 
@@ -30,31 +30,31 @@ class TaskStatusUpdater(RedisClient):
 
     def _update_task_status(self):
         while True:
-            task = TASK_STATUS_QUEUE.get()
+            task = CrawlerQueues.TASK_STATUS.get()
             try:
                 self._update(task)
             except Exception, e:
                 print('_update_task_status', e)
-                TASK_STATUS_QUEUE.put(task)
+                CrawlerQueues.TASK_STATUS.put(task)
                 gevent.sleep(1)
 
     def _update(self, task):
-        return self.hset(TASK_STATUS_HSET + '.%s.%d' % (task.platform, task.status),
+        return self.hset(TASK_STATUS_HSET_PREFIX + '.%s.%d' % (task.platform, task.status),
                          task.url,
                          task.to_json())
 
     def _remove_task_status(self):
         while True:
-            task = TASK_STATUS_REMOVE_QUEUE.get()
+            task = CrawlerQueues.TASK_STATUS_REMOVE.get()
             try:
                 self._remove(task)
             except Exception, e:
                 print('_update_task_status', e)
-                TASK_STATUS_REMOVE_QUEUE.put(task)
+                CrawlerQueues.TASK_STATUS_REMOVE.put(task)
                 gevent.sleep(1)
 
     def _remove(self, task):
-        return self.hdel(TASK_STATUS_HSET + '.%s.%d' % (task.platform, task.status),
+        return self.hdel(TASK_STATUS_HSET_PREFIX + '.%s.%d' % (task.platform, task.status),
                          task.url)
 
 

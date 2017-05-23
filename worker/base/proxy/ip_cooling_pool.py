@@ -10,7 +10,7 @@ import time
 import random
 import gevent
 
-from common.queues import PLATFORM_PROXY_QUEUES
+from common.queues import CrawlerQueues
 
 
 class CoolingQueue(object):
@@ -86,7 +86,7 @@ class IPCoolingPoll(object):
                 use_timestamp = info[(ip, platform)]
                 if self._cur_timestamp - use_timestamp >= (self.cooldown) + random_time:
                     self._cooling_queue.pop(info)
-                    PLATFORM_PROXY_QUEUES.get(platform, set()).add(ip)
+                    CrawlerQueues.PLATFORM_PROXY.get(platform, set()).add(ip)
 
 
 if __name__ == '__main__':

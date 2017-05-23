@@ -15,11 +15,11 @@ crawler_process = CrawlerProcess(settings)
 crawler_process.join()
 
 from conf.crawler_site import CRAWLER_CONCURRENT
-from common.queues import CRAWL_QUEUE, STORAGE_QUEUE
+from common.queues import CrawlerQueues
 from common import TDDCLogging
 
 from .event import EventManagre, TDDCEvent
-from .Scrapy.spiders.single_spider import SingleSpider, SIGNAL_STORAGE
+from .Scrapy import SingleSpider
 
 
 class Crawler(object):
@@ -33,8 +33,9 @@ class Crawler(object):
         '''
         TDDCLogging.info('-->Spider Is Starting.')
         self._spider = None
+        self._spider_mqs = None
         self._signals_list = {signals.spider_opened: self._spider_opened,
-                              SIGNAL_STORAGE: self._storage}
+                              SingleSpider.SIGNAL_STORAGE: self._storage}
         self._process = crawler_process
         self._process.crawl(SingleSpider, callback=self._spider_signals)
         EventManagre().register(TDDCEvent.RULE_UPDATE, self._rule_update)
@@ -43,15 +44,13 @@ class Crawler(object):
         print(event.__dict__)
         
     def _get_spider_mqs_size(self):
-        q = self._spider.crawler.engine.slot.scheduler.mqs.queues
-        mqs_count = len(q[0]) if q and len(q) else 0
-        return mqs_count
+        return len(self._spider_mqs) if self._spider_mqs else 0
     
     def _task_dispatch(self):
         while True:
             if self._get_spider_mqs_size() < CRAWLER_CONCURRENT / 4:
                 while True:
-                    task = CRAWL_QUEUE.get()
+                    task = CrawlerQueues.CRAWL.get()
                     self._spider.add_task(task)
                     if self._get_spider_mqs_size() >= CRAWLER_CONCURRENT:
                         break
@@ -68,12 +67,13 @@ class Crawler(object):
     def _spider_opened(self, spider):
         if not self._spider:
             self._spider = spider
+            self._spider_mqs = spider.crawler.engine.slot.scheduler.mqs
             gevent.spawn(self._task_dispatch)
             gevent.sleep()
             TDDCLogging.info('-->Spider Was Ready.')
 
     def _storage(self, items=None):
-        STORAGE_QUEUE.put(items)
+        CrawlerQueues.STORAGE.put(items)
 
 
 def main():

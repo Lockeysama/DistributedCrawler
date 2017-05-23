@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from conf.crawler_site import CRAWLER_CONCURRENT
+# import scrapy.settings.default_settings
 
 BOT_NAME = 'Scrapy'
 
@@ -34,17 +35,23 @@ DEFAULT_REQUEST_HEADERS = {
     'DNT': 1
 }
 
+REACTOR_THREADPOOL_MAXSIZE = 20
+
 CONCURRENT_REQUESTS = CRAWLER_CONCURRENT
 
-DOWNLOAD_TIMEOUT = 10
+CONCURRENT_REQUESTS_PER_DOMAIN = 16
 
-COOKIES_ENABLED = True
+CONCURRENT_ITEMS = 0
 
-COOKIES_DEBUG = False
+DOWNLOAD_DELAY = 0
+
+DOWNLOAD_TIMEOUT = 15
+
+COOKIES_ENABLED = False
 
 RETRY_ENABLED = False
 
 DOWNLOADER_MIDDLEWARES = {
-    'worker.crawler.Scrapy.contrib.user_agent.CustomUserAgent': 543,
-    'worker.crawler.Scrapy.contrib.proxy.ProxyMiddleware': 480,
+    'worker.crawler.Scrapy.contrib.user_agent.CustomUserAgent': 500,
+    'worker.crawler.Scrapy.contrib.proxy.ProxyMiddleware': 750,
 }

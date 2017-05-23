@@ -9,7 +9,7 @@ import gevent
 
 from conf.base_site import EXCEPTION_TOPIC_NAME, KAFKA_HOST_PORT
 from common import TDDCLogging
-from common.queues import EXCEPTION_QUEUE
+from common.queues import CrawlerQueues
 
 from plugins import KafkaHelper
 
@@ -31,7 +31,7 @@ class ExceptionCollection(object):
 
     def _send(self):
         while True:
-            exception = EXCEPTION_QUEUE.get()
+            exception = CrawlerQueues.EXCEPTION.get()
             self._exception_producer.send(EXCEPTION_TOPIC_NAME,
                                           exception.to_json())
             

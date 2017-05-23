@@ -9,7 +9,7 @@ import gevent
 from conf.proxy_checker_site import PLATFORM_PROXY_SET_BASE_KEY,\
     HTTP_SOURCE_PROXY_SET_KEY, HTTPS_SOURCE_PROXY_SET_KEY, PROXY_PUBSUB_PATTERN, PROXY_CHECKER_CONCURRENT
 
-from common.queues import HTTP_SOURCE_PROXY_QUEUE, HTTPS_SOURCE_PROXY_QUEUE,\
+from common.queues_define import HTTP_SOURCE_PROXY_QUEUE, HTTPS_SOURCE_PROXY_QUEUE,\
     USEFUL_PROXY_QUEUE
 
 from worker.proxy_checker.models.IPInfo import IPInfo

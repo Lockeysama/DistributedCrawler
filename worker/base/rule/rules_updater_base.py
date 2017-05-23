@@ -9,10 +9,10 @@ import os
 import json
 import gevent
 
-from common.queues import RULES_MOULDS_UPDATE_QUEUE, EVENT_QUEUE
-from common.models import Rule
-from plugins import DBManager
 from conf.base_site import HBASE_HOST_PORTS
+from common.models import Rule
+from common.queues import CrawlerQueues
+from plugins import DBManager
 
 
 class RulesUpdater(object):
@@ -36,7 +36,7 @@ class RulesUpdater(object):
     def _event(self):
         print('-->Rules Updater Was Ready.')
         while True:
-            if not EVENT_QUEUE.empty():
+            if not CrawlerQueues.EVENT.empty():
                 if not self._db:
                     self._wait = True
                     def _db_ready(params=None):
@@ -44,7 +44,7 @@ class RulesUpdater(object):
                     self._db = DBManager('Rules Updater', HBASE_HOST_PORTS, _db_ready)
                     while self._wait:
                         gevent.sleep(0.2)
-                event = EVENT_QUEUE.get()
+                event = CrawlerQueues.EVENT.get()
                 if not event:
                     print('Update Rules Event Exception.')
                     continue
@@ -123,7 +123,7 @@ class RulesUpdater(object):
             with open(_file_path, 'a') as f:
                 f.write(ret.columnValues[0].value)
             rule = Rule(event.platform, _package, item.get('moulds', None))
-            RULES_MOULDS_UPDATE_QUEUE.put(rule)
+            CrawlerQueues.RULES_MOULDS_UPDATE.put(rule)
 
     def _update(self, event):
         _local_confs = self._get_local_conf(event) 

@@ -9,7 +9,7 @@ import os
 import json
 import gevent
 
-from common.queues import EVENT_QUEUE, PARSER_RULES_MOULDS_UPDATE_QUEUE
+from common.queues_define import EVENT_QUEUE, PARSER_RULES_MOULDS_UPDATE_QUEUE
 from plugins import DBManager
 from conf.parser_site import PARSE_RULES_HBASE_TABLE, PARSE_RULES_HBASE_FAMILY, PARSE_RULES_HBASE_INDEX_QUALIFIER
 from common.models import Rule

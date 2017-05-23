@@ -15,17 +15,18 @@ from scrapy.http import Request, FormRequest
 import twisted.internet.error as internet_err
 import twisted.web._newclient as newclient_err
 
-from common.queues import UNUSEFUL_PROXY_FEEDBACK_QUEUE, TASK_STATUS_REMOVE_QUEUE, EXCEPTION_QUEUE
 from common import TDDCLogging
-from common.models import TDDCException
-from common.models.exception import TDDCExceptionType
-
-SIGNAL_STORAGE = object()
+from common.queues import CrawlerQueues
+from common.models import TDDCException, TDDCExceptionType
+from worker.crawler.cookies import CookiesManager
 
 class SingleSpider(scrapy.Spider):
     '''
     single spider
     '''
+    
+    SIGNAL_STORAGE = object()
+
     name = 'SingleSpider'
     start_urls = []
 
@@ -66,21 +67,23 @@ class SingleSpider(scrapy.Spider):
                if not task.method or upper(task.method) == 'GET' 
                else self._make_post_request(task, headers, times))
         self.crawler.engine.schedule(req, self)
-        
+
     def _make_get_request(self, task, headers, times):
         req = Request(task.url,
                       headers=headers,
+                      cookies=task.cookie or CookiesManager.get_cookie(task.platform),
                       callback=self.parse,
                       errback=self.error_back,
                       meta={'item': [task, times]},
                       dont_filter=True)
         return req
-    
+
     def _make_post_request(self, task, headers, times):
         form_data = {'params': headers.get('post_params', None)}
         req = FormRequest(task.url,
                           formdata=form_data,
                           headers=headers,
+                          cookies=task.cookie or CookiesManager.get_cookie(task.platform),
                           callback=self.parse,
                           errback=self.error_back,
                           meta={'item': [task, times]},
@@ -92,7 +95,7 @@ class SingleSpider(scrapy.Spider):
         proxy = response.request.meta.get('proxy', None)
         if response.type == httperror.HttpError:
             status = response.value.response.status
-            if status >= 500:
+            if status >= 500 or status == 408:
                 fmt = '[%s][%s] Crawled Failed(%d | %s). Will Retry After While.'
                 TDDCLogging.warning(fmt % (task.platform,
                                            task.url,
@@ -106,8 +109,8 @@ class SingleSpider(scrapy.Spider):
                     exception = TDDCException(name='Crawl Task 404',
                                               e_type=TDDCExceptionType.CrawlerTask404,
                                               detail=task.to_json())
-                    EXCEPTION_QUEUE.put(exception)
-                    TASK_STATUS_REMOVE_QUEUE.put(task)
+                    CrawlerQueues.EXCEPTION.put(exception)
+                    CrawlerQueues.TASK_STATUS_REMOVE.put(task)
                     fmt = '[%s:%s] Crawled Failed(404 | %s). Not Retry.'
                     TDDCLogging.warning(fmt % (task.platform,
                                                task.url,
@@ -132,20 +135,20 @@ class SingleSpider(scrapy.Spider):
             err_msg = '%s' % (response.value)
         if proxy:
             proxy = proxy.split('//')[1]
-            UNUSEFUL_PROXY_FEEDBACK_QUEUE.put([task.platform, proxy])
+            CrawlerQueues.UNUSEFUL_PROXY_FEEDBACK.put([task.platform, proxy])
         fmt = '[%s][%s] Crawled Failed(%s | %s). Will Retry After While.'
         TDDCLogging.warning(fmt % (task.platform,
                                    task.url,
                                    err_msg,
                                    proxy))
         self.add_task(task, True, times)
-        
+
     def parse(self, response):
         task,_ = response.request.meta.get('item')
         rsp_info = {'rsp': [response.url, response.status],
                     'content': response.body}
         if self.signals_callback:
-            self.signals_callback(self, SIGNAL_STORAGE, [task, rsp_info])
+            self.signals_callback(self, SingleSpider.SIGNAL_STORAGE, [task, rsp_info])
 
     def signal_dispatcher(self, signal):
         '''

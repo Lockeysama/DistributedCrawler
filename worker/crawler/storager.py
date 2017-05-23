@@ -8,7 +8,7 @@ Created on 2017年4月14日
 import gevent
 
 from conf.base_site import PLATFORM_SUFFIX
-from common.queues import STORAGE_QUEUE, PARSE_QUEUE
+from common.queues import CrawlerQueues
 
 from . import StoragerBase
 from common.models import Task
@@ -25,7 +25,7 @@ class CrawlStorager(StoragerBase):
         platform_rows = {}
         while True:
             try:
-                task, rsp_info = STORAGE_QUEUE.get()
+                task, rsp_info = CrawlerQueues.STORAGE.get()
                 items = {'source': rsp_info,
                          'task': {'task': task.to_json()}}
                 if not platform_rows.get(task.platform + PLATFORM_SUFFIX):
@@ -33,7 +33,7 @@ class CrawlStorager(StoragerBase):
                 platform_rows[task.platform + PLATFORM_SUFFIX][task.row_key] = items
                 cnt += 1
                 gevent.sleep(0.05)
-                if STORAGE_QUEUE.qsize() or not cnt % 5:
+                if CrawlerQueues.STORAGE.qsize() or not cnt % 5:
                     continue
                 if self._db.puts_to_hbase(platform_rows):
                     self._pushed(platform_rows, True)
@@ -50,10 +50,10 @@ class CrawlStorager(StoragerBase):
                 rsp_info = row.get('source')
                 task = Task(**json.loads(row.get('task').get('task')))
                 if success:
-                    PARSE_QUEUE.put((task, rsp_info.get('rsp')[1] if rsp_info.get('rsp') else None))
+                    CrawlerQueues.PARSE.put((task, rsp_info.get('rsp')[1] if rsp_info.get('rsp') else None))
                 else:
-                    STORAGE_QUEUE.put((task, rsp_info))
-        
+                    CrawlerQueues.STORAGE.put((task, rsp_info))
+
 
 def main():
     CrawlStorager()

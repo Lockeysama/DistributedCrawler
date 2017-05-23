@@ -12,7 +12,7 @@ import time
 from conf.base_site import TASK_STATUS_HSET, REDIS_NODES
 from common import TDDCLogging
 from common.models.task import Task
-from common.queues import EXCEPTION_TASK_QUEUE
+from common.queues_define import EXCEPTION_TASK_QUEUE
 from plugins import RedisClient
 
 
