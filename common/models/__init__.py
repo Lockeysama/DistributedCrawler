@@ -1,9 +1,11 @@
 from __future__ import absolute_import
 
-from .event import Event
+from .events import *
+from .rules import *
 from .exception import TDDCException, TDDCExceptionType
 from .ip_info import IPInfo
-from .rule import Rule
 from .task import Task
 
-__all__ = ['Event', 'TDDCException', 'TDDCExceptionType', 'IPInfo', 'Rule', 'Task']
+__all__ = ['TDDCException', 'TDDCExceptionType',
+           'IPInfo',
+           'Task']

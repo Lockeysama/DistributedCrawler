@@ -31,7 +31,7 @@ class BaseSite(CookiesSite,
     PLATFORM_SUFFIX = '_test' if TEST else ''
    
     # Current Worker
-#     WORKER = Worker.Crawler
-    WORKER = Worker.Parser
+    WORKER = Worker.Crawler
+#     WORKER = Worker.Parser
 #     WORKER = Worker.ProxyChecker
 #     WORKER = Worker.Monitor

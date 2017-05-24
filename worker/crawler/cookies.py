@@ -11,8 +11,9 @@ import random
 from conf import CrawlerSite
 from common.queues import CrawlerQueues
 
-from worker.crawler.event import EventManagre, TDDCEvent
+from worker.crawler.event import CrawlerEventCenter
 from plugins import RedisClient
+from common.models.events.event_base import EventType
 
 
 class CookiesManager(RedisClient):
@@ -25,7 +26,7 @@ class CookiesManager(RedisClient):
         Constructor
         '''
         super(CookiesManager, self).__init__(CrawlerSite.REDIS_NODES)
-        EventManagre().register(TDDCEvent.COOKIE_UPDATE, self._update_cookie)
+        CrawlerEventCenter().register(EventType.Crawler.COOKIES, self._update_cookie)
 
     def _update_cookie(self, event):
         info = event.detail

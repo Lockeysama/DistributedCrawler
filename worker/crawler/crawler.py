@@ -8,6 +8,7 @@ Created on 2017年4月14日
 import gevent
 
 from scrapy.utils.project import get_project_settings
+from common.models.events import EventType
 settings = get_project_settings()
 from scrapy import signals
 from scrapy.crawler import CrawlerProcess
@@ -18,7 +19,7 @@ from conf import CrawlerSite
 from common.queues import CrawlerQueues
 from common import TDDCLogging
 
-from .event import EventManagre, TDDCEvent
+from worker.crawler.event import CrawlerEventCenter
 from .Scrapy import SingleSpider
 
 
@@ -38,7 +39,7 @@ class Crawler(object):
                               SingleSpider.SIGNAL_STORAGE: self._storage}
         self._process = crawler_process
         self._process.crawl(SingleSpider, callback=self._spider_signals)
-        EventManagre().register(TDDCEvent.RULE_UPDATE, self._rule_update)
+        CrawlerEventCenter().register(EventType.Crawler.MODULE, self._rule_update)
         
     def _rule_update(self, event):
         print(event.__dict__)

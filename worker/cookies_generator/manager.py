@@ -5,10 +5,10 @@ Created on 2017年5月22日
 @author: chenyitao
 '''
 
+import gevent
 import setproctitle
 
 from common import TDDCLogging
-import gevent
 
 class CookiesGeneratorManager(object):
     '''
