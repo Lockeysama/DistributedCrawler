@@ -9,14 +9,20 @@ import gevent
 
 from conf import ParserSite
 from common.queues import ParserQueues
-from common import TDDCLogging
+from log import TDDCLogging
+from common import singleton
 from . import StoragerBase
 
 
+@singleton
 class ParseStorager(StoragerBase):
     '''
     classdocs
     '''
+    
+    @staticmethod
+    def push(task, items):
+        ParserQueues.STORAGE.put((task, items))
         
     def _push(self):
         while True:
@@ -28,6 +34,9 @@ class ParseStorager(StoragerBase):
                                          storage_items):
                 ParserQueues.STORAGE.put((task, items))
                 gevent.sleep(1)
+
+    def pull(self, task):
+        ParserQueues.PARSE.put(task)
 
     def _pull(self):
         while True:

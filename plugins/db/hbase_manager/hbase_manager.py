@@ -14,7 +14,7 @@ from hbase import THBaseService
 from hbase.ttypes import TColumnValue, TPut, TGet, TColumn
 from thrift.transport.TTransport import TTransportException
 from thrift.protocol.TCompactProtocol import TCompactProtocol
-from common import TDDCLogging
+from log import TDDCLogging
 
 
 class HBaseManager(object):

@@ -8,11 +8,10 @@ Created on 2017年5月5日
 import gevent.queue
 import json
 
-from common import TDDCLogging
+from log import TDDCLogging
 
 from plugins import KafkaHelper
 from common.models.events import *
-from StdSuites.AppleScript_Suite import event
 
 
 class EventManagreBase(object):

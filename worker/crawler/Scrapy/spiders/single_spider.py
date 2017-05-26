@@ -15,7 +15,7 @@ from scrapy.http import Request, FormRequest
 import twisted.internet.error as internet_err
 import twisted.web._newclient as newclient_err
 
-from common import TDDCLogging
+from log import TDDCLogging
 from common.queues import CrawlerQueues
 from common.models import TDDCException, TDDCExceptionType
 from worker.crawler.cookies import CookiesManager

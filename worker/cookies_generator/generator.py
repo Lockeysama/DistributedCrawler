@@ -9,7 +9,7 @@ import gevent
 import time
 import json
 
-from common import TDDCLogging
+from log import TDDCLogging
 from worker.cookies_generator.rules.cheok.cheok import CheokCookiesGenerator
 
 

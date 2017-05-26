@@ -9,7 +9,7 @@ import time
 import smtplib
 from conf.monitor_site import MAIL_USER, MAIL_PWD, MAIL_TO, MAIL_HOST, MAIL_PORT
 from email.mime.text import MIMEText
-from common import TDDCLogging
+from log import TDDCLogging
 
 
 class EMailManager(object):

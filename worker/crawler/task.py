@@ -11,7 +11,7 @@ import gevent
 from conf import CrawlerSite
 from common.models import Task
 from common.queues import CrawlerQueues
-from common import TDDCLogging
+from log import TDDCLogging
 
 from . import TaskManagerBase
 from plugins import KafkaHelper

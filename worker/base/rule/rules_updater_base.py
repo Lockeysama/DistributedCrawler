@@ -12,7 +12,7 @@ import gevent
 from conf.default import HBaseSite
 from common.models import Rule
 from common.queues import CrawlerQueues
-from common import TDDCLogging
+from log import TDDCLogging
 from plugins import DBManager
 
 

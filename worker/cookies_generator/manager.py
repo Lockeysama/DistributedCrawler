@@ -8,7 +8,8 @@ Created on 2017年5月22日
 import gevent
 import setproctitle
 
-from common import TDDCLogging
+from log import TDDCLogging
+
 
 class CookiesGeneratorManager(object):
     '''

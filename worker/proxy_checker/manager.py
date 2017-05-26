@@ -11,7 +11,7 @@ import gevent
 from gevent import monkey
 monkey.patch_all()
 
-from common import TDDCLogging
+from log import TDDCLogging
 from .rules_updater import ProxyCheckerRulesUpdater
 from .event import ProxyMQManager
 from .proxy import ProxyManager

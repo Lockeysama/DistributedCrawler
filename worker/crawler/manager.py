@@ -8,7 +8,7 @@ Created on 2017年4月14日
 import setproctitle
 from twisted.internet import reactor
 
-from common import TDDCLogging
+from log import TDDCLogging
 
 from .exception import ExceptionCollection
 from .storager import CrawlStorager

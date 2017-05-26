@@ -11,7 +11,7 @@ import random
 from conf import CrawlerSite
 from common.queues import CrawlerQueues
 
-from common import TDDCLogging
+from log import TDDCLogging
 from . import IPPool
 from worker.base.proxy.ip_cooling_pool import IPCoolingPoll
 

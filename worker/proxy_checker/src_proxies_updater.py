@@ -12,7 +12,7 @@ import json
 import setproctitle
 
 from conf.default import RedisSite
-from common import TDDCLogging
+from log import TDDCLogging
 from ..base import IPPool
 
 

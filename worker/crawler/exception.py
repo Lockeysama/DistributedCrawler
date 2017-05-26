@@ -8,7 +8,7 @@ Created on 2017年5月5日
 import gevent
 
 from conf import CrawlerSite
-from common import TDDCLogging
+from log import TDDCLogging
 from common.queues import CrawlerQueues
 
 from plugins import KafkaHelper

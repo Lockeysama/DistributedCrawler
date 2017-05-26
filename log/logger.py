@@ -12,7 +12,7 @@ import sys
 class TDDCLogger(object):
 
     def __init__(self):
-        from conf import BaseSite
+        from conf.base_site import BaseSite
         _format = '[%(levelname)s] [%(asctime)s] [%(filename)s:%(lineno)s] => %(message)s'
         logging.basicConfig(format=_format,
                             datefmt='%Y-%m-%d %H:%M:%S',

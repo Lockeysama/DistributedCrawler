@@ -10,7 +10,7 @@ import gevent
 
 from conf import ParserSite
 from common.queues import ParserQueues
-from common import TDDCLogging
+from log import TDDCLogging
 from common.models import Task
 from plugins import KafkaHelper
 from ..base import BloomFilter, TaskManagerBase

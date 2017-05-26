@@ -5,7 +5,7 @@ Created on 2017年4月18日
 @author: chenyitao
 '''
 
-from worker.parser.models.parse_rule_base import ParseRuleBase
+from worker.parser.parser_moulds.parse_rule_base import ParseRuleBase
 
 
 class CheokWantBuyDetail(ParseRuleBase):
@@ -16,6 +16,8 @@ class CheokWantBuyDetail(ParseRuleBase):
     platform = 'cheok'
     
     feature = 'cheok.want_buy_detail'
+    
+    version = '1495799999'
 
     def _parse(self):
         if self._body_type == self.HTML:

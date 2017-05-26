@@ -10,7 +10,7 @@ from conf import ProxyCheckerSite
 from conf.default import RedisSite
 from common.queues import ProxyCheckerQueues
 from common.models import IPInfo
-from common import TDDCLogging
+from log import TDDCLogging
 from ..base import IPPool
 
 

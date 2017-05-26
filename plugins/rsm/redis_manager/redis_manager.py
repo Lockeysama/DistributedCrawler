@@ -6,7 +6,7 @@ Created on 2017年4月10日
 '''
 
 from rediscluster import StrictRedisCluster
-from common import TDDCLogging
+from log import TDDCLogging
 
 
 class RedisClient(StrictRedisCluster):

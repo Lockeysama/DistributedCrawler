@@ -5,7 +5,7 @@ Created on 2017年4月14日
 @author: chenyitao
 '''
 
-from .base_site import BaseSite
+from conf.base_site import BaseSite
 from common import get_mac_address
 
 

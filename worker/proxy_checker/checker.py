@@ -11,7 +11,7 @@ import importlib
 
 from conf import ProxyCheckerSite
 from common.queues import ProxyCheckerQueues
-from common import TDDCLogging
+from log import TDDCLogging
 
 
 class Checker(object):

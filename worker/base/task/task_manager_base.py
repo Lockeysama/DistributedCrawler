@@ -8,7 +8,7 @@ Created on 2017年4月7日
 import json
 import gevent
 
-from common import TDDCLogging
+from log import TDDCLogging
 
 from .task_status_updater import TaskStatusUpdater
 from plugins.mq.kafka_manager.kafka_helper import KafkaHelper

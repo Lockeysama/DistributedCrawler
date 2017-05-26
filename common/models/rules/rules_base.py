@@ -19,18 +19,18 @@ class MouldsBase(QuickModelBase):
 class RulesBase(QuickModelBase):
 
     default_values = {'platform': None,
-                      'modules': None}
+                      'models': None}
 
     def __init__(self, **kwargs):
         super(RulesBase, self).__init__(**kwargs)
-        items = self.__dict__.get('modules')
+        items = self.__dict__.get('models')
         if not items:
             return
         modeles = []
         for item in items:
             mould = MouldsBase(**item)
             modeles.append(mould)
-        self.__dict__['modules'] = modeles
+        self.__dict__['models'] = modeles
 
 
 def main():

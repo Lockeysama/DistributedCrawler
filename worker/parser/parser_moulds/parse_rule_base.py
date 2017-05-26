@@ -22,6 +22,8 @@ class ParseRuleBase(object):
     platform = ''
 
     feature = ''
+    
+    version = 'unknow'
 
     def __init__(self, task, body):
         '''

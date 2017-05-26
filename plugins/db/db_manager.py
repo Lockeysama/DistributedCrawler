@@ -8,7 +8,7 @@ Created on 2017年4月12日
 import json
 import happybase
 
-from common import TDDCLogging
+from log import TDDCLogging
 
 
 class DBManager(object):
@@ -34,7 +34,7 @@ class DBManager(object):
                                                  protocol='compact')
         TDDCLogging.info('----->HBase(%s:%s) Was Ready.' % (host, port))
         TDDCLogging.info('---->DB Manager Was Ready.')
-    
+
     def create_table_to_hbase(self, table, families):
         try:
             with self._hb_pool.connection() as connection:

@@ -6,7 +6,8 @@ Created on 2017年5月17日
 '''
 
 from worker.monitor.exception.task import ExceptionTaskManager
-from common import TDDCLogging
+from log import TDDCLogging
+
 
 class ExceptionManager(object):
     '''

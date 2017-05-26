@@ -7,7 +7,7 @@ Created on 2017年4月13日
 
 import time
 
-from worker.parser.models.parse_rule_base import ParseRuleBase
+from ..parse_rule_base import ParseRuleBase
 from common.models import Task
 
 class CheokHomepage(ParseRuleBase):
@@ -18,6 +18,8 @@ class CheokHomepage(ParseRuleBase):
     platform = 'cheok'
 
     feature = 'cheok.homepage'
+    
+    version = '1495799999'
 
     def _parse(self):
         self._make_want_buy_list_urls()
