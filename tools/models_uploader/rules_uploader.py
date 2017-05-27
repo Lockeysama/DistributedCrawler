@@ -18,9 +18,9 @@ class RuleUploader(object):
     '''
     classdocs
     '''
-    
+
     path_base = ''
-    
+
     hbase_table = ''
 
     def __init__(self, packages):

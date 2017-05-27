@@ -33,7 +33,7 @@ class BaseSite(CookiesSite,
     PLATFORM_CONF_TABLE = 'tddc_platform_conf_table' 
    
     # Current Worker
-#     WORKER = Worker.Crawler
-    WORKER = Worker.Parser
+    WORKER = Worker.Crawler
+#     WORKER = Worker.Parser
 #     WORKER = Worker.ProxyChecker
 #     WORKER = Worker.Monitor

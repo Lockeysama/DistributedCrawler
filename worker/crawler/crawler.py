@@ -8,7 +8,7 @@ Created on 2017年4月14日
 import gevent
 
 from scrapy.utils.project import get_project_settings
-from common.models.events import EventType
+from common.models.events_model import EventType
 settings = get_project_settings()
 from scrapy import signals
 from scrapy.crawler import CrawlerProcess

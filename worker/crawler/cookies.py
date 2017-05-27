@@ -13,7 +13,7 @@ from common.queues import CrawlerQueues
 
 from worker.crawler.event import CrawlerEventCenter
 from plugins import RedisClient
-from common.models.events.event_base import EventType
+from common.models.events_model.event_base import EventType
 
 
 class CookiesManager(RedisClient):

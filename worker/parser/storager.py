@@ -7,9 +7,9 @@ Created on 2017年4月12日
 
 import gevent
 
+from log import TDDCLogging
 from conf import ParserSite
 from common.queues import ParserQueues
-from log import TDDCLogging
 from common import singleton
 from . import StoragerBase
 

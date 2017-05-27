@@ -11,7 +11,7 @@ import json
 from log import TDDCLogging
 
 from plugins import KafkaHelper
-from common.models.events import *
+from common.models.events_model import *
 
 
 class EventManagreBase(object):

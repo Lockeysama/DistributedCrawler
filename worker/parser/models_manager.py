@@ -12,8 +12,8 @@ import importlib
 
 from log import TDDCLogging
 from conf import ParserSite
-from common.models.events.event_base import EventType
-from common.models.rules.parser import ParserRules
+from common.models.events_model.event_base import EventType
+from common.models import ParserModels
 from worker.parser.storager import ParseStorager
 from worker.parser.event import ParserEventCenter
 
@@ -111,8 +111,8 @@ class ParseModelsManager(object):
         return update_list
 
     def _update(self, event, models_info):
-        remote_pr = ParserRules(**json.loads(models_info))
-        local_pr = ParserRules(**self.get_local_conf(remote_pr.platform))
+        remote_pr = ParserModels(**json.loads(models_info))
+        local_pr = ParserModels(**self.get_local_conf(remote_pr.platform))
         update_list = self.update_check(local_pr, remote_pr)
         if not len(update_list):
             return

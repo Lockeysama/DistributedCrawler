@@ -16,10 +16,10 @@ class CrawlerSite(BaseSite):
 
     # Crawler Concurrent
     CONCURRENT = 100
-    
+
     # Crawler Topic Group
     CRAWL_TOPIC_GROUP = 'tddc.crawler'
-    
+   
     # Proxy Checker Event Topic Info
     EVENT_TOPIC = 'tddc_c_event'
     EVENT_TOPIC_GROUP = 'tddc.pc.{mac}.{id}'.format(mac=get_mac_address(),
