@@ -36,7 +36,7 @@ class CrawlerManager(object):
         self._cookies = CookiesManager()
         self._task_manager = CrawlTaskManager()
         TDDCLogging.info('->Crawler Was Ready.')
-        
+
     @staticmethod
     def start():
         reactor.__init__()  # @UndefinedVariable

@@ -32,7 +32,8 @@ class ParseModelsManager(object):
         TDDCLogging.info('-->Parser Models Manager Is Starting.')
         self._rules_moulds = {}
         self._load_local_models()
-        ParserEventCenter().register(EventType.Parser.MODULE, self._models_update_event)
+        ParserEventCenter().register(EventType.Parser.MODULE,
+                                     self._models_update_event)
         TDDCLogging.info('-->Parser Models Manager Was Ready.')
     
     def _load_local_models(self):
@@ -41,7 +42,7 @@ class ParseModelsManager(object):
         for index in indexs:
             path = self.local_conf_path_base + index
             with open(path, 'r') as f:
-                pr = ParserRules(**json.loads(f.read()))
+                pr = ParserModels(**json.loads(f.read()))
             for model_info in pr.models:
                 self._load_moulds(pr.platform, model_info)
     
@@ -56,7 +57,7 @@ class ParseModelsManager(object):
 
     @staticmethod
     def get_local_conf(platform):
-        _conf_path = ParseModelsManager.local_conf_path_base + platform + '.json' 
+        _conf_path = ParseModelsManager.local_conf_path_base + platform + '.json'
         if os.path.exists(_conf_path):
             with open(_conf_path, 'r') as f:
                 return json.loads(f.read())
@@ -64,7 +65,8 @@ class ParseModelsManager(object):
     
     @staticmethod
     def save_local_conf(remote_pr):
-        conf_path = ParseModelsManager.local_conf_path_base + remote_pr.platform + '.json'
+        conf_path = (ParseModelsManager.local_conf_path_base 
+                     + remote_pr.platform + '.json')
         if os.path.exists(conf_path):
             os.remove(conf_path)
         with open(conf_path, 'a') as f:
@@ -99,7 +101,7 @@ class ParseModelsManager(object):
                 os.remove(file_path + 'c')
             with open(file_path, 'a') as f:
                 f.write(ret[0])
-    
+
     @staticmethod
     def update_check(local_pr, remote_pr):
         update_list = []
