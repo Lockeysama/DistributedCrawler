@@ -12,7 +12,7 @@ class EventSite(object):
     
     EVENT_TOPIC_GROUP = ''
 
-
+    
 # EVENT_TOPIC = ''
 # if MODEL == WorkerModel.Crawler:
 #     EVENT_TOPIC = 'tddc_crawler_event'

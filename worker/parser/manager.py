@@ -8,20 +8,20 @@ Created on 2017年4月14日
 import setproctitle
 import gevent
 
-from log import TDDCLogging
-from .models_manager import ParseModelsManager
+from common import TDDCLogging
 from .parser import Parser
 from .task import ParseTaskManager
 from .storager import ParseStorager
+from base import WorkerManager
 
 
-class ParserManager(object):
+class ParserManager(WorkerManager):
     
     def __init__(self):
         TDDCLogging.info('->Client Is Starting')
+        super(ParserManager, self).__init__()
         self._storager = ParseStorager()
-        self._rules_updater = ParseModelsManager()
-        self._parser = Parser(self._rules_updater.get_parse_model)
+        self._parser = Parser()
         self._task_manager = ParseTaskManager()
         TDDCLogging.info('->Client Was Ready.')
     
@@ -34,7 +34,6 @@ class ParserManager(object):
 
 
 def main():
-    setproctitle.setproctitle("TDDC_PARSER")
     ParserManager.start()
     
 if __name__ == '__main__':

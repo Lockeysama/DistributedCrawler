@@ -7,28 +7,27 @@ Created on 2017年4月14日
 
 import multiprocessing
 import gevent.monkey
-from conf.proxy_checker_site import ProxyCheckerSite
 gevent.monkey.patch_all()
-
-from conf import Worker, BaseSite
 
 
 def main():
-    if BaseSite.WORKER == Worker.Parser:
+    import settings
+    if settings.WORKER == settings.Worker.Parser:
         from worker.parser.manager import ParserManager
         ParserManager.start()
-    elif BaseSite.WORKER == Worker.Crawler:
+    elif settings.WORKER == settings.Worker.Crawler:
         from worker.crawler.manager import CrawlerManager
         CrawlerManager.start()
-    elif BaseSite.WORKER == Worker.ProxyChecker:
+    elif settings.WORKER == settings.Worker.ProxyChecker:
         from worker.proxy_checker.manager import ProxyCheckerManager
         from worker.proxy_checker.src_proxies_updater import ProxySourceUpdater
         def update_ip_source():
             ProxySourceUpdater().start()
+        from conf.proxy_checker_site import ProxyCheckerSite
         if ProxyCheckerSite.PROXY_SOURCE_UPDATER_ENABLE:
             multiprocessing.Process(target=update_ip_source).start()
         ProxyCheckerManager.start()
-    elif BaseSite.WORKER == Worker.Monitor:
+    elif settings.WORKER == settings.Worker.Monitor:
         from worker.monitor.monitor_manager import MonitorManager
         MonitorManager.start()
 

@@ -12,8 +12,8 @@ import json
 import setproctitle
 
 from conf.default import RedisSite
-from log import TDDCLogging
-from ..base import IPPool
+from common import TDDCLogging
+from base import IPPool
 
 
 class ProxySourceUpdater(object):

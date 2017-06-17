@@ -7,8 +7,9 @@ Created on 2017年4月11日
 
 import gevent
 
-from log import TDDCLogging
+from common import TDDCLogging
 from common.queues import ParserQueues
+from .parser_moulds.models_manager import ParseModelsManager
 
 
 class Parser(object):
@@ -16,27 +17,31 @@ class Parser(object):
     classdocs
     '''
 
-    def __init__(self, get_parse_model_method=None):
+    def __init__(self):
         '''
         Constructor
         '''
         TDDCLogging.info('-->Parser Is Starting.')
-        self._get_parser_model = get_parse_model_method
+        self._rules_updater = ParseModelsManager()
         gevent.spawn(self._parse)
         gevent.sleep()
         TDDCLogging.info('-->Parser Was Ready.')
-    
+
     def _parse(self):
         while True:
             task, body = ParserQueues.WAITING_PARSE.get()
-            cls = self._get_parser_model(task.platform, task.feature)
+            cls = self._rules_updater.get_parse_model(task.platform, task.feature)
             if not cls:
                 fmt = 'Parse No Match: [P:{platform}][F:{feature}][K:{row_key}]'
                 TDDCLogging.warning(fmt.format(platform=task.platform,
                                                feature=task.feature,
                                                row_key=task.row_key))
                 continue
-            ret = cls(task, body)
+            try:
+                ret = cls(task, body)
+            except Exception, e:
+                TDDCLogging.error(e)
+                continue
             self._storage(task, ret.items)
             self._new_task_push(ret.tasks)
             fmt = 'Parse: [{platform}:{row_key}:{feature}][S:{items}][N:{tasks}]'

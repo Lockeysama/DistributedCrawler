@@ -11,8 +11,8 @@ from common.models import Task
 from common.queues_define import TASK_STATUS_REMOVE_QUEUE, EXCEPTION_TASK_QUEUE
 from conf.base_site import PARSE_TOPIC_NAME, CRAWL_TOPIC_NAME
 
-from .. import TaskManagerBase
-from log import TDDCLogging
+from base import TaskManagerBase
+from common import TDDCLogging
 
 
 class ExceptionTaskManager(TaskManagerBase):

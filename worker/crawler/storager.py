@@ -7,52 +7,19 @@ Created on 2017年4月14日
 
 import gevent
 
-from conf import CrawlerSite
 from common.queues import CrawlerQueues
-
-from . import StoragerBase
-from common.models import Task
-import json
+from base import StoragerBase
 
 
 class CrawlStorager(StoragerBase):
     '''
     classdocs
     '''
-        
-    def _push(self):
-        cnt = 0
-        platform_rows = {}
-        while True:
-            try:
-                task, rsp_info = CrawlerQueues.STORAGE.get()
-                items = {'source': rsp_info,
-                         'task': {'task': task.to_json()}}
-                if not platform_rows.get(task.platform + CrawlerSite.PLATFORM_SUFFIX):
-                    platform_rows[task.platform + CrawlerSite.PLATFORM_SUFFIX] = {}
-                platform_rows[task.platform + CrawlerSite.PLATFORM_SUFFIX][task.row_key] = items
-                cnt += 1
-                gevent.sleep(0.05)
-                if CrawlerQueues.STORAGE.qsize() or not cnt % 5:
-                    continue
-                if self._db.puts_to_hbase(platform_rows):
-                    self._pushed(platform_rows, True)
-                else:
-                    self._pushed(platform_rows, False)
-                    gevent.sleep(1)
-                platform_rows = {}
-            except Exception, e:
-                print(e)
+    
+    FAMILY = 'source'
 
-    def _pushed(self, platform_rows, success):
-        for _, rows in platform_rows.items():
-            for _, row in rows.items():
-                rsp_info = row.get('source')
-                task = Task(**json.loads(row.get('task').get('task')))
-                if success:
-                    CrawlerQueues.PARSE.put((task, rsp_info.get('rsp')[1] if rsp_info.get('rsp') else None))
-                else:
-                    CrawlerQueues.STORAGE.put((task, rsp_info))
+    def _push_success(self, task, storage_info):
+        CrawlerQueues.PARSE.put((task, storage_info.get('rsp')[1] if storage_info.get('rsp') else None))
 
 
 def main():

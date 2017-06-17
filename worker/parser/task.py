@@ -8,12 +8,12 @@ Created on 2017年4月12日
 import json
 import gevent
 
-from log import TDDCLogging
+from common import TDDCLogging
 from conf import ParserSite
 from common.queues import ParserQueues
 from common.models import Task
-from plugins import KafkaHelper
-from ..base import BloomFilter, TaskManagerBase
+from base.plugins import KafkaHelper
+from base import BloomFilter, TaskManagerBase
 
 
 class ParseTaskManager(TaskManagerBase):

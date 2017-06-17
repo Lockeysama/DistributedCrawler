@@ -5,20 +5,19 @@ Created on 2017年4月14日
 @author: chenyitao
 '''
 
-import setproctitle
 from twisted.internet import reactor
 
-from log import TDDCLogging
+from common import TDDCLogging
 
-from .exception import ExceptionCollection
 from .storager import CrawlStorager
 from .proxy_pool import CrawlProxyPool
 from .task import CrawlTaskManager
 from .crawler import Crawler
 from .cookies import CookiesManager
+from base.manager.manager import WorkerManager
 
 
-class CrawlerManager(object):
+class CrawlerManager(WorkerManager):
     '''
     classdocs
     '''
@@ -27,9 +26,8 @@ class CrawlerManager(object):
         '''
         Constructor
         '''
-        setproctitle.setproctitle("TDDC_CRAWLER")
         TDDCLogging.info('->Crawler Starting.')
-        self._exception_collection = ExceptionCollection()
+        super(CrawlerManager, self).__init__()
         self._crawler = Crawler()
         self._storager = CrawlStorager()
         self._proxy_pool = CrawlProxyPool()

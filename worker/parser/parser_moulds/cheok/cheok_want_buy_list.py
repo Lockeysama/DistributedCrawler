@@ -27,7 +27,7 @@ class CheokWantBuyList(ParseRuleBase):
 
     def _want_buy_list(self):
         if self._json_dict.get('code') != 1:
-            print('(%s)Error. Response Code:%d.' % (self.__class__, self._json_dict.get('code')))
+            print('(%s)Error. Response Code:%d.' % (self.__class__, self._json_dict.get('code', -1000)))
             return
         objs = self._json_dict.get('object')
         if objs and len(objs):

@@ -15,9 +15,9 @@ class PackageBase(QuickModelBase):
     def members():
         return dict(QuickModelBase.members(),
                     **{'platform': None,
-                       'modules': None})
+                       'packages': None})
 
     @staticmethod
     def types():
         return dict(QuickModelBase.types(),
-                    **{'modules': [ModuleBase]})
+                    **{'packages': [ModuleBase]})

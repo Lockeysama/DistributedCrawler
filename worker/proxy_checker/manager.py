@@ -11,8 +11,8 @@ import gevent
 from gevent import monkey
 monkey.patch_all()
 
-from log import TDDCLogging
-from .rules_updater import ProxyCheckerRulesUpdater
+from common import TDDCLogging
+# from .rules_updater import ProxyCheckerRulesUpdater
 from .event import ProxyMQManager
 from .proxy import ProxyManager
 from .checker import Checker
@@ -30,7 +30,7 @@ class ProxyCheckerManager(object):
         setproctitle.setproctitle("TDDC_PROXY_CHECKER")
         TDDCLogging.info('->Client Is Starting')
         self._checker = Checker()
-        self._rules_updater = ProxyCheckerRulesUpdater()
+#         self._rules_updater = ProxyCheckerRulesUpdater()
         self._proxy_mq_manager = ProxyMQManager()
         self._proxy_manager = ProxyManager()
         TDDCLogging.info('->Client Was Ready.')

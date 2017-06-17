@@ -7,11 +7,10 @@ Created on 2017年4月12日
 
 import gevent
 
-from log import TDDCLogging
 from conf import ParserSite
 from common.queues import ParserQueues
-from common import singleton
-from . import StoragerBase
+from common import singleton, TDDCLogging
+from base import StoragerBase
 
 
 @singleton
@@ -20,21 +19,9 @@ class ParseStorager(StoragerBase):
     classdocs
     '''
     
-    @staticmethod
-    def push(task, items):
-        ParserQueues.STORAGE.put((task, items))
-        
-    def _push(self):
-        while True:
-            task, items = ParserQueues.STORAGE.get()
-            storage_items = {'valuable': items,
-                             'task': {'task': task.to_json()}}
-            if not self._db.put_to_hbase(task.platform + ParserSite.PLATFORM_SUFFIX, 
-                                         task.row_key,
-                                         storage_items):
-                ParserQueues.STORAGE.put((task, items))
-                gevent.sleep(1)
+    FAMILY = 'valuable'
 
+    @staticmethod
     def pull(self, task):
         ParserQueues.PARSE.put(task)
 

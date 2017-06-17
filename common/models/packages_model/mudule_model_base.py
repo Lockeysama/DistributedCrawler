@@ -14,6 +14,6 @@ class ModuleBase(QuickModelBase):
     def members():
         return dict(QuickModelBase.members(),
                     **{'package': None,
-                       'modules': None,
+                       'moulds': None,
                        'version': None,
                        'md5': None})

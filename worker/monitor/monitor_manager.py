@@ -5,7 +5,7 @@ Created on 2017年5月17日
 @author: chenyitao
 '''
 
-from log import TDDCLogging
+from common import TDDCLogging
 from worker.monitor.exception.exception_manager import ExceptionManager
 from worker.monitor.status.status_manager import StatusManager
 import gevent

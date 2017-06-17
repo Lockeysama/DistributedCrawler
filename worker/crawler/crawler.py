@@ -17,9 +17,9 @@ crawler_process.join()
 
 from conf import CrawlerSite
 from common.queues import CrawlerQueues
-from log import TDDCLogging
+from common import TDDCLogging
 
-from worker.crawler.event import CrawlerEventCenter
+from base import EventCenter
 from .Scrapy import SingleSpider
 
 
@@ -39,7 +39,7 @@ class Crawler(object):
                               SingleSpider.SIGNAL_STORAGE: self._storage}
         self._process = crawler_process
         self._process.crawl(SingleSpider, callback=self._spider_signals)
-        CrawlerEventCenter().register(EventType.Crawler.MODULE, self._rule_update)
+        EventCenter().register(EventType.Crawler.MODULE, self._rule_update)
         
     def _rule_update(self, event):
         print(event.__dict__)

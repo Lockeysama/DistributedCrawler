@@ -10,7 +10,7 @@ import json
 import time
 
 from conf.base_site import TASK_STATUS_HSET, REDIS_NODES
-from log import TDDCLogging
+from common import TDDCLogging
 from common.models.task import Task
 from common.queues_define import EXCEPTION_TASK_QUEUE
 from plugins import RedisClient

@@ -5,11 +5,13 @@ Created on 2017年4月12日
 @author: chenyitao
 '''
 
-from enum import Enum
-
+import uuid
+from settings import Worker, WORKER
 from .default import *
 
-Worker = Enum('Worker', ('Crawler', 'Parser', 'ProxyChecker', 'Monitor'))
+def get_mac_address(): 
+    mac=uuid.UUID(int = uuid.getnode()).hex[-12:] 
+    return ":".join([mac[e:e+2] for e in range(0,11,2)])
 
 class BaseSite(CookiesSite,
                EventSite,
@@ -31,9 +33,14 @@ class BaseSite(CookiesSite,
     PLATFORM_SUFFIX = '_test' if TEST else ''
    
     PLATFORM_CONF_TABLE = 'tddc_platform_conf_table' 
-   
-    # Current Worker
-    WORKER = Worker.Crawler
-#     WORKER = Worker.Parser
-#     WORKER = Worker.ProxyChecker
-#     WORKER = Worker.Monitor
+
+    # Proxy Checker Event Topic Info
+    _EVENT_TOPICS = {Worker.Crawler: 'tddc_c_event',
+                     Worker.Parser: 'tddc_p_event',
+                     Worker.ProxyChecker: 'tddc_pc_event',
+                     Worker.CookiesGenerator: 'tddc_cc_event',
+                     Worker.Monitor: 'tddc_m_event',}
+    
+    EVENT_TOPIC = _EVENT_TOPICS[WORKER]
+    EVENT_TOPIC_GROUP = 'tddc.pc.{mac}.{id}'.format(mac=get_mac_address(),
+                                                    id=CLIENT_ID) 

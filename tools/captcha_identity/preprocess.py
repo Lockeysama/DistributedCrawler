@@ -107,11 +107,7 @@ class CaptchaIdentity(object):
 # 判断像素点是黑点还是白点
 def getflag(img, x, y):
     tmp_pixel = img.getpixel((x, y))
-    if tmp_pixel > 228:  # 白点
-        tmp_pixel = 0
-    else:  # 黑点
-        tmp_pixel = 1
-    return tmp_pixel
+    return 0 if tmp_pixel > 288 else 1
 
 
 # 黑点个数
@@ -123,42 +119,35 @@ def sum_9_region(img, x, y):
     if flag == 0:
         return 0
     # 如果是黑点
+    total = None
     if y == 0:  # 第一行
         if x == 0:  # 左上顶点,4邻域
             # 中心点旁边3个点
             total = getflag(img, x, y + 1) + getflag(img, x + 1, y) + getflag(img, x + 1, y + 1)
-            return total
         elif x == width - 1:  # 右上顶点
             total = getflag(img, x, y + 1) + getflag(img, x - 1, y) + getflag(img, x - 1, y + 1)
-            return total
         else:  # 最上非顶点,6邻域
             total = getflag(img, x - 1, y) + getflag(img, x - 1, y + 1) + getflag(img, x, y + 1) \
                     + getflag(img, x + 1, y) \
                     + getflag(img, x + 1, y + 1)
-            return total
     elif y == height - 1:  # 最下面一行
         if x == 0:  # 左下顶点
             # 中心点旁边3个点
             total = getflag(img, x + 1, y) + getflag(img, x + 1, y - 1) + getflag(img, x, y - 1)
-            return total
         elif x == width - 1:  # 右下顶点
             total = getflag(img, x, y - 1) + getflag(img, x - 1, y) + getflag(img, x - 1, y - 1)
-            return total
         else:  # 最下非顶点,6邻域
             total = getflag(img, x - 1, y) + getflag(img, x + 1, y) + getflag(img, x, y - 1) + getflag(img, x - 1, y - 1) + getflag(img, x + 1, y - 1)
-            return total
     else:  # y不在边界
         if x == 0:  # 左边非顶点
             total = getflag(img, x, y - 1) + getflag(img, x, y + 1) + getflag(img, x + 1, y - 1) + getflag(img, x + 1, y) + getflag(img, x + 1, y + 1)
-            return total
         elif x == width - 1:  # 右边非顶点
             total = getflag(img, x, y - 1) + getflag(img, x, y + 1) + getflag(img, x - 1, y - 1) + getflag(img, x - 1, y) + getflag(img, x - 1, y + 1)
-            return total
         else:  # 具备9领域条件的
             total = getflag(img, x - 1, y - 1) + getflag(img, x - 1, y) + getflag(img, x - 1, y + 1) + getflag(img, x, y - 1) \
                     + getflag(img, x, y + 1) + getflag(img, x + 1, y - 1) + getflag(img, x + 1, y) + getflag(img, x + 1, y + 1)
-            return total
-
+    return total
+    
 
 def to36(n):
     loop = '0123456789abcdefghijklmnopqrstuvwxyz'
@@ -268,7 +257,7 @@ def train_svm_model(filename):
     svm_save_model("svm_model_file", model)
  
  
-# 使用测试集测试模型
+# 使用测{"platform": "cheok", "url": "http://www.cheok.com/car/cp_1", "row_key": "f28c6a2d65105fddb08b9500df1db7ef", "feature": "cheok.homepage",  "headers": {"Referer": "http://www.cheok.com"}}试集测试模型
 def svm_model_test(filename):
     yt, xt = svm_read_problem(filename)
     model = svm_load_model("svm_model_file")
@@ -292,7 +281,7 @@ def split_img():
     cnt = 1
     while cnt < 101:
         pic = Image.open('./captchas/%d.jpeg' % cnt)
-        pic = to_grey(pic)
+        pic = CaptchaIdentity.to_grey(pic)
         pic.save('./captchas/new/%d.jpeg' % cnt)
         pic = Image.open('./captchas/new/%d.jpeg' % cnt)
         newpic = greyimg(pic)
@@ -322,8 +311,8 @@ def main():
                 correct += 1
             os.rename(path + f, path + predict + '.jpeg')
     print(correct / 100.0)
-            
-    
+
+
 #     cnt = 1
 #     while cnt < 101:
 #         for i in range(4):

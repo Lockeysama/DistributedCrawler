@@ -11,9 +11,9 @@ import random
 from conf import CrawlerSite
 from common.queues import CrawlerQueues
 
-from log import TDDCLogging
-from . import IPPool
-from worker.base.proxy.ip_cooling_pool import IPCoolingPoll
+from common import TDDCLogging
+from .proxy.ip_pool import IPPool
+from .proxy.ip_cooling_pool import IPCoolingPoll
 
 
 class CrawlProxyPool(object):

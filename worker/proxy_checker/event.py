@@ -5,7 +5,7 @@ Created on 2017年4月20日
 @author: chenyitao
 '''
 
-from ..base import TaskManagerBase
+from base import TaskManagerBase
 from conf import ProxyCheckerSite
 
 

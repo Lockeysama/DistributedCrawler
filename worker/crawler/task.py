@@ -11,10 +11,10 @@ import gevent
 from conf import CrawlerSite
 from common.models import Task
 from common.queues import CrawlerQueues
-from log import TDDCLogging
+from common import TDDCLogging
 
-from . import TaskManagerBase
-from plugins import KafkaHelper
+from base import TaskManagerBase
+from base.plugins import KafkaHelper
 
 
 class CrawlTaskManager(TaskManagerBase):

@@ -8,7 +8,7 @@ Created on 2017年4月12日
 import gevent
 
 from conf import ProxyCheckerSite
-from ..base import RulesUpdater
+from base import RulesUpdater
 
 
 class ProxyCheckerRulesUpdater(RulesUpdater):

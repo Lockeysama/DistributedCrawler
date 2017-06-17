@@ -15,7 +15,7 @@ from scrapy.http import Request, FormRequest
 import twisted.internet.error as internet_err
 import twisted.web._newclient as newclient_err
 
-from log import TDDCLogging
+from common import TDDCLogging
 from common.queues import CrawlerQueues
 from common.models import TDDCException, TDDCExceptionType
 from worker.crawler.cookies import CookiesManager
@@ -144,6 +144,7 @@ class SingleSpider(scrapy.Spider):
         self.add_task(task, True, times)
 
     def parse(self, response):
+        TDDCLogging.debug('Download Success. ' + response.url)
         task,_ = response.request.meta.get('item')
         rsp_info = {'rsp': [response.url, response.status],
                     'content': response.body}
