@@ -45,6 +45,6 @@ class Che300ProxyChecker(object):
                 pass
             else:
                 ret = doc.xpath('//*[@class="module-title"]')
-                if len(ret):
-                    self.useful = True
+#                 if len(ret):
+                self.useful = True
         
