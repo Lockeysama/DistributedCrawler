@@ -5,13 +5,12 @@ Created on 2017年4月17日
 @author: chenyitao
 '''
 
+from settings import CLIENT_ID
 from .base_site import BaseSite
 from common import get_mac_address
 
 
 class ProxyCheckerSite(BaseSite):
-
-    CLIENT_ID = 1
 
     # Is Proxy Source Process Start.
     PROXY_SOURCE_UPDATER_ENABLE = True
@@ -34,7 +33,7 @@ class ProxyCheckerSite(BaseSite):
     TOPIC_GROUP = 'tddc.pc.parser'
     
     # Proxy Checker Concurrent
-    CONCURRENT = 16
+    CONCURRENT = 32
     
     # Source Proxy Set Key
     HTTP_SOURCE_PROXY_SET_KEY = 'tddc:test:proxy:ip_src:http'

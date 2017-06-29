@@ -5,7 +5,7 @@ Created on 2017年5月24日
 @author: chenyitao
 '''
 
-from common.models.packages_model.package_model_base import QuickModelBase
+from common.models.packages_model.package_model import QuickModelBase
 
 
 class RequestHeadersModels(QuickModelBase):

@@ -94,8 +94,9 @@ class ParseTaskManager(TaskManagerBase):
     def _task_status_update(self):
         while True:
             task = ParserQueues.TASK_STATUS.get()
-            TDDCLogging.debug('[%s:%s] Parsed Successed.' % (task.platform,
-                                                             task.url))
+            TDDCLogging.debug('[{}:{}:{}]'.format(task.platform,
+                                                  task.url,
+                                                  task.status))
             self._successed_num += 1
             self._successed_pre_min += 1
 

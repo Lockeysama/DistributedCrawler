@@ -30,4 +30,4 @@ class CustomUserAgent(UserAgentMiddleware):
     def process_request(self, request, spider):
         user_agent = self._user_agent(spider)
         if user_agent:
-            request.headers.setdefault('User-Agent', user_agent)
+            request.headers['User-Agent'] = user_agent

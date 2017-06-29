@@ -38,7 +38,7 @@ class Checker(object):
     def _init_rules(self):
         base_path = ProxyCheckerSite.RULES_CONF_PATH_BASE
         self._rules_moulds = {'http': {}, 'https': {}}
-        indexs = os.listdir(base_path)
+        indexs = [conf_file for conf_file in os.listdir(base_path) if conf_file[-5:] == '.json']
         for index in indexs:
             path = base_path + index
             with open(path, 'r') as f:

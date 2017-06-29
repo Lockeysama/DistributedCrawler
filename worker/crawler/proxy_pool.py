@@ -12,8 +12,8 @@ from conf import CrawlerSite
 from common.queues import CrawlerQueues
 
 from common import TDDCLogging
-from .proxy.ip_pool import IPPool
-from .proxy.ip_cooling_pool import IPCoolingPoll
+from base import IPPool
+from base import IPCoolingPoll
 
 
 class CrawlProxyPool(object):

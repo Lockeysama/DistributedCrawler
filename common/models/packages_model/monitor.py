@@ -5,12 +5,7 @@ Created on 2017年5月24日
 @author: chenyitao
 '''
 
-from .package_model_base import PackageBase, QuickModelBase
-
-
-class MonitorExceptionProcessModels(PackageBase):
-
-    pass
+from common.models.packages_model.package_model import QuickModelBase
 
 
 class MonitorEMailModels(QuickModelBase):

@@ -5,7 +5,7 @@ Created on 2017年5月26日
 @author: chenyitao
 '''
 
-from common.models.packages_model.package_model_base import PackageBase
+from common.models.packages_model.package_model import PackageBase
 from common.models.packages_model.mudule_model_base import ModuleBase
 from common.models.packages_model.cookies import CookiesGeneratorModels
 from common.models.packages_model.crawler import CrawlerModels

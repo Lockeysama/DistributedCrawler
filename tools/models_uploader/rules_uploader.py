@@ -10,7 +10,7 @@ import os
 import hashlib
 import json
 import re
-from plugins import DBManager
+from base.plugins import DBManager
 from conf.default.hbase_site import HBaseSite
 
 
@@ -18,6 +18,8 @@ class RuleUploader(object):
     '''
     classdocs
     '''
+    
+    conf_path = ''
 
     path_base = ''
 
@@ -45,7 +47,7 @@ class RuleUploader(object):
         return False
 
     def _generator_mould_info(self):
-        packages_info = {'platform': None, 'models': []}
+        packages_info = {'platform': None, 'packages': []}
         for path in self._packages:
             model_info = {'moulds': []}
             packages_info['platform'], filename = path.split('/')
@@ -61,7 +63,7 @@ class RuleUploader(object):
                 _md5 = hashlib.md5()
                 _md5.update(content)
                 model_info['md5'] = _md5.hexdigest()
-            packages_info['models'].append(model_info)
+            packages_info['packages'].append(model_info)
         return packages_info
 
     def _uploader(self, packages_info, method='ADD'):  # REPLACE_ALL
@@ -70,14 +72,20 @@ class RuleUploader(object):
         self._storager.put_to_hbase(self.hbase_table,
                                     platform,
                                     items)
-        for path, package in zip(self._packages, packages_info['models']):
+        for path, package in zip(self._packages, packages_info['packages']):
             with open(self.path_base + path, 'r') as f:
                 content = f.read()
             items = {'models': {package['package']: content}}
             self._storager.put_to_hbase(self.hbase_table,
                                         packages_info['platform'],
                                         items)
+        self._save_conf(packages_info)
         print('Done')
+
+    def _save_conf(self, packages_info):
+        platform = packages_info['platform']
+        with open(self.conf_path + platform + '.json', 'w') as f:
+            f.write(json.dumps(packages_info))
 
 
 class ProxyRuleUploader(RuleUploader):
@@ -89,6 +97,8 @@ class ProxyRuleUploader(RuleUploader):
 
 class ParserModulesUploader(RuleUploader):
     
+    conf_path = '/Users/chenyitao/git/tuodao/tddc/conf/parse_rule_index/'
+    
     path_base = '/Users/chenyitao/git/tuodao/tddc/worker/parser/parser_moulds/'
     
     hbase_table = 'tddc_platform_conf_table'
@@ -96,9 +106,12 @@ class ParserModulesUploader(RuleUploader):
 
 def main():
     paths = []
-    paths.append('cheok/cheok_homepage.py')
-    paths.append('cheok/cheok_want_buy_list.py')
-    paths.append('cheok/cheok_want_buy_detail.py')
+#     paths.append('cheok/cheok_homepage.py')
+#     paths.append('cheok/cheok_want_buy_list.py')
+#     paths.append('cheok/cheok_want_buy_detail.py')
+    paths.append('weidai/show_bid_list.py')
+    paths.append('weidai/bid_detail.py')
+    paths.append('weidai/bid_detail_extra.py')
     ParserModulesUploader(paths)
     while True:
         time.sleep(60)

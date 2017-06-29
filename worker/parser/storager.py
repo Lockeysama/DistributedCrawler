@@ -9,17 +9,25 @@ import gevent
 
 from conf import ParserSite
 from common.queues import ParserQueues
-from common import singleton, TDDCLogging
+from common import TDDCLogging
 from base import StoragerBase
 
 
-@singleton
 class ParseStorager(StoragerBase):
     '''
     classdocs
     '''
     
     FAMILY = 'valuable'
+    
+    _shared_state={}
+    def __new__(cls,*args,**kwargs):
+        obj=super(ParseStorager,cls).__new__(cls,*args,**kwargs)
+        obj.__dict__=cls._shared_state
+        return obj
+
+    def __init__(self):
+        super(ParseStorager, self).__init__(True, True)
 
     @staticmethod
     def pull(self, task):

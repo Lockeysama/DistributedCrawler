@@ -6,7 +6,7 @@ Created on 2017年4月12日
 '''
 
 import uuid
-from settings import Worker, WORKER
+from settings import Worker, WORKER, TEST, CLIENT_ID
 from .default import *
 
 def get_mac_address(): 
@@ -22,12 +22,6 @@ class BaseSite(CookiesSite,
                RedisSite,
                TaskSite,
                ZookeeperSite):
-
-    # Test
-    TEST = True
-
-    # Client ID
-    CLIENT_ID = 1
 
     # Platform Suffix
     PLATFORM_SUFFIX = '_test' if TEST else ''

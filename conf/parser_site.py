@@ -6,12 +6,11 @@ Created on 2017年4月12日
 '''
 
 from common import get_mac_address
-from .base_site import BaseSite
+from settings import CLIENT_ID
+from conf import BaseSite
 
 
 class ParserSite(BaseSite):
-    # Parser ID
-    CLIENT_ID = 1
     
     # Parse Rules HBase Table Info
     RULES_TABLE = 'tddc_p_rules'

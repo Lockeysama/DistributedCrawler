@@ -86,7 +86,8 @@ class DBManager(object):
                 for column, value in data.items():
                     if isinstance(value, dict) or isinstance(value, list):
                         value = json.dumps(value)
-                    values[cf_fmt + column] = value
+                    values[cf_fmt + column] = (value if not isinstance(value, int) and
+                                               not isinstance(value, float) else unicode(value))
                 batch.put(row_key, values)
  
     def put_to_hbase(self, table, row_key, items):

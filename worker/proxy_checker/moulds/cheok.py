@@ -47,36 +47,3 @@ class CheokProxyChecker(object):
                 ret = doc.xpath('//*[@class="module-title"]')
                 if len(ret):
                     self.useful = True
-        
-
-def main():
-    import csv
-    import Queue
-    import gevent.monkey
-    gevent.monkey.patch_all()
-    from worker.proxy_checker.models.IPInfo import IPInfo
-    
-    ips = Queue.Queue()
-    csvfile = file('results.csv', 'rb')
-    reader = csv.reader(csvfile)
-    for line in reader:
-        print(line)
-        ips.put(IPInfo(line[0]+':8080'))
-    
-    def test():
-        while True:
-            ip = ips.get()
-            ret = CheokProxyChecker(ip)
-            if ret.useful:
-                print(ip.ip_port)
-#                 print(ret.useful)
-    for _ in range(16):
-        gevent.spawn(test)
-        gevent.sleep()
-        
-    while True:
-        gevent.sleep(10)
-    
-    
-if __name__ == '__main__':
-    main()

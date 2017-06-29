@@ -9,7 +9,7 @@ import gevent
 
 from common import TDDCLogging
 from common.queues import ParserQueues
-from .parser_moulds.models_manager import ParseModelsManager
+from .parser_moulds.manager import ParsePackagesManager
 
 
 class Parser(object):
@@ -22,7 +22,7 @@ class Parser(object):
         Constructor
         '''
         TDDCLogging.info('-->Parser Is Starting.')
-        self._rules_updater = ParseModelsManager()
+        self._rules_updater = ParsePackagesManager()
         gevent.spawn(self._parse)
         gevent.sleep()
         TDDCLogging.info('-->Parser Was Ready.')
@@ -44,7 +44,7 @@ class Parser(object):
                 continue
             self._storage(task, ret.items)
             self._new_task_push(ret.tasks)
-            fmt = 'Parse: [{platform}:{row_key}:{feature}][S:{items}][N:{tasks}]'
+            fmt = 'Parsed: [{platform}:{row_key}:{feature}][S:{items}][N:{tasks}]'
             TDDCLogging.info(fmt.format(platform=task.platform,
                                         feature=task.feature,
                                         row_key=task.row_key,

@@ -1,1 +1,29 @@
-{"packages": [{"moulds": ["CheokHomepage"], "version": "1495799999", "md5": "2c685d85b9a4640d54a88c7b39b17b1e", "package": "cheok_homepage"}, {"moulds": ["CheokWantBuyList"], "version": "1495782034", "md5": "9ab057e239be2062cb57c7d1fff911ce", "package": "cheok_want_buy_list"}, {"moulds": ["CheokWantBuyDetail"], "version": "1495782034", "md5": "317ce8786612c752aa6cc90d26497b08", "package": "cheok_want_buy_detail"}], "platform": "cheok"}
+{
+ "platform": "cheok", 
+ "packages": [
+  {
+   "moulds": [
+    "CheokHomepage"
+   ], 
+   "version": "1495799999", 
+   "package": "cheok_homepage", 
+   "md5": "e85b176f0ebba31d4233ded3bd591218"
+  }, 
+  {
+   "moulds": [
+    "CheokWantBuyList"
+   ], 
+   "version": "1495799999", 
+   "package": "cheok_want_buy_list", 
+   "md5": "133e52c859aab6e5181ff37b3473dca2"
+  }, 
+  {
+   "moulds": [
+    "CheokWantBuyDetail"
+   ], 
+   "version": "1495799999", 
+   "package": "cheok_want_buy_detail", 
+   "md5": "4f2c379023cfb2f02026821a996dadcb"
+  }
+ ]
+}

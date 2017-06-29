@@ -1,70 +1,81 @@
 # -*- coding: utf-8 -*-
 '''
-Created on 2017年4月12日
+Created on 2017年4月20日
 
 @author: chenyitao
 '''
 
-import os
-import json
-import gevent
 import importlib
+import json
+import os
 
-from conf import ParserSite
-from common.models import EventType, ParserModels
+from ..event.event import EventCenter
+from ..storage.storager_base import StoragerBase
 from common import TDDCLogging
-from base import EventCenter
-from worker.parser.storager import ParseStorager
+from common.models import PackageModel
+from conf import ParserSite
 
 
-class ParseModelsManager(object):
+class FetchServer(StoragerBase):
+    
+    def __init__(self):
+        TDDCLogging.info('>Fetch Event Info.<')
+        super(FetchServer, self).__init__(push=False)
+        TDDCLogging.info('>Fetch Event Info.<')
+
+
+class PackagesManager(object):
     '''
     classdocs
     '''
 
-    local_conf_path_base = './conf/parse_rule_index/'
+    EVENT_TYPE = None
+
+    CONF_PATH = None
+    
+    PACKAGE_PATH = None
 
     def __init__(self):
         '''
         Constructor
         '''
-        TDDCLogging.info('--->Parser Models Manager Is Starting.')
+        TDDCLogging.info('--->Models Manager Is Starting.')
         self._rules_moulds = {}
         self._load_local_models()
-        EventCenter().register(EventType.Parser.MODULE,
+        EventCenter().register(self.EVENT_TYPE,
                                self._models_update_event)
-        TDDCLogging.info('--->Parser Models Manager Was Ready.')
+        TDDCLogging.info('--->Models Manager Was Ready.')
 
     def _load_local_models(self):
         self._rules_moulds = {}
-        indexs = os.listdir(self.local_conf_path_base)
+        indexs = [conf for conf in os.listdir(self.CONF_PATH) if conf[-5:] == '.json']
         for index in indexs:
-            path = self.local_conf_path_base + index
+            path = self.CONF_PATH + index
             with open(path, 'r') as f:
-                pr = ParserModels(**json.loads(f.read()))
+                pr = PackageModel(**json.loads(f.read()))
             for model_info in pr.packages:
                 self._load_moulds(pr.platform, model_info)
 
     def _models_update_event(self, event):
-        successe, ret = ParseStorager().pull_once(event.table,
-                                                  event.platform,
-                                                  'models',
-                                                  'index')
+        successe, ret = FetchServer().pull_once(event.table,
+                                                event.platform,
+                                                'models',
+                                                'index')
         if not successe:
             return
         self._update(event, ret[0])
 
-    @staticmethod
-    def get_local_conf(platform):
-        _conf_path = ParseModelsManager.local_conf_path_base + platform + '.json'
+    @classmethod
+    def get_local_conf(cls, platform):
+        _conf_path = cls.CONF_PATH + platform + '.json'
         if os.path.exists(_conf_path):
             with open(_conf_path, 'r') as f:
                 return json.loads(f.read())
         return {}
 
-    @staticmethod
-    def save_local_conf(remote_pr):
-        conf_path = (ParseModelsManager.local_conf_path_base 
+    @classmethod
+    def save_local_conf(cls, remote_pr):
+        conf_path = (cls.CONF_PATH 
                      + remote_pr.platform + '.json')
         if os.path.exists(conf_path):
             os.remove(conf_path)
@@ -84,14 +95,14 @@ class ParseModelsManager(object):
 
     def _download_moulds(self, platform, update_list):
         for model_info in update_list:
-            success, ret = ParseStorager().pull_once(ParserSite.PLATFORM_CONF_TABLE,
-                                                     platform,
-                                                     'models',
-                                                     model_info.package)
+            success, ret = FetchServer().pull_once(ParserSite.PLATFORM_CONF_TABLE,
+                                                   platform,
+                                                   'models',
+                                                   model_info.package)
             if not success or not ret:
                 print('Rules Fetch Exception.')
             self.create_package(platform)
-            file_path = ('./worker/parser/parser_moulds/' 
+            file_path = (self.PACKAGE_PATH  # './worker/parser/parser_moulds/' 
                          + platform + '/' 
                          + model_info.package + '.py')
             if os.path.exists(file_path):
@@ -104,16 +115,20 @@ class ParseModelsManager(object):
     @staticmethod
     def update_check(local_pr, remote_pr):
         update_list = []
-        for remote_model_info in remote_pr.moulds:
-            for local_model_info in local_pr.moulds:
-                if (remote_model_info.package == local_model_info.package and 
-                    int(remote_model_info.version) > int(local_model_info.version)):
-                    update_list.append(remote_model_info)
+        for remote_package_info in remote_pr.packages:
+            if not local_pr:
+                update_list.append(remote_package_info)
+                continue
+            for local_package_info in local_pr.packages:
+                if (remote_package_info.package == local_package_info.package and 
+                    int(remote_package_info.version) > int(local_package_info.version)):
+                    update_list.append(remote_package_info)
         return update_list
 
     def _update(self, event, models_info):
-        remote_pr = ParserModels(**json.loads(models_info))
-        local_pr = ParserModels(**self.get_local_conf(remote_pr.platform))
+        remote_pr = PackageModel(**json.loads(models_info))
+        local_conf_info = self.get_local_conf(remote_pr.platform)
+        local_pr = PackageModel(**local_conf_info) if local_conf_info else None
         update_list = self.update_check(local_pr, remote_pr)
         if not len(update_list):
             return
@@ -152,11 +167,3 @@ class ParseModelsManager(object):
             return None
         return models.get(feature)
 
-
-def main():
-    ParseModelsManager()
-    while True:
-        gevent.sleep()
-
-if __name__ == '__main__':
-    main()

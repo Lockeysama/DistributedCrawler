@@ -5,15 +5,16 @@ Created on 2017年5月8日
 @author: chenyitao
 '''
 
-import gevent
 import json
 
+import gevent
+
 from common import TDDCLogging
+from common.models import Task
+from common.queues import PublicQueues
 from conf import BaseSite
 
 from ..plugins import DBManager
-from common.queues import PublicQueues
-from common.models import Task
 
 
 class StoragerBase(object):
@@ -23,16 +24,18 @@ class StoragerBase(object):
 
     FAMILY = ''
 
-    def __init__(self):
+    def __init__(self, push=True, pull=False):
         '''
         Constructor
         '''
         TDDCLogging.info('-->Storager Manager Is Starting.')
         self._db = DBManager(BaseSite.random_hbase_node())
-        gevent.spawn(self._push)
-        gevent.sleep()
-        gevent.spawn(self._pull)
-        gevent.sleep()
+        if push:
+            gevent.spawn(self._push)
+            gevent.sleep()
+        if pull:
+            gevent.spawn(self._pull)
+            gevent.sleep()
         TDDCLogging.info('-->Storager Manager Was Ready.')
 
     def push_onec(self, table, row_key, family, qualifier, content):

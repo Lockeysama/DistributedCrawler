@@ -50,12 +50,15 @@ class EventType(object):
 class EventBase(QuickModelBase):
 
     event_type = EventType.NONE
-    
-    default_values = {'id': None,
-                      'timestamp': None,
-                      'table': None,
-                      'platform': None,
-                      'method': None}
+
+    @staticmethod
+    def members():
+        return dict(QuickModelBase.members(),
+                    **{'id': None,
+                       'timestamp': None,
+                       'table': None,
+                       'platform': None,
+                       'method': None})
 
 
 def main():

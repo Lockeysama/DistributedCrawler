@@ -46,7 +46,7 @@ class Crawler(object):
         
     def _get_spider_mqs_size(self):
         return len(self._spider_mqs) if self._spider_mqs else 0
-    
+
     def _task_dispatch(self):
         while True:
             if self._get_spider_mqs_size() < CrawlerSite.CONCURRENT / 4:

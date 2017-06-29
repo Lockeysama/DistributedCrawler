@@ -7,16 +7,22 @@ Created on 2017年6月15日
 
 from enum import Enum
 
+
+# Test
+TEST = True
+
+# Client ID
+CLIENT_ID = 1
+
 Worker = Enum('Worker', ('Crawler',
                          'Parser',
                          'ProxyChecker',
                          'CookiesGenerator',
                          'Monitor'))
 
-
 # Current Worker
 # WORKER = Worker.Crawler
-# WORKER = Worker.Parser
-WORKER = Worker.ProxyChecker
+WORKER = Worker.Parser
+# WORKER = Worker.ProxyChecker
 # WORKER = Worker.CookiesGenerator
 # WORKER = Worker.Monitor

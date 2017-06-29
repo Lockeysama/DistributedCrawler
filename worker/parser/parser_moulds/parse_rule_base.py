@@ -31,6 +31,7 @@ class ParseRuleBase(object):
         '''
         self.platform
         self._task = task
+        self._body = body
         self._body_type = None
         self.items = dict()
         self.tasks = list()

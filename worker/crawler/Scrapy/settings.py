@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 from conf import CrawlerSite
-# import scrapy.settings.default_settings
 
 BOT_NAME = 'Scrapy'
 
@@ -32,14 +31,15 @@ DEFAULT_REQUEST_HEADERS = {
     'Accept-Encoding': 'gzip, deflate, sdch',
     'Accept-Language': 'zh-CN,zh;q=0.8,en;q=0.6',
     'Upgrade-Insecure-Requests': 1,
-    'DNT': 1
+    'DNT': 1,
+    'Cache-Control': 'max-age=0'
 }
 
 REACTOR_THREADPOOL_MAXSIZE = 20
 
 CONCURRENT_REQUESTS = CrawlerSite.CONCURRENT
 
-CONCURRENT_REQUESTS_PER_DOMAIN = 16
+CONCURRENT_REQUESTS_PER_DOMAIN = 32
 
 CONCURRENT_ITEMS = 0
 
@@ -50,6 +50,10 @@ DOWNLOAD_TIMEOUT = 15
 COOKIES_ENABLED = False
 
 RETRY_ENABLED = False
+
+ROBOTSTXT_OBEY = False
+
+HTTPCACHE_ENABLED = False
 
 DOWNLOADER_MIDDLEWARES = {
     'worker.crawler.Scrapy.contrib.user_agent.CustomUserAgent': 500,

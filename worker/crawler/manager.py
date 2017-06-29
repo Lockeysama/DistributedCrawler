@@ -7,14 +7,14 @@ Created on 2017年4月14日
 
 from twisted.internet import reactor
 
+from base.manager.manager import WorkerManager
 from common import TDDCLogging
 
-from .storager import CrawlStorager
-from .proxy_pool import CrawlProxyPool
-from .task import CrawlTaskManager
-from .crawler import Crawler
 from .cookies import CookiesManager
-from base.manager.manager import WorkerManager
+from .crawler import Crawler
+from .proxy_pool import CrawlProxyPool
+from .storager import CrawlStorager
+from .task import CrawlTaskManager
 
 
 class CrawlerManager(WorkerManager):

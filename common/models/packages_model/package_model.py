@@ -6,10 +6,20 @@ Created on 2017年5月24日
 '''
 
 from ..model_base import QuickModelBase
-from .mudule_model_base import ModuleBase
 
 
-class PackageBase(QuickModelBase):
+class ModuleModel(QuickModelBase):
+
+    @staticmethod
+    def members():
+        return dict(QuickModelBase.members(),
+                    **{'package': None,
+                       'moulds': None,
+                       'version': None,
+                       'md5': None})
+
+
+class PackageModel(QuickModelBase):
 
     @staticmethod
     def members():
@@ -20,4 +30,4 @@ class PackageBase(QuickModelBase):
     @staticmethod
     def types():
         return dict(QuickModelBase.types(),
-                    **{'packages': [ModuleBase]})
+                    **{'packages': [ModuleModel]})

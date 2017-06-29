@@ -96,3 +96,17 @@ class EventCenter(object):
                 callback(event)
             else:
                 TDDCLogging.warning('Event Exception: %d Not Register.' % event.event_type)
+
+    def _consume_msg_exp(self, exp_type, info, exception=None):
+        if 'JSON_ERR' in exp_type:
+            TDDCLogging.error('*'*5+exp_type+'*'*5+
+                              '\nException: '+info+'\n'+
+                              exception.message+'\n'+
+                              '*'*(10+len(exp_type))+'\n')
+        elif 'TASK_ERR' in exp_type or 'EVENT_ERR' in exp_type:
+            TDDCLogging.error('*'*5+exp_type+'*'*5+
+                              '\nException: '+
+                              'item={item}\n'.format(item=info)+
+                              'item_type={item_type}\n'.format(item_type=type(info))+
+                              '*'*(10+len(exp_type))+'\n')
+                
