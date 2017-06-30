@@ -17,8 +17,8 @@ import twisted.web._newclient as newclient_err
 
 from common import TDDCLogging
 from common.queues import CrawlerQueues
-from common.models import TDDCException, TDDCExceptionType
 from worker.crawler.cookies import CookiesManager
+from common.models.exception.crawler import CrawlerTaskFailedException
 
 class SingleSpider(scrapy.Spider):
     '''
@@ -106,9 +106,7 @@ class SingleSpider(scrapy.Spider):
             elif status == 404:
                 retry_times = task.retry if task.retry else 3
                 if times >= retry_times:
-                    exception = TDDCException(name='Crawl Task 404',
-                                              e_type=TDDCExceptionType.CrawlerTask404,
-                                              detail=task.to_json())
+                    exception = CrawlerTaskFailedException(task)
                     CrawlerQueues.EXCEPTION.put(exception)
                     CrawlerQueues.TASK_STATUS_REMOVE.put(task)
                     fmt = '[%s:%s] Crawled Failed(\033[0m 404 \033[1;37;43m| %s ). Not Retry.'

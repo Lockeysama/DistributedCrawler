@@ -5,9 +5,7 @@ Created on 2017年4月17日
 @author: chenyitao
 '''
 
-from settings import CLIENT_ID
-from .base_site import BaseSite
-from common import get_mac_address
+from .base_site import BaseSite, CLIENT_ID, get_mac_address
 
 
 class ProxyCheckerSite(BaseSite):

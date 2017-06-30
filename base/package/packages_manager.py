@@ -9,9 +9,8 @@ import importlib
 import json
 import os
 
-from ..event.event import EventCenter
+from ..event.event import EventCenter, TDDCLogging
 from ..storage.storager_base import StoragerBase
-from common import TDDCLogging
 from common.models import PackageModel
 from conf import ParserSite
 

@@ -5,9 +5,7 @@ Created on 2017年4月12日
 @author: chenyitao
 '''
 
-from common import get_mac_address
-from settings import CLIENT_ID
-from conf import BaseSite
+from .base_site import BaseSite, CLIENT_ID, get_mac_address
 
 
 class ParserSite(BaseSite):
