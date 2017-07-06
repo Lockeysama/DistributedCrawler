@@ -12,6 +12,7 @@ gevent.monkey.patch_all()
 
 def main():
     import settings
+    settings.WORKER = settings.Worker.Parser
     if settings.WORKER == settings.Worker.Parser:
         from worker.parser.manager import ParserManager
         ParserManager.start()

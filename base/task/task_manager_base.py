@@ -20,7 +20,7 @@ class TaskManagerBase(object):
     classdocs
     '''
 
-    def __init__(self):
+    def __init__(self, status_logger=True):
         '''
         Constructor
         '''
@@ -28,8 +28,9 @@ class TaskManagerBase(object):
         self._task_status_updater = TaskStatusUpdater()
         self._successed_num = 0
         self._successed_pre_min = 0
-        gevent.spawn(self._status_printer)
-        gevent.sleep()
+        if status_logger: 
+            gevent.spawn(self._status_printer)
+            gevent.sleep()
 
     def _status_printer(self):
         while True:

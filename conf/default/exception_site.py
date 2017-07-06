@@ -7,5 +7,8 @@ Created on 2017年5月23日
 
 class ExceptionSite(object):
 
-    # Exception Task Topic Info
+    # Exception Topic Info
     EXCEPTION_TOPIC = 'tddc_exception'
+
+    # Exception Topic Group
+    EXCEPTION_GROUP = ''

@@ -45,15 +45,15 @@ class ExceptionModelBase(QuickModelBase):
 
     EXCEPTION_TYPE = None
 
-    def __init__(self, desc=None):
-        super(ExceptionModelBase, self).__init__()
-        self.timestamp = time.time()
-        self.id = '{client_id}-{timestamp}-{rdm}'.format(client_id=settings.CLIENT_ID,
-                                                         timestamp=self.timestamp,
-                                                         rdm=random.randint(0, 10000))
-        self.code = self.EXCEPTION_TYPE
-        self.name = str(self.__class__).split('\'')[1].split('.')[-1]
-        self.desc = desc
+    def __init__(self, **kwargs):
+        super(ExceptionModelBase, self).__init__(**kwargs)
+        self.timestamp = kwargs.get('timestamp', time.time())
+        self.id = kwargs.get('id', '{client_id}-{timestamp}-{rdm}'.format(client_id=settings.CLIENT_ID,
+                                                                          timestamp=self.timestamp,
+                                                                          rdm=random.randint(0, 10000)))
+        self.code = kwargs.get('code', self.EXCEPTION_TYPE)
+        self.name = kwargs.get('name', str(self.__class__).split('\'')[1].split('.')[-1])
+        self.desc = kwargs.get('desc')
 
     @staticmethod
     def members():

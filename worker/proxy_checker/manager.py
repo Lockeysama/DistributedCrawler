@@ -28,12 +28,12 @@ class ProxyCheckerManager(object):
         Constructor
         '''
         setproctitle.setproctitle("TDDC_PROXY_CHECKER")
-        TDDCLogging.info('->Client Is Starting')
+        TDDCLogging.info('->Proxy Checker Is Starting')
         self._checker = Checker()
 #         self._rules_updater = ProxyCheckerRulesUpdater()
         self._proxy_mq_manager = ProxyMQManager()
         self._proxy_manager = ProxyManager()
-        TDDCLogging.info('->Client Was Ready.')
+        TDDCLogging.info('->Proxy Checker Was Ready.')
     
     @staticmethod
     def start():

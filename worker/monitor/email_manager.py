@@ -5,11 +5,12 @@ Created on 2017年5月17日
 @author: chenyitao
 '''
 
-import time
-import smtplib
-from conf.monitor_site import MAIL_USER, MAIL_PWD, MAIL_TO, MAIL_HOST, MAIL_PORT
 from email.mime.text import MIMEText
+import smtplib
+import time
+
 from common import TDDCLogging
+from conf.monitor_site import MonitorSite
 
 
 class EMailManager(object):
@@ -26,12 +27,15 @@ class EMailManager(object):
             return False
         msg = MIMEText(content, 'plain', 'utf-8')
         msg['Subject'] = subject
-        msg['From'] = MAIL_USER
-        msg['To'] = ';'.join(MAIL_TO)
-        server = smtplib.SMTP_SSL(MAIL_HOST, MAIL_PORT)
+        msg['From'] = MonitorSite.MAIL_USER
+        msg['To'] = ';'.join(MonitorSite.MAIL_TO)
+        server = smtplib.SMTP_SSL(MonitorSite.MAIL_HOST,
+                                  MonitorSite.MAIL_PORT)
         try:
-            server.login(MAIL_USER, MAIL_PWD)
-            server.sendmail(MAIL_USER, MAIL_TO, msg.as_string())
+            server.login(MonitorSite.MAIL_USER, MonitorSite.MAIL_PWD)
+            server.sendmail(MonitorSite.MAIL_USER,
+                            MonitorSite.MAIL_TO,
+                            msg.as_string())
         except Exception, e:
             TDDCLogging.error(e)
         else:

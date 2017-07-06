@@ -6,7 +6,7 @@ Created on 2017年5月17日
 '''
 
 from common import TDDCLogging
-from worker.monitor.exception.exception_manager import ExceptionManager
+from worker.monitor.exception.manager import ExceptionManager
 from worker.monitor.status.status_manager import StatusManager
 import gevent
 
@@ -19,10 +19,10 @@ class MonitorManager(object):
         '''
         Constructor
         '''
-        TDDCLogging.info('->Exception Manager Is Starting.')
+        TDDCLogging.info('->Monitor Is Starting.')
         self._exception_manager = ExceptionManager()
         self._status_manager = StatusManager()
-        TDDCLogging.info('->Exception Manager Was Started.')
+        TDDCLogging.info('->Monitor Was Started.')
 
     @staticmethod
     def start():

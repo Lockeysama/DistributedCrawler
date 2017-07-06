@@ -18,12 +18,12 @@ from base import WorkerManager
 class ParserManager(WorkerManager):
     
     def __init__(self):
-        TDDCLogging.info('->Client Is Starting')
+        TDDCLogging.info('->Parser Is Starting')
         super(ParserManager, self).__init__()
         self._storager = ParseStorager()
         self._parser = Parser()
         self._task_manager = ParseTaskManager()
-        TDDCLogging.info('->Client Was Ready.')
+        TDDCLogging.info('->Parser Was Ready.')
     
     @staticmethod
     def start():
