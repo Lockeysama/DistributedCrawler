@@ -5,21 +5,17 @@ Created on 2017年5月23日
 @author: chenyitao
 '''
 
+from .server import HOST
+
 
 class RedisSite():
     
     # Redis Info
-    REDIS_NODES = [{'host': '72.127.2.48', 'port': '7000'},
-                   {'host': '72.127.2.48', 'port': '7001'},
-                   {'host': '72.127.2.48', 'port': '7002'},
-                   {'host': '72.127.2.48', 'port': '7003'},
-                   {'host': '72.127.2.48', 'port': '7004'},
-                   {'host': '72.127.2.48', 'port': '7005'}]
 
-#     REDIS_NODES = [{'host': '192.168.1.108', 'port': '7000'},
-#                    {'host': '192.168.1.108', 'port': '7001'},
-#                    {'host': '192.168.1.108', 'port': '7002'},
-#                    {'host': '192.168.1.108', 'port': '7003'},
-#                    {'host': '192.168.1.108', 'port': '7004'},
-#                    {'host': '192.168.1.108', 'port': '7005'}]
+    REDIS_NODES = [{'host': HOST, 'port': '7000'},
+                   {'host': HOST, 'port': '7001'},
+                   {'host': HOST, 'port': '7002'},
+                   {'host': HOST, 'port': '7003'},
+                   {'host': HOST, 'port': '7004'},
+                   {'host': HOST, 'port': '7005'}]
 

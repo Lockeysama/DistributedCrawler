@@ -53,7 +53,7 @@ class CrawlProxyPool(object):
             proxy = proxies.pop()
         CrawlProxyPool.IP_COOLING_POOL.push((proxy, platform))
         return proxy
-        
+
     @staticmethod
     def get_random_proxy():
         for _, proxies in CrawlerQueues.PLATFORM_PROXY.items():

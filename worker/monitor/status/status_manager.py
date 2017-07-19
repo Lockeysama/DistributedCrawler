@@ -32,7 +32,7 @@ class StatusManager(RedisClient):
         gevent.spawn(self._get_status)
         gevent.sleep()
         TDDCLogging.info('-->Status Manager Was Started.')
-    
+
     def _get_status(self):
         while True:
             cur_time = 1495087998  # time.time()
@@ -62,7 +62,7 @@ class StatusManager(RedisClient):
                                          sort_keys=True,
                                          indent=4))
 
-        
+
 def main():
     import gevent.monkey
     gevent.monkey.patch_all()

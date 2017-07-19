@@ -95,7 +95,7 @@ class SingleSpider(scrapy.Spider):
         proxy = response.request.meta.get('proxy', None)
         if response.type == httperror.HttpError:
             status = response.value.response.status
-            if status >= 500 or status == 408:
+            if status >= 500 or status in [408, 429]: 
                 fmt = '[%s][%s] Crawled Failed(\033[0m %d \033[1;37;43m| %s ). Will Retry After While.'
                 TDDCLogging.warning(fmt % (task.platform,
                                            task.url,
@@ -122,6 +122,8 @@ class SingleSpider(scrapy.Spider):
                                            proxy))
                 self.add_task(task, True, times)
                 return
+            else:
+                err_msg = '{status}'.format(status=status)
         elif response.type == internet_err.TimeoutError:
             err_msg = 'TimeoutError'
         elif response.type in [internet_err.ConnectionRefusedError,
@@ -142,7 +144,7 @@ class SingleSpider(scrapy.Spider):
         self.add_task(task, True, times)
 
     def parse(self, response):
-        TDDCLogging.debug('Download Success. ' + response.url)
+#         TDDCLogging.debug('Download Success. ' + response.url)
         task,_ = response.request.meta.get('item')
         rsp_info = {'rsp': [response.url, response.status],
                     'content': response.body}
@@ -155,6 +157,8 @@ class SingleSpider(scrapy.Spider):
         '''
         if self.signals_callback:
             if signal == signals.spider_idle or signal == signals.spider_error:
+                if signal == signals.spider_error:
+                    print('err')
                 raise DontCloseSpider('..I prefer live spiders.')
             elif signal == signals.spider_opened:
                 self.signals_callback(self, signal, self)

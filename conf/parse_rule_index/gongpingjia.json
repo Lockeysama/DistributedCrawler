@@ -1,0 +1,21 @@
+{
+ "platform": "gongpingjia", 
+ "packages": [
+  {
+   "moulds": [
+    "GongpingjiaCarList"
+   ], 
+   "version": "1495799999", 
+   "package": "car_list", 
+   "md5": "5db3f5307854dce082030e6013864272"
+  },
+  {
+   "moulds": [
+    "EvalList"
+   ], 
+   "version": "1495799999", 
+   "package": "eval_list", 
+   "md5": "5db3f5307854dce082030e6013864272"
+  }
+ ]
+}
