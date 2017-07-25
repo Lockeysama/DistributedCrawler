@@ -6,15 +6,16 @@ Created on 2017年4月14日
 '''
 
 import json
-import gevent
+import time
 
-from conf import CrawlerSite
-from common.models import Task
-from common.queues import CrawlerQueues
-from common import TDDCLogging
+import gevent
 
 from base import TaskManagerBase
 from base.plugins import KafkaHelper
+from common import TDDCLogging
+from common.models import Task
+from common.queues import CrawlerQueues
+from conf import CrawlerSite
 
 
 class CrawlTaskManager(TaskManagerBase):
@@ -73,6 +74,7 @@ class CrawlTaskManager(TaskManagerBase):
             self._consume_msg_exp('CRAWL_TASK_JSON_ERR', record.value, e)
         else:
             if item and isinstance(item, dict) and item.get('url', None):
+                item['reflush_time'] = True
                 task = Task(**item)
                 task.status = Task.Status.WAIT_CRAWL
                 CrawlerQueues.CRAWL.put(task)
@@ -85,14 +87,16 @@ class CrawlTaskManager(TaskManagerBase):
         while True:
             task, status = CrawlerQueues.PARSE.get()
             tmp = Task(**task.__dict__)
-            task.status = Task.Status.CRAWL_SUCCESS
+            tmp.status = Task.Status.CRAWL_SUCCESS
+            tmp.timestamp = time.time()
             if not isinstance(task, Task):
                 TDDCLogging.error('')
                 continue
             if not self._push_task(CrawlerSite.PARSE_TOPIC, tmp):
                 TDDCLogging.error('')
             else:
-                CrawlerQueues.TASK_STATUS_REMOVE.put(tmp)
+                CrawlerQueues.TASK_STATUS_REMOVE.put(task)
+                CrawlerQueues.TASK_STATUS.put(tmp)
                 TDDCLogging.debug('[%s:%s] Crawled Successed(%d).' % (task.platform,
                                                                       task.row_key,
                                                                       status))

@@ -26,42 +26,65 @@ class TaskStatusMonitor(RedisClient):
         '''
         Constructor
         '''
-        TDDCLogging.info('-->Task Status Monitor Is Starting.')
+        TDDCLogging.info('--->Task Status Monitor Is Starting.')
         self._status = {}
         super(TaskStatusMonitor, self).__init__(MonitorSite.REDIS_NODES)
         gevent.spawn(self._get_status)
         gevent.sleep()
-        TDDCLogging.info('-->Task Status Monitor Was Started.')
+        TDDCLogging.info('--->Task Status Monitor Was Started.')
 
     def _get_status(self):
         while True:
-            cur_time = 1495087998  # time.time()
+            cur_time = time.time()  # 1495087998  # 
             keys = self.keys(MonitorSite.STATUS_HSET_PREFIX + '.*')
             for key in keys:
-                h_len = self.hlen(key)
                 platform, status = key.split('.')[-2:]
+                h_len = self.hlen(key)
                 if not self._status.get(platform):
                     self._status[platform] = {}
                 self._status[platform][status] = h_len
                 items = self.hscan_iter(key)
-                self._task_timer_check(items, cur_time)
+                self._task_timer_check(key, items, cur_time, status)
+            self._print_status()
             gevent.sleep(60)
-            TDDCLogging.debug(json.dumps(self._status,
-                                         sort_keys=True,
-                                         indent=4))
+            self._status = {}
 
-    def _task_timer_check(self, items, cur_time):
-        for index, (url, task) in enumerate(items):
+    def _task_timer_check(self, key, items, cur_time, status):
+        if int(status) not in [Task.Status.WAIT_CRAWL,
+                               Task.Status.WAIT_PARSE]:
+            return
+        del_list = []
+        timeout_count = 0
+        for _, (url, task) in enumerate(items):
             task = json.loads(task)
             task = Task(**task)
-            time = task.timestamp
-            if int(time) > cur_time - 20:
+            timestamp = task.timestamp
+            if int(timestamp) > cur_time - 60:
                 continue
-            MonitorQueues.EXCEPTION_TASK.put(task)
-            TDDCLogging.debug(str(index) + ' : '
-                              + task.platform + ' : ' 
-                              + url + ' : '
-                              + str(task.status) + ' : '
-                              + str(time) + ' : '
-                              + 'Crawl Again.')
-            self.hdel(MonitorSite.STATUS_HSET_PREFIX, url)
+            MonitorQueues.NEW_EXCEPTION.put(task)
+            TDDCLogging.debug(''.join(['[Platform: ', task.platform, '] ', 
+                                       '[Status: ', str(task.status), '] ',
+                                       '[Timeout: ', str(int(cur_time - timestamp)), 's]',
+                                       '[URL: ', url, '] ']))
+            del_list.append(url)
+            if len(del_list) == 100:
+                timeout_count += len(del_list)
+                self.hmdel(key, del_list)
+                del_list = []
+        if len(del_list):
+            timeout_count += len(del_list)
+            self.hmdel(key, del_list)
+        if timeout_count:
+            TDDCLogging.info('Task Status(Timeout): [{}: {}].'.format(key, timeout_count))
+
+    def _print_status(self):
+        for platform, status in self._status.items():
+            for state, count in status.items():
+                if not count:
+                    del status[state]
+            if not len(status):
+                del self._status[platform]
+        status_info = json.dumps(self._status,
+                                 sort_keys=True,
+                                 indent=4) if len(self._status) else 'No Task Status.'
+        TDDCLogging.debug(status_info)

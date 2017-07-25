@@ -21,9 +21,14 @@ class CrawlerTaskFailedException(ExceptionModelBase):
 
     EXCEPTION_TYPE = ExceptionType.Crawler.TASK_FAILED
 
-    def __init__(self, task):
-        super(CrawlerTaskFailedException, self).__init__()
-        self.task = task.to_json()
+    def __init__(self, **kwargs):
+        super(CrawlerTaskFailedException, self).__init__(**kwargs)
+        self.task = kwargs.get('task', None) if kwargs.get('task') else None 
+
+    @staticmethod
+    def members():
+        return dict(ExceptionModelBase.members(),
+                    **{'task': None})
 
 class CrawlerSrorageFailedException(ExceptionModelBase):
 

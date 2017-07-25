@@ -13,6 +13,9 @@ import gevent
 from base import TaskManagerBase
 from base.plugins.mq.kafka_manager.kafka_helper import KafkaHelper
 from common import TDDCLogging
+from common.models.exception.crawler import CrawlerTaskFailedException
+from common.models.exception.parser import ParserTaskFailedException
+from common.models.task import Task
 from common.queues.monitor import MonitorQueues
 from conf import MonitorSite
 
@@ -33,6 +36,10 @@ class ExceptionMessageSR(TaskManagerBase):
         self._models_table = {}
         self._load_exception_models()
         gevent.spawn(self._recv)
+        gevent.sleep()
+        gevent.spawn(self._send_new_exception)
+        gevent.sleep()
+        gevent.spawn(self._resend_exception_task)
         gevent.sleep()
         TDDCLogging.info('--->Messages Send And Recv Plugin Was Ready.')
 
@@ -81,3 +88,23 @@ class ExceptionMessageSR(TaskManagerBase):
                 TDDCLogging.warning('This Exception Is No Match Model.')
                 return
             MonitorQueues.EXCEPTION.put(cls(**exception))
+
+    def _send_new_exception(self):
+        TDDCLogging.info('--->Exception Producer Was Ready.')
+        exps = {Task.Status.WAIT_CRAWL: CrawlerTaskFailedException,
+                Task.Status.WAIT_PARSE: ParserTaskFailedException}
+        while True:
+            task = MonitorQueues.NEW_EXCEPTION.get()
+            exp_cls = exps.get(task.status)
+            if not exp_cls:
+                TDDCLogging.error('No Match Exception(Task) Type.')
+                continue
+            exp = exp_cls(**{'task': task.__dict__})
+            if not self._push_task(MonitorSite.EXCEPTION_TOPIC, exp):
+                TDDCLogging.error('Make Task Exception Failed.')
+
+    def _resend_exception_task(self):
+        while True:
+            topic, task = MonitorQueues.EXCEPTION_TASK.get()
+            if not self._push_task(topic, task):
+                TDDCLogging.error('Make Task Exception Failed.')

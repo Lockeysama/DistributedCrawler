@@ -47,11 +47,15 @@ class Task(object):
                 self.__dict__[key] = task_attr.pop(key)
         if not self.__dict__['id']:
             self.__dict__['id'] = ShortUUID.UUID()
-        self.timestamp = time.time()
-            
+        if task_attr.get('reflush_time', False) or not self.__dict__['timestamp']:
+            self.timestamp = time.time()
+
     def to_json(self):
         info = {k:v for k,v in self.__dict__.items() if v != None}
         return json.dumps(info)
+    
+    def __repr__(self, *args, **kwargs):
+        return self.to_json()
 
 
 def main():

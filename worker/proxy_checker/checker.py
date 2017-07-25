@@ -65,7 +65,7 @@ class Checker(object):
                 molule = importlib.import_module(rule.package)
                 cls = getattr(molule, cls_name)
                 if not cls:
-                    TDDCLogging.error('Exception: import rule failed: '+cls_name)
+                    TDDCLogging.error('Exception: import rule failed: ' + cls_name)
                     continue
                 self._rules_moulds[cls.proxy_type][cls.proxy_type] = cls
     

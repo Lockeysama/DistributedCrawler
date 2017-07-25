@@ -5,29 +5,33 @@ Created on 2015年12月28日
 @author: chenyitao
 '''
 
-import urlparse
 from string import upper
-from scrapy.spidermiddlewares import httperror
+import time
+import urlparse
+
 from scrapy import signals
 import scrapy
 from scrapy.exceptions import DontCloseSpider
 from scrapy.http import Request, FormRequest
-import twisted.internet.error as internet_err
-import twisted.web._newclient as newclient_err
+from scrapy.spidermiddlewares import httperror
 
 from common import TDDCLogging
-from common.queues import CrawlerQueues
-from worker.crawler.cookies import CookiesManager
 from common.models.exception.crawler import CrawlerTaskFailedException
+from common.queues import CrawlerQueues
+import twisted.internet.error as internet_err
+import twisted.web._newclient as newclient_err
+from worker.crawler.cookies import CookiesManager
+
 
 class SingleSpider(scrapy.Spider):
     '''
     single spider
     '''
-    
+
     SIGNAL_STORAGE = object()
 
     name = 'SingleSpider'
+
     start_urls = []
 
     @classmethod
@@ -67,6 +71,8 @@ class SingleSpider(scrapy.Spider):
                if not task.method or upper(task.method) == 'GET' 
                else self._make_post_request(task, headers, times))
         self.crawler.engine.schedule(req, self)
+        task.timestamp = time.time()
+        CrawlerQueues.TASK_STATUS.put(task)
 
     def _make_get_request(self, task, headers, times):
         req = Request(task.url,
@@ -96,7 +102,8 @@ class SingleSpider(scrapy.Spider):
         if response.type == httperror.HttpError:
             status = response.value.response.status
             if status >= 500 or status in [408, 429]: 
-                fmt = '[%s][%s] Crawled Failed(\033[0m %d \033[1;37;43m| %s ). Will Retry After While.'
+                fmt = ('[%s][%s] Crawled Failed(\033[0m %d \033[1;37;43m| %s ). '
+                       'Will Retry After While.')
                 TDDCLogging.warning(fmt % (task.platform,
                                            task.url,
                                            status,
@@ -109,13 +116,15 @@ class SingleSpider(scrapy.Spider):
                     exception = CrawlerTaskFailedException(task)
                     CrawlerQueues.EXCEPTION.put(exception)
                     CrawlerQueues.TASK_STATUS_REMOVE.put(task)
-                    fmt = '[%s:%s] Crawled Failed(\033[0m 404 \033[1;37;43m| %s ). Not Retry.'
+                    fmt = ('[%s:%s] Crawled Failed(\033[0m 404 \033[1;37;43m| %s ). '
+                           'Not Retry.')
                     TDDCLogging.warning(fmt % (task.platform,
                                                task.url,
                                                proxy))
                     return
                 times += 1
-                fmt = '[%s:%s] Crawled Failed(\033[0m %d \033[1;37;43m| %s ). Will Retry After While.'
+                fmt = ('[%s:%s] Crawled Failed(\033[0m %d \033[1;37;43m| %s ). '
+                       'Will Retry After While.')
                 TDDCLogging.warning(fmt % (task.platform,
                                            task.url,
                                            status,
@@ -136,7 +145,8 @@ class SingleSpider(scrapy.Spider):
         if proxy:
             proxy = proxy.split('//')[1]
             CrawlerQueues.UNUSEFUL_PROXY_FEEDBACK.put([task.platform, proxy])
-        fmt = '[%s][%s] Crawled Failed(\033[0m %s \033[1;37;43m| %s ). Will Retry After While.'
+        fmt = ('[%s][%s] Crawled Failed(\033[0m %s \033[1;37;43m| %s ). '
+               'Will Retry After While.')
         TDDCLogging.warning(fmt % (task.platform,
                                    task.url,
                                    err_msg,

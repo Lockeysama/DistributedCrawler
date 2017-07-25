@@ -21,6 +21,9 @@ class PublicQueues(object):
     # Crawled Queue
     PARSE = Queue()
     
+    # New Exception Queue
+    NEW_EXCEPTION = Queue()
+    
     # Exception Task Queue
     EXCEPTION_TASK = Queue()
     

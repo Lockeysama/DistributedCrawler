@@ -42,6 +42,15 @@ class RedisClient(StrictRedisCluster):
             ppl.spop(name)
         return ppl.execute()
 
+    def hmdel(self, name, values):
+        '''
+        批量hdel
+        '''
+        ppl = self.pipeline()
+        for value in values:
+            ppl.hdel(name, value)
+        return ppl.execute()
+
     def psubscribe(self, pattern):
         '''
         匹配订阅
