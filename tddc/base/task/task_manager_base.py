@@ -9,50 +9,115 @@ import json
 
 import gevent
 from tddc.common import TDDCLogging
-from tddc.conf import KafkaSite
 
 from ..plugins import KafkaHelper
 from .task_status_updater import TaskStatusUpdater
+from tddc.common.models.task import Task
 
 
-class TaskManagerBase(object):
+class TaskManagerBase(KafkaHelper):
     '''
     classdocs
     '''
 
-    def __init__(self, status_logger=True):
+    def __init__(self, site, queues):
         '''
         Constructor
         '''
-        self._producer = KafkaHelper.make_producer(KafkaSite.KAFKA_NODES)
-        self._task_status_updater = TaskStatusUpdater()
-        self._successed_num = 0
-        self._successed_pre_min = 0
-        if status_logger: 
-            gevent.spawn(self._status_printer)
-            gevent.sleep()
+        super(TaskManagerBase, self).__init__()
+        self._site = site
+        self._queues = queues
+        gevent.spawn(self._update_task_status)
+        gevent.sleep()
+        self._task_output_producer = self.make_producer(site.KAFKA_NODES)
+        self._task_status_updater = TaskStatusUpdater(site)
+        self._task_input_consumer = self.make_consumer(site.KAFKA_NODES,
+                                                       site.TASK_INPUT_TOPIC,
+                                                       site.TASK_INPUT_TOPIC_GROUP)
+        gevent.spawn(self._fetch_task)
+        gevent.sleep()
+        gevent.spawn(self._push_task)
+        gevent.sleep()
 
-    def _status_printer(self):
+    def _fetch_task(self):
+        TDDCLogging.info('--->Task Input Consumer Was Ready.')
+        pause = False
         while True:
-            gevent.sleep(60)
-            TDDCLogging.info('Successed Status: [All=%d] [Pre Minute:%d]' % (self._successed_num,
-                                                                             self._successed_pre_min))
-            self._successed_pre_min = 0
+            if self._queues.TASK_INPUT.qsize() > self._site.LOCAL_TASK_QUEUE_SIZE:
+                if not pause:
+                    self._task_input_consumer.commit()
+                    self._task_input_consumer.unsubscribe()
+                    pause = True
+                    TDDCLogging.info('Task Input Consumer Was Paused.')
+                gevent.sleep(1)
+                continue
+            if pause and self._queues.TASK_INPUT.qsize() < self._site.LOCAL_TASK_QUEUE_SIZE / 2:
+                self._task_input_consumer.subscribe(self._site.TASK_INPUT_TOPIC)
+                pause = False
+                TDDCLogging.info('Task Input Consumer Was Resumed.')
+            partition_records = self._task_input_consumer.poll(2000, 16)
+            if not len(partition_records):
+                gevent.sleep(1)
+                continue
+            for _, records in partition_records.items():
+                for record in records:
+                    self._record_proc(record)
 
-    def _push_task(self, topic, task, times=0):
+    def _record_proc(self, record):
+        try:
+            item = json.loads(record.value)
+        except Exception, e:
+            self._consume_msg_exp('TASK_JSON_ERR', record.value, e)
+        else:
+            if item and isinstance(item, dict) and item.get('url', None):
+                task = Task(**item)
+                self.task_status_process(task)
+                self._queues.TASK_INPUT.put(task)
+            else:
+                self._consume_msg_exp('TASK_ERR', item)
+
+    def task_status_process(self, task):
+        '''
+        如需更改任务状态等操作，可以重写此方法
+        '''
+        pass
+
+    def _push_task(self):
+        TDDCLogging.info('--->Task Output Producer Was Ready.')
+        while True:
+            task = self._queues.TASK_OUTPUT.get()
+            if not self._push(self._site.TASK_OUTPUT_TOPIC, task):
+                TDDCLogging.error('Push Task Failed.')
+            else:
+                self.pushed(task)
+
+    def pushed(self, task):
+        '''
+        新任务推送成功回调
+        '''
+        pass
+
+    def pushhing(self, task):
+        '''
+        新任务推送前回调
+        继续推送：return True
+        '''
+        return True
+
+    def _push(self, topic, task, times=0):
         if not task:
             return False
         msg = json.dumps(task.__dict__)
         if msg:
             try:
-                self._producer.send(topic, msg)
+                if self.pushhing(task): 
+                    self._task_output_producer.send(topic, msg)
             except Exception, e:
-                print('_push_task', e)
+                TDDCLogging.warning('Push Task Field: ' + e)
                 gevent.sleep(1)
                 if times == 10:
                     return False 
-                times += 1
-                return self._push_task(topic, task, times)
+                return self._push(topic, task, times + 1)
             else:
                 return True
         return False
@@ -70,3 +135,20 @@ class TaskManagerBase(object):
                               'item_type={item_type}\n'.format(item_type=type(info))+
                               '*'*(10+len(exp_type))+'\n')
 
+    def _update_task_status(self):
+        while True:
+            task, new_status, old_status = self._queues.TASK_STATUS.get()
+            self.update_status(task, new_status, old_status)
+            self.task_status_changed(task, new_status)
+
+    def task_status_changed(self, task, new_status):
+        '''
+        任务状态改变
+        '''
+        pass
+    
+    def update_status(self, task, new_status, old_status):
+        self._task_status_updater.update_status(task, new_status, old_status)
+
+    def create_record(self, task):
+        self._task_status_updater.create_record(task)

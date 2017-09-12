@@ -5,9 +5,11 @@ Created on 2017年5月8日
 @author: chenyitao
 '''
 
+import time
+
 import gevent
+from tddc.common.log.logger import TDDCLogging
 from tddc.common.queues import PublicQueues
-from tddc.conf import RedisSite, TaskSite
 
 from ..plugins import RedisClient
 
@@ -17,48 +19,52 @@ class TaskStatusUpdater(RedisClient):
     classdocs
     '''
 
-    def __init__(self):
+    def __init__(self, site):
         '''
         Constructor
         '''
-        super(TaskStatusUpdater, self).__init__(RedisSite.REDIS_NODES)
-        gevent.spawn(self._update_task_status)
+        self.site = site
+        super(TaskStatusUpdater, self).__init__(site.REDIS_NODES)
+        gevent.spawn(self._create_record)
         gevent.sleep()
-        gevent.spawn(self._remove_task_status)
-        gevent.sleep()
+        self._successed_num = 0
+        self._successed_pre_min = 0
+        if site.STATUS_LOGGER_ENABLE: 
+            gevent.spawn(self._status_printer)
+            gevent.sleep()
 
-    def _update_task_status(self):
+    def _status_printer(self):
         while True:
-            task = PublicQueues.TASK_STATUS.get()
-            try:
-                self._update(task)
-            except Exception, e:
-                print('_update_task_status', e)
-                PublicQueues.TASK_STATUS.put(task)
-                gevent.sleep(1)
+            gevent.sleep(60)
+            base = 'Successed Status: [All=%d] [Pre Minute:%d]'
+            TDDCLogging.info(base % (self._successed_num,
+                                     self._successed_pre_min))
+            self._successed_pre_min = 0
 
-    def _update(self, task):
-        return self.hset(TaskSite.STATUS_HSET_PREFIX + '.%s.%d' % (task.platform, task.status),
-                         task.url,
-                         task.to_json())
+    @staticmethod
+    def create_record(task):
+        PublicQueues.TASK_RECORD.put(task)
 
-    def _remove_task_status(self):
+    def _create_record(self):
         while True:
-            task = PublicQueues.TASK_STATUS_REMOVE.get()
+            task = PublicQueues.TASK_RECORD.get()
             try:
-                self._remove(task)
+                self.hset(self.site.RECORD_HSET_PREFIX + '.%s' % task.platform,
+                          task.id,
+                          task.to_json())
             except Exception, e:
-                print('_update_task_status', e)
-                PublicQueues.TASK_STATUS_REMOVE.put(task)
-                gevent.sleep(1)
+                TDDCLogging.error(e)
+                PublicQueues.TASK_RECORD.put(task)
 
-    def _remove(self, task):
-        return self.hdel(TaskSite.STATUS_HSET_PREFIX + '.%s.%d' % (task.platform, task.status),
-                         task.url)
-
-
-def main():
-    pass
-
-if __name__ == '__main__':
-    main()
+    def update_status(self, task, new_status, old_status):
+        if not new_status % 200:
+            self._successed_pre_min += 1
+            self._successed_num += 1
+        self.hmove('%s.%s.%d' % (self.site.STATUS_HSET_PREFIX,
+                                 task.platform,
+                                 old_status),
+                   '%s.%s.%d' % (self.site.STATUS_HSET_PREFIX,
+                                 task.platform,
+                                 new_status),
+                   task.id,
+                   str(int(time.time())))

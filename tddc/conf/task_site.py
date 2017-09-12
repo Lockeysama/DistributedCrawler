@@ -9,16 +9,25 @@ class TaskSite(object):
     '''
     classdocs
     '''
+    STATUS_LOGGER_ENABLE = True
 
     BASE_INFO_TABLE = 'tddc_task_base'
     BASE_INFO_FAMILY = 'info'
     BASE_INFO_QUALIFIER = 'index'
 
-    # Parse Task Topic Info
-    PARSE_TOPIC = 'tddc_parse'
-    
-    # Crawl Task Topic Info
-    CRAWL_TOPIC = 'tddc_crawl'
-    
+    # Task Input Topic Info
+    TASK_INPUT_TOPIC = ''
+    TASK_INPUT_TOPIC_GROUP = ''
+
+    # Task Output Topic Info
+    TASK_OUTPUT_TOPIC = ''
+    TASK_OUTPUT_TOPIC_GROUP = ''
+
     # Task Status HSet Prefix
     STATUS_HSET_PREFIX = 'tddc.task.status'
+
+    # Task Record HSet Prefix
+    RECORD_HSET_PREFIX = 'tddc.task.record'
+
+    # Local Task Queue Size
+    LOCAL_TASK_QUEUE_SIZE = 200

@@ -7,7 +7,7 @@ Created on 2017年6月12日
 
 from ..event.event import EventCenter, EventType
 from ..exception.exception import ExceptionCollection
-from tddc.base.package.packages_manager import PackagesManager
+from ..package.packages_manager import PackagesManager
 
 
 class WorkerManager(object):

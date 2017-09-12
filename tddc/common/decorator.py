@@ -5,7 +5,12 @@ Created on 2017年5月5日
 @author: chenyitao
 '''
 
+import time
+
 def singleton(cls, *args, **kw):
+    '''
+    单例模式装饰器
+    '''
     instances = {}
 
     def _singleton():
@@ -15,8 +20,13 @@ def singleton(cls, *args, **kw):
     return _singleton
 
 
-def main():
-    pass
-
-if __name__ == '__main__':
-    main()
+def timer(func):
+    '''
+    执行时间计算装饰器
+    '''
+    def _deco(*args,**kwargs):  
+        start = time.time()  
+        func(*args,**kwargs)  
+        end = time.time()  
+        print(end-start)
+    return _deco

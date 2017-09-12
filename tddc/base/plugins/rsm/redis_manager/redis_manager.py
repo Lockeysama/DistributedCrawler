@@ -51,6 +51,12 @@ class RedisClient(StrictRedisCluster):
             ppl.hdel(name, value)
         return ppl.execute()
 
+    def hmove(self, old_name, new_name, key, value):
+        ppl = self.pipeline()
+        ppl.hdel(old_name, key)
+        ppl.hset(new_name, key, value)
+        return ppl.execute()
+
     def psubscribe(self, pattern):
         '''
         匹配订阅
