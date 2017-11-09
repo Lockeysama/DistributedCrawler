@@ -9,7 +9,7 @@ import importlib
 import json
 import os
 
-from tddc import TDDCLogger
+from tddc import TDDCLogger, Singleton
 from tddc.config.config_center import ConfigCenter
 
 
@@ -17,6 +17,7 @@ class ExternManager(TDDCLogger):
     '''
     classdocs
     '''
+    __metaclass__ = Singleton
 
     def __init__(self):
         super(ExternManager, self).__init__()
@@ -26,19 +27,21 @@ class ExternManager(TDDCLogger):
         '''
         Constructor
         '''
-        self.logger.info('-->Extern Modules Is Loading.')
+        self.info('Extern Modules Is Loading.')
         self._load_local_models()
-        self.logger.info('-->Extern Modules Was Loaded.')
+        self.info('Extern Modules Was Loaded.')
 
     def _load_local_models(self):
         self._rules_moulds = {}
         conf = ConfigCenter().get_extern_modules()
+        if not conf:
+            return
         for platform, packages in conf.items():
             for package in packages:
                 try:
                     self._load_moulds(package)
-                except Exception, e:
-                    self.logger.error(e)
+                except Exception as e:
+                    self.exception(e)
 
     def _models_update_event(self, event):
         successe, ret = FetchServer(self.site).pull_once(event.event.table,
@@ -119,9 +122,13 @@ class ExternManager(TDDCLogger):
 
     def _load_moulds(self, package):
         rules_path_base = 'worker.extern_modules'
-        module = importlib.import_module('%s.%s.%s' % (rules_path_base,
-                                                       package.platform,
-                                                       package.package))
+        try:
+            module = importlib.import_module('%s.%s.%s' % (rules_path_base,
+                                                           package.platform,
+                                                           package.package))
+        except Exception as e:
+            self.exception(e)
+            return False
         if not module:
             return False
         if not self._update_models_table(package.platform, package.mould, module):

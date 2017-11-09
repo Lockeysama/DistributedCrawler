@@ -21,7 +21,9 @@ class Singleton(type):
 
 
 def object2json(obj):
-    info = {k: v for k, v in obj.__dict__.items() if v and k[:2] != '__'}
+    info = {k: v for k, v in obj.__dict__.items()
+            if v is not None
+            and '__' not in k}
     return json.dumps(info)
 
 

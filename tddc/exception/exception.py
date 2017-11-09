@@ -22,15 +22,10 @@ class ExceptionCollection(TDDCLogger):
 
     def __init__(self):
         super(ExceptionCollection, self).__init__()
-        self.logger.info('-->Exception Collector Is Starting.')
+        self.info('Exception Collector Is Starting.')
         self._exception_info = ConfigCenter().get_exception()
-        kafka_info = ConfigCenter().get_services('kafka')
-        if not kafka_info:
-            self.logger.error('Kafka Server Info Not Found.')
-            return
-        kafka_nodes = ','.join(['%s:%s' % (info.host, info.port) for info in kafka_info['kafka']])
-        self._exception_producer = KeepAliveProducer(bootstrap_servers=kafka_nodes)
-        self.logger.info('-->Exception Collector Was Started.')
+        self._exception_producer = KeepAliveProducer()
+        self.info('Exception Collector Was Started.')
 
     def push(self, exception):
         RecordManager().create_record('tddc.exception.record',

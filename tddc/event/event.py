@@ -24,12 +24,13 @@ class EventCenter(TDDCLogger):
 
     def __init__(self):
         super(EventCenter, self).__init__()
-        self.logger.info('-->Event Manager Is Starting.')
+        self.info('Event Manager Is Starting.')
         self._event_queue = gevent.queue.Queue()
+        self._event_call = {}
         event_info = ConfigCenter().get_event()
         kafka_info = ConfigCenter().get_services('kafka')
         if not kafka_info:
-            self.logger.error('Kafka Server Info Not Found.')
+            self.error('Kafka Server Info Not Found.')
             return
         kafka_nodes = ','.join(['%s:%s' % (info.host, info.port) for info in kafka_info['kafka']])
         self._event_consumer = KeepAliveConsumer(event_info.topic,
@@ -41,7 +42,7 @@ class EventCenter(TDDCLogger):
         gevent.sleep()
         gevent.spawn(self._dispatch)
         gevent.sleep()
-        self.logger.info('-->Event Manager Was Ready.')
+        self.info('Event Manager Was Ready.')
 
     def register(self, event_type, callback):
         self._event_call[event_type] = callback
@@ -54,7 +55,7 @@ class EventCenter(TDDCLogger):
 
     def _event_parse(self, event):
         if not isinstance(event, dict):
-            self.logger.warning('Event Can\'t Parser.')
+            self.warning('Event Can\'t Parser.')
             return
         event = type(str(capitalize(event.get('name', 'OtherEvent'))),
                      (),

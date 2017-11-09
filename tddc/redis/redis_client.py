@@ -4,6 +4,7 @@ Created on 2017年4月10日
 
 @author: chenyitao
 '''
+
 import gevent
 from rediscluster import StrictRedisCluster
 
@@ -40,7 +41,7 @@ class RedisClient(StrictRedisCluster, TDDCLogger):
         批量spop
         '''
         ppl = self.pipeline()
-        for _ in xrange(count):
+        for _ in range(count):
             ppl.spop(name)
         return ppl.execute()
 

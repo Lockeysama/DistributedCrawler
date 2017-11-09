@@ -19,6 +19,24 @@ class KeepAliveConsumer(KafkaConsumer, TDDCLogger):
     """
 
     def __init__(self, topics, group, pause_size, record_model_cls=None, *args, **kwargs):
+        # import logging
+        # from kafka import conn, client, cluster
+        # conn.log.setLevel(logging.ERROR)
+        # client.log.setLevel(logging.ERROR)
+        # cluster.log.setLevel(logging.ERROR)
+        # from kafka.metrics import metrics
+        # metrics.logger.setLevel(logging.ERROR)
+        # from kafka.coordinator import base, consumer
+        # base.log.setLevel(logging.ERROR)
+        # consumer.log.setLevel(logging.ERROR)
+        # from kafka.consumer import fetcher
+        # fetcher.log.setLevel(logging.ERROR)
+        # from kafka.producer import kafka, sender
+        # kafka.log.setLevel(logging.ERROR)
+        # sender.log.setLevel(logging.ERROR)
+        # from kafka.consumer import subscription_state
+        # subscription_state.log.setLevel(logging.ERROR)
+
         self._topics = topics
         self._group = group
         self._pause_size = pause_size
@@ -65,20 +83,28 @@ class KeepAliveConsumer(KafkaConsumer, TDDCLogger):
     def _record(self, record):
         try:
             item = json.loads(record.value)
-        except Exception, e:
-            self.logger.error('\n' + '*' * 5 + 'JSON Error' + '*' * 5 +
-                              '\nException: ' + record.value + '\n' +
-                              e.message + '\n' +
-                              '*' * (10 + len('JSON Error')) + '\n')
+        except Exception as e:
+            self.error('\n' + '*' * 5 + 'JSON Error' + '*' * 5 +
+                       '\nException: ' + record.value + '\n' +
+                       e.message + '\n' +
+                       '*' * (10 + len('JSON Error')) + '\n')
         else:
             if not item:
                 return
             try:
                 if self._record_model_cls:
                     item = self._record_model_cls(item)
-            except Exception, e:
-                self.logger.warning('Item(%s) is not type of %s' % (record.value,
-                                                                    self._record_model_cls.__name__))
-                self.logger.warning(e)
+            except Exception as e:
+                self.warning('Item(%s) is not type of %s' % (record.value,
+                                                             self._record_model_cls.__name__))
+                self.exception(e)
             else:
+                item = self._deserialization(item)
+                self._record_fetched(item)
                 self._queue.put(item)
+
+    def _record_fetched(self, item):
+        pass
+
+    def _deserialization(self, item):
+        return item

@@ -39,15 +39,16 @@ class HBaseManager(happybase.ConnectionPool, TDDCLogger):
                     cf = family
                 else:
                     return False, None
-                return True, table.row(row_key, columns=[cf])
-        except Exception, e:
-            self.logger.error(e)
+                data = table.row(row_key, columns=[cf])
+                return bool(len(data)), data
+        except Exception as e:
+            self.exception(e)
             return False, None
 
-    def get_async(self, callback, table, row_key, family=None, qualifier=None):
+    def get_async(self, callback, table, row_key, family=None, qualifier=None, *args, **kwargs):
         def _get(_callback, _table, _row_key, _family=None, _qualifier=None):
             ret = self.get(_table, _row_key, _family, _qualifier)
-            _callback(ret)
+            _callback(ret, *args, **kwargs)
         gevent.spawn(_get, callback, table, row_key, family, qualifier)
         gevent.sleep()
 
@@ -55,8 +56,8 @@ class HBaseManager(happybase.ConnectionPool, TDDCLogger):
         try:
             with self.connection() as connection:
                 connection.create_table(table, families)
-        except Exception, e:
-            self.logger.error(e)
+        except Exception as e:
+            self.exception(e)
             return False
         else:
             return True
@@ -67,7 +68,7 @@ class HBaseManager(happybase.ConnectionPool, TDDCLogger):
             if table not in self._tables:
                 if cnt == 1:
                     connection.create_table(table, {k: {} for k in keys})
-                    self.logger.warning('Create New Table(%s) to HBase.' % table)
+                    self.warning('Create New Table(%s) to HBase.' % table)
                 self._tables = connection.tables()
             else:
                 break
@@ -91,8 +92,8 @@ class HBaseManager(happybase.ConnectionPool, TDDCLogger):
                     self._puts(b, rows)
                     b.send()
                 return True
-        except Exception, e:
-            self.logger.error(e)
+        except Exception as e:
+            self.exception(e)
             return False
 
     def _puts(self, batch, rows):
@@ -131,6 +132,6 @@ class HBaseManager(happybase.ConnectionPool, TDDCLogger):
                         values[cf_fmt + column] = value
                     table.put(row_key, values)
                 return True
-        except Exception, e:
-            self.logger.error(e)
+        except Exception as e:
+            self.exception(e)
             return False

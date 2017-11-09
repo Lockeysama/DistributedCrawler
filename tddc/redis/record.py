@@ -7,8 +7,6 @@ Created on 2017年5月8日
 
 import gevent
 
-from tddc.config.config_center import ConfigCenter
-from tddc.util import Singleton
 from .redis_client import RedisClient
 
 
@@ -22,12 +20,12 @@ class RecordManager(RedisClient):
         while True:
             try:
                 self.hset(name, key, record)
-            except Exception, e:
-                self.logger.warning(e)
+            except Exception as e:
+                self.exception(e)
                 gevent.sleep(1)
                 times += 1
                 if times == 5:
-                    self.logger.error('Create Record [%s:%s:%s] Failed.'.format(name, key, record))
+                    self.error('Create Record [%s:%s:%s] Failed.'.format(name, key, record))
                     break
             else:
                 break
@@ -37,12 +35,12 @@ class RecordManager(RedisClient):
         while True:
             try:
                 record = self.hget(name, key)
-            except Exception, e:
-                self.logger.warning(e)
+            except Exception as e:
+                self.exception(e)
                 gevent.sleep(0.5)
                 times += 1
                 if times == 5:
-                    self.logger.error('Get Record [%s:%s] Failed.'.format(name, key))
+                    self.error('Get Record [%s:%s] Failed.'.format(name, key))
                     break
             else:
                 callback(record, **kwargs)

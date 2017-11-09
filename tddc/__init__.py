@@ -16,6 +16,7 @@ from .util.util import Singleton, object2json, timer
 from .worker.extern_modules.extern_base import ExternBase
 from .worker.extern_modules.extern_manager import ExternManager
 from .worker.manager import WorkerManager
+from .worker.storager import Storager
 
 __all__ = ['ConfigCenters',
            'EventCenter',
@@ -34,4 +35,5 @@ __all__ = ['ConfigCenters',
            'timer',
            'ExternBase',
            'ExternManager',
-           'WorkerManager']
+           'WorkerManager',
+           'Storager']

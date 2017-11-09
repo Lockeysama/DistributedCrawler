@@ -1,7 +1,7 @@
 # -*- coding:utf-8 -*-
 import gevent
 
-from tddc import ConfigCenter
+from tddc import ConfigCenter, Singleton
 from tddc import EventCenter
 from tddc import ExceptionCollection
 from tddc import ExternManager
@@ -12,6 +12,9 @@ def _callback(*args, **kwargs):
 
 
 def main():
+    from old.testclass import A
+    A()
+    print getattr(A(), 'method', 'GET')
     exception()
     event()
     hbase()

@@ -51,7 +51,8 @@ class ConfigCenter(TDDCLogger):
     def _create_table(self):
         check_sql = ("SELECT count(*) FROM `sqlite_master` "
                      "WHERE type=\"table\" AND name=\"{table_name}\";")
-        for table, fields in self.tables().items():
+        tables = self.tables()
+        for table, fields in tables.items():
             if self._connection.execute(check_sql.format(table_name=table)).fetchall()[0][0] == 1:
                 return
             create_sql = "CREATE TABLE `{table_name}` (".format(table_name=table)
