@@ -7,13 +7,25 @@ Created on 2017年5月8日
 
 import gevent
 
-from .redis_client import RedisClient
+from ..util.util import Singleton
+from ..redis.redis_client import RedisClient
+
+from .worker_config import WorkerConfigCenter
 
 
 class RecordManager(RedisClient):
     '''
     classdocs
     '''
+    __metaclass__ = Singleton
+
+    def __init__(self):
+        nodes = WorkerConfigCenter().get_redis()
+        if not nodes:
+            return
+        nodes = [{'host': node.host,
+                  'port': node.port} for node in nodes]
+        super(RedisClient, self).__init__(startup_nodes=nodes)
 
     def create_record(self, name, key, record):
         times = 0

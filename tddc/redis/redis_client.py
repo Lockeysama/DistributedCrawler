@@ -9,23 +9,12 @@ import gevent
 from rediscluster import StrictRedisCluster
 
 from ..log.logger import TDDCLogger
-from ..config.config_center import ConfigCenter
-from ..util.util import Singleton
 
 
 class RedisClient(StrictRedisCluster, TDDCLogger):
     '''
     classdocs
     '''
-    __metaclass__ = Singleton
-
-    def __init__(self):
-        nodes = ConfigCenter().get_services('redis')
-        if not nodes:
-            return
-        nodes = [{'host': node.host,
-                  'port': node.port} for node in nodes['redis']]
-        super(RedisClient, self).__init__(startup_nodes=nodes)
 
     def smadd(self, name, values):
         '''
@@ -60,6 +49,13 @@ class RedisClient(StrictRedisCluster, TDDCLogger):
             ppl.hdel(old_name, key)
         ppl.hset(new_name, key, value)
         return ppl.execute()
+
+    def happend(self, name, key, tag, new_status):
+        status = self.get_status(name, key)
+        status = status.split('|')
+        status.append('%s_%d' % (tag, new_status))
+        new = '|'.join(status)
+        self.hset(name, key, new)
 
     def psubscribe(self, pattern):
         '''

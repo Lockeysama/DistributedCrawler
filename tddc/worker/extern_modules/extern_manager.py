@@ -9,8 +9,11 @@ import importlib
 import json
 import os
 
-from tddc import TDDCLogger, Singleton
-from tddc.config.config_center import ConfigCenter
+from ...log.logger import TDDCLogger
+from ...util.util import Singleton
+from ..worker_config import WorkerConfigCenter
+from ..event import EventType, EventCenter, EventStatus
+from ..storager import Storager
 
 
 class ExternManager(TDDCLogger):
@@ -20,6 +23,8 @@ class ExternManager(TDDCLogger):
     __metaclass__ = Singleton
 
     def __init__(self):
+        EventCenter()
+        self.config = WorkerConfigCenter().get_extern_modules_config()
         super(ExternManager, self).__init__()
         self._start()
 
@@ -33,91 +38,71 @@ class ExternManager(TDDCLogger):
 
     def _load_local_models(self):
         self._rules_moulds = {}
-        conf = ConfigCenter().get_extern_modules()
+        conf = WorkerConfigCenter().get_extern_modules()
         if not conf:
-            return
+            return False
         for platform, packages in conf.items():
             for package in packages:
                 try:
                     self._load_moulds(package)
                 except Exception as e:
                     self.exception(e)
-
-    def _models_update_event(self, event):
-        successe, ret = FetchServer(self.site).pull_once(event.event.table,
-                                                         event.event.platform,
-                                                         'modules',
-                                                         'index')
-        if not successe:
-            TDDCLogging.error('Module Update Failed.\n' + event.to_json())
-            return
-        status = self._update(event, ret[0])
-        EventCenter().update_status('tddc.event.status.%s' % event.event.table.split('_')[-1],
-                                    event.id,
-                                    str(status))
-
-    def create_package(self, package):
-        path = './worker/extern_modules/%s/' % package
-        if not os.path.exists(path):
-            os.mkdir(path)
-            with open(path+'__init__.py', 'a') as _:
-                self.logger.info('Make New Rules Package Success.')
-
-    def _download_moulds(self, platform, update_list, event):
-        for model_info in update_list:
-            success, ret = FetchServer(self.site).pull_once(event.event.table,
-                                                            platform,
-                                                            'modules',
-                                                            model_info.package)
-            if not success or not ret:
-                TDDCLogging.warning('Rules Fetch Exception.')
-                return False
-            self.create_package(platform)
-            file_path = ('./worker/extern_modules/' 
-                         + platform + '/' 
-                         + model_info.package)
-            if os.path.exists(file_path + '.py'):
-                os.remove(file_path + '.py')
-            if os.path.exists(file_path + '.pyc'):
-                os.remove(file_path + '.pyc')
-            with open(file_path + '.py', 'a') as f:
-                f.write(ret[0])
+                    return False
         return True
 
     @staticmethod
-    def update_check(local_packages, remote_packages):
-        update_list = []
-        for remote_package in remote_packages:
-            if not local_packages:
-                update_list.append(remote_package)
-                continue
-            local_package = local_packages.get(remote_package.feature)
-            if (remote_package.feature == local_package.feature and 
-                int(remote_package.version) > int(local_package.version)):
-                update_list.append(remote_package)
-        return update_list
+    @EventCenter.route(EventType.ExternModuleUpdate)
+    def _models_update_event(event):
+        EventCenter().event_status_update(event,
+                                          EventStatus.Executed_Success
+                                          if ExternManager()._update(event)
+                                          else EventStatus.Executed_Failed)
 
-    def _update(self, event, models_info):
-        '''
-        return 0: 不需更新 1：更新成功 -1：更新失败
-        '''
-        remote_pr = PackageModel(**{'platform': event.event.platform,
-                                    'packages': json.loads(models_info)})
-        local_packages = self._rules_moulds.get(remote_pr.platform)
-        update_list = self.update_check(local_packages, remote_pr.packages)
-        if not len(update_list):
-            return 0
-        if not self._download_moulds(remote_pr.platform, update_list, event):
-            return -1
-        self._cf.update_extern_modules_conf(remote_pr.platform, update_list)
-        if not self._reload_models(remote_pr.platform, update_list):
-            return -1
-        return 1
+    def _get_remote_config(self, platform):
+        success, config = Storager().get(self.config.config_table,
+                                         platform,
+                                         'config',
+                                         'config')
+        return json.loads(config.get('config:config')) if success else None
 
-    def _reload_models(self, platform, update_list):
-        for model_info in update_list:
-            if not self._load_moulds(platform, model_info):
+    def _create_package(self, path, platform):
+        if not os.path.exists(path):
+            os.mkdir(path)
+            with open(path + '__init__.py', 'a') as _:
+                self.info('Create %s Extern Modules Packages.' % platform)
+
+    def _download_package_file(self, platform, remote_config, path):
+        for feature, package in remote_config.items():
+            package_package = package.get('package')
+            success, package_content = Storager().get(self.config.config_table,
+                                                      platform,
+                                                      'content',
+                                                      package_package)
+            if not success:
                 return False
+            path_base = '%s/%s/' % (path, platform)
+            self._create_package(path_base, platform)
+            with open(path_base + package.get('package') + '.py', 'w') as f:
+                f.write(package_content.get('content:' + package_package))
+        return True
+
+    def _update(self, event):
+        self.info('Extern Modules Is Updating...')
+        platform = event.event.get('platform')
+        if not platform:
+            return False
+        remote_config = self._get_remote_config(platform)
+        if not remote_config:
+            return False
+        path = os.popen('find . -name extern_modules').readlines()[0].strip()
+        if not self._download_package_file(platform, remote_config, path):
+            return False
+        local_config = [type('PackageInfo', (), config) for _, config in remote_config.items()]
+        if not WorkerConfigCenter().set_extern_modules(platform, local_config):
+            return False
+        if not self._load_local_models():
+            return False
+        self.info('Extern Modules Was Updated.')
         return True
 
     def _load_moulds(self, package):
@@ -147,11 +132,11 @@ class ExternManager(TDDCLogger):
         self._rules_moulds[platform][feature] = cls
         return True
 
-    def get_model(self, platform, feature):
+    def get_model(self, platform, feature=None):
         models = self._rules_moulds.get(platform)
         if not models:
             return None
-        return models.get(feature)
+        return models.get(feature) if feature else models
 
     def get_all_modules(self):
         return self._rules_moulds

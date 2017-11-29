@@ -1,9 +1,8 @@
 # -*- coding:utf-8 -*-
 import gevent
 
-from tddc import ConfigCenter, Singleton
+from tddc import ConfigCenter, Singleton, WorkerConfigCenter
 from tddc import EventCenter
-from tddc import ExceptionCollection
 from tddc import ExternManager
 
 
@@ -12,17 +11,41 @@ def _callback(*args, **kwargs):
 
 
 def main():
-    from old.testclass import A
-    A()
-    print getattr(A(), 'method', 'GET')
-    exception()
-    event()
-    hbase()
-    kafka()
-    redis()
-    config()
+    # abstract()
+    # worker()
+    # exception()
+    # event()
+    # hbase()
+    # kafka()
+    # redis()
+    # config()
     extern_manager()
+    while True:
+        gevent.sleep(100)
     print(1)
+
+
+def abstract():
+    import abc
+
+    class A(object):
+        __metaclass__ = abc.ABCMeta
+
+        @abc.abstractmethod
+        def foo(self):
+            pass
+
+    class B(A):
+        __metaclass__ = Singleton
+        # def foo(self):
+        #     pass
+
+    B()
+    print 1
+
+
+def worker():
+    WorkerConfigCenter()
 
 
 def exception():
@@ -40,6 +63,8 @@ def exception():
 
 def event():
     EventCenter()
+    # while True:
+    #     gevent.sleep(100)
 
 
 def extern_manager():
@@ -86,8 +111,11 @@ def config():
 
 def hbase():
     from tddc import HBaseManager
-    h = HBaseManager()
-    x = h.get_async(_callback, 'che300', '66bb02d7f3f6f1f790362982aa424a94', 'source')
+    node = type('Node', (), {})
+    node.host = '72.127.2.48'
+    node.port = 9090
+    h = HBaseManager([node])
+    x = h.get_async(_callback, 'qwert', 'qwert', 'content')
     h.put('qwert', 'qwert', {'content': {'data': 'test'}})
     print(x)
 
@@ -110,16 +138,16 @@ def redis():
     from tddc import CacheManager
     from tddc import StatusManager
     RecordManager()
-    print RecordManager().get_record('tddc.event.record.crawler',
+    print(RecordManager().get_record('tddc.event.record.crawler',
                                      '1-1505811162.56-1799',
-                                     _callback)
+                                     _callback))
     RecordManager().logger.debug('Record')
     CacheManager()
-    print CacheManager().get_random('tddc:test:proxy:ip_dst:che300')
+    print(CacheManager().get_random('tddc:proxy:pool:che300'))
     CacheManager().logger.info('Cache')
     StatusManager()
-    print StatusManager().get_status('tddc.task.status.che300.1200',
-                                     'XRTDepEFx255UPyqEZEJsG')
+    print(StatusManager().get_status('tddc.task.status.che300.1200',
+                                     'XRTDepEFx255UPyqEZEJsG'))
     StatusManager().logger.error('Status')
 
 
@@ -128,6 +156,6 @@ if __name__ == '__main__':
         main()
         while True:
             gevent.sleep(10)
-    except Exception, e:
+    except Exception as e:
         print(e)
     print('End.')

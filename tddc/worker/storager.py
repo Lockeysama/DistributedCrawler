@@ -7,19 +7,23 @@ Created on 2017年4月14日
 
 import gevent.queue
 
-from ..log.logger import TDDCLogger
 from ..util.util import Singleton
 from ..hbase.hbase import HBaseManager
 
+from .worker_config import WorkerConfigCenter
 
-class Storager(TDDCLogger):
+
+class Storager(HBaseManager):
     '''
     classdocs
     '''
     __metaclass__ = Singleton
 
     def __init__(self):
-        super(Storager, self).__init__()
+        nodes = WorkerConfigCenter().get_hbase()
+        if not nodes:
+            return
+        super(Storager, self).__init__(nodes)
         self.info('Storager Is Starting.')
         self._q = gevent.queue.Queue()
         gevent.spawn(self._storage)
@@ -34,8 +38,9 @@ class Storager(TDDCLogger):
             (data, callback) = self._q.get()
             data = type('Data', (), data)
             try:
-                HBaseManager().put(data.table, data.row_key, data.data)
+                self.put(data.table, data.row_key, data.data)
             except Exception as e:
                 self.exception(e)
             else:
+                self.debug('[%s:%s] Storaged.' % (data.table, data.row_key))
                 callable(callback(data))

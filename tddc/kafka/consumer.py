@@ -19,31 +19,12 @@ class KeepAliveConsumer(KafkaConsumer, TDDCLogger):
     """
 
     def __init__(self, topics, group, pause_size, record_model_cls=None, *args, **kwargs):
-        # import logging
-        # from kafka import conn, client, cluster
-        # conn.log.setLevel(logging.ERROR)
-        # client.log.setLevel(logging.ERROR)
-        # cluster.log.setLevel(logging.ERROR)
-        # from kafka.metrics import metrics
-        # metrics.logger.setLevel(logging.ERROR)
-        # from kafka.coordinator import base, consumer
-        # base.log.setLevel(logging.ERROR)
-        # consumer.log.setLevel(logging.ERROR)
-        # from kafka.consumer import fetcher
-        # fetcher.log.setLevel(logging.ERROR)
-        # from kafka.producer import kafka, sender
-        # kafka.log.setLevel(logging.ERROR)
-        # sender.log.setLevel(logging.ERROR)
-        # from kafka.consumer import subscription_state
-        # subscription_state.log.setLevel(logging.ERROR)
-
         self._topics = topics
         self._group = group
         self._pause_size = pause_size
         self._record_model_cls = record_model_cls
         super(KeepAliveConsumer, self).__init__(topics,
                                                 group_id=group,
-                                                api_version=(0, 10, 1),
                                                 heartbeat_interval_ms=9000,
                                                 consumer_timeout_ms=5000,
                                                 max_poll_records=32,
@@ -108,3 +89,22 @@ class KeepAliveConsumer(KafkaConsumer, TDDCLogger):
 
     def _deserialization(self, item):
         return item
+
+
+# import logging
+# from kafka import conn, client, cluster
+# conn.log.setLevel(logging.ERROR)
+# client.log.setLevel(logging.ERROR)
+# cluster.log.setLevel(logging.ERROR)
+# from kafka.metrics import metrics
+# metrics.logger.setLevel(logging.ERROR)
+# from kafka.coordinator import base, consumer
+# base.log.setLevel(logging.ERROR)
+# consumer.log.setLevel(logging.ERROR)
+# from kafka.consumer import fetcher
+# fetcher.log.setLevel(logging.ERROR)
+# from kafka.producer import kafka, sender
+# kafka.log.setLevel(logging.ERROR)
+# sender.log.setLevel(logging.ERROR)
+# from kafka.consumer import subscription_state
+# subscription_state.log.setLevel(logging.ERROR)

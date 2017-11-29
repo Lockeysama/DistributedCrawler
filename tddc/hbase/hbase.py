@@ -4,6 +4,7 @@ Created on 2017年4月12日
 
 @author: chenyitao
 '''
+
 import json
 import random
 
@@ -11,16 +12,12 @@ import gevent
 import happybase
 
 from ..log.logger import TDDCLogger
-from ..config.config_center import ConfigCenter
 
 
 class HBaseManager(happybase.ConnectionPool, TDDCLogger):
 
-    def __init__(self):
-        nodes = ConfigCenter().get_services('hbase')
-        if not nodes:
-            return
-        self._nodes = nodes['hbase']
+    def __init__(self, nodes):
+        self._nodes = nodes
         self._current_node = random.choice(self._nodes)
         super(HBaseManager, self).__init__(8,
                                            transport='framed',

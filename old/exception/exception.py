@@ -5,12 +5,13 @@ Created on 2017年5月5日
 @author: chenyitao
 '''
 
-from ..log.logger import TDDCLogger
-from ..config.config_center import ConfigCenter
-from ..kafka.producer import KeepAliveProducer
-from ..redis.record import RecordManager
-from ..redis.status import StatusManager
-from ..util.util import Singleton, object2json
+from tddc.redis.record import RecordManager
+
+from tddc.config.config_center import ConfigCenter
+from tddc.kafka.producer import KeepAliveProducer
+from tddc.log.logger import TDDCLogger
+from tddc.util.util import Singleton, object2json
+from tddc.worker.status import StatusManager
 
 
 class ExceptionCollection(TDDCLogger):
