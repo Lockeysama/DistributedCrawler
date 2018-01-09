@@ -19,7 +19,7 @@ class Postman(KeepAliveProducer):
     def __init__(self):
         kafka_info = WorkerConfigCenter().get_kafka()
         if not kafka_info:
-            self.error('Kafka Server Info Not Found.')
+            print('>>> Kafka Nodes Not Found.')
             return
         kafka_nodes = ','.join(['%s:%s' % (info.host, info.port) for info in kafka_info])
         super(Postman, self).__init__(kafka_nodes)

@@ -20,18 +20,26 @@ class CacheManager(RedisClient):
     def __init__(self):
         nodes = WorkerConfigCenter().get_redis()
         if not nodes:
+            print('>>> Redis Nodes Not Found.')
             return
         nodes = [{'host': node.host,
                   'port': node.port} for node in nodes]
-        super(RedisClient, self).__init__(startup_nodes=nodes)
+        super(CacheManager, self).__init__(startup_nodes=nodes)
+        self.info('Status Manager Was Ready.')
 
     def get_random(self, name, pop=True):
-        if pop:
-            return self.spop(name)
-        return self.srandmember(name)
+        def _get_random(_name, _pop):
+            if _pop:
+                return self.spop(_name)
+            return self.srandmember(_name)
+        return self.robust(_get_random, name, pop)
 
     def set(self, name, *cache):
-        self.sadd(name, *cache)
+        def _set(_name, *_cache):
+            self.sadd(_name, *_cache)
+        self.robust(_set, name, *cache)
 
     def remove(self, name, *cache):
-        self.srem(name, *cache)
+        def _remove(_name, *_cache):
+            self.srem(_name, *_cache)
+        self.robust(_remove, name, *cache)

@@ -5,8 +5,6 @@ Created on 2017年8月31日
 @author: chenyitao
 """
 
-from string import capitalize
-
 from ..config.config_center import ConfigCenter
 
 
@@ -28,6 +26,7 @@ class WorkerConfigCenter(ConfigCenter):
                          "default_value": "host_id"},
                   "name": {"field_type": "TEXT",
                            "default_value": "tddc_worker_name"},
+                  "platform": {"field_type": "TEXT"},
                   "describe": {"field_type": "TEXT",
                                "default_value": ("id: Worker唯一标识 | "
                                                  "name: Worker及进程名")}}
@@ -133,7 +132,7 @@ class WorkerConfigCenter(ConfigCenter):
 
     def get_extern_modules(self, platform=None):
         keys = self.tables().get("extern_modules").keys()
-        sql = "SELECT %s FROM `extern_modules` WHERE valid=1" % ','.join(keys)
+        sql = "SELECT %s FROM `extern_modules` WHERE valid='%s'" % (','.join(keys), '1')
         sql += ";" if not platform else " AND platform=\"%s\";" % platform
         return self._get_infos(sql, keys, platform, 'platform', 'mould', 'ExternModuleInfo')
 
@@ -204,3 +203,17 @@ class WorkerConfigCenter(ConfigCenter):
             packages.append(obj)
         conf = conf if conf else None
         return None if not conf else conf if not index else conf.get(index, None)
+
+    def _get_all(self, table_name, record_name, parent_cls=None):
+        keys = self.tables().get(table_name).keys()
+        sql = 'SELECT %s FROM `%s` WHERE valid=1;' % (', '.join(keys),
+                                                      table_name)
+        records = self._connection.execute(sql).fetchall()
+        ret = []
+        for record in records:
+            r = type(record_name,
+                     parent_cls if parent_cls else (),
+                     {keys[i]: record[i] for i in range(len(keys))})
+            ret.append(r)
+        return ret if len(ret) else None
+

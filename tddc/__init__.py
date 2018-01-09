@@ -18,7 +18,7 @@ from .worker.storager import Storager
 from .worker.cache import CacheManager
 from .worker.status import StatusManager
 from .worker.record import RecordManager
-from .worker.task import TaskStatus, TaskManager
+from .worker.task import TaskStatus, TaskManager, Task
 from .worker.postman import Postman
 
 __all__ = ['ConfigCenter',
@@ -42,5 +42,5 @@ __all__ = ['ConfigCenter',
            'CacheManager',
            'StatusManager',
            'RecordManager',
-           'TaskStatus', 'TaskManager',
+           'TaskStatus', 'TaskManager', 'Task',
            'Postman']

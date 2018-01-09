@@ -24,6 +24,7 @@ class ExternManager(TDDCLogger):
 
     def __init__(self):
         EventCenter()
+        Storager()
         self.config = WorkerConfigCenter().get_extern_modules_config()
         super(ExternManager, self).__init__()
         self._start()

@@ -43,7 +43,7 @@ class EventCenter(KeepAliveConsumer):
         self.event_config = event_info
         kafka_info = WorkerConfigCenter().get_kafka()
         if not kafka_info:
-            self.error('Kafka Server Info Not Found.')
+            print('>>> Kafka Nodes Not Found.')
             return
         kafka_nodes = ','.join(['%s:%s' % (info.host, info.port) for info in kafka_info])
         super(EventCenter, self).__init__(event_info.topic,
@@ -73,8 +73,19 @@ class EventCenter(KeepAliveConsumer):
     def _deserialization(self, item):
         return type('EventRecord', (), item)
 
-    def event_status_update(self, event, status):
-        StatusManager().append_status(self.event_config.status_table,
-                                      event.id,
-                                      '%s_%s' % (self.worker.name, self.worker.id),
-                                      status)
+    def update_the_status(self, event, status):
+        """
+        :param event: Event Detail Info
+        :param status: Event Executive Condition
+        :return:
+        Status Structure(Redis):
+            name(table type: hash)
+            key(event id)
+            value(key from hash(name('xxx:xx:x:event_id')))
+        """
+        StatusManager().set_the_hash_value_for_the_hash('tddc:event:status:' + event.platform,
+                                                        event.id,
+                                                        'tddc:event:status:value:' + event.id,
+                                                        '%s_%s' % (self.worker.name, self.worker.id),
+                                                        status)
+        StatusManager().sadd('tddc:event:status:processing:%s' % event.platform)

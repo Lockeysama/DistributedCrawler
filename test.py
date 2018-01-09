@@ -17,9 +17,9 @@ def main():
     # event()
     # hbase()
     # kafka()
-    # redis()
+    redis()
     # config()
-    extern_manager()
+    # extern_manager()
     while True:
         gevent.sleep(100)
     print(1)
@@ -138,9 +138,26 @@ def redis():
     from tddc import CacheManager
     from tddc import StatusManager
     RecordManager()
-    print(RecordManager().get_record('tddc.event.record.crawler',
-                                     '1-1505811162.56-1799',
-                                     _callback))
+    StatusManager().set_the_hash_value_for_the_hash('test:event:status:test',
+                                                    'test_id_10',
+                                                    'test:event:status:value:test_id_10',
+                                                    'client1',
+                                                    '1000')
+    StatusManager().set_the_hash_value_for_the_hash('test:event:status:test',
+                                                    'test_id_10',
+                                                    'test:event:status:value:test_id_10',
+                                                    'client1',
+                                                    '1200')
+    StatusManager().set_the_hash_value_for_the_hash('test:event:status:test',
+                                                    'test_id_10',
+                                                    'test:event:status:value:test_id_10',
+                                                    'tddc_worker_monitor_host_id',
+                                                    '1200')
+    print(StatusManager().get_the_hash_value_for_the_hash('test:event:status:test', 'test_id_10', 'client2'))
+    print(StatusManager().get_the_hash_value_for_the_hash('test:event:status:test', 'test_id_10'))
+    print(RecordManager().get_record_sync('tddc.event.record.crawler.a',
+                                          '1-1505811162.56-1799',
+                                          _callback))
     RecordManager().logger.debug('Record')
     CacheManager()
     print(CacheManager().get_random('tddc:proxy:pool:che300'))

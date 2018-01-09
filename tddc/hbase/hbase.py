@@ -7,9 +7,11 @@ Created on 2017年4月12日
 
 import json
 import random
+import time
 
 import gevent
 import happybase
+from thriftpy.transport import TTransportException
 
 from ..log.logger import TDDCLogger
 
@@ -17,6 +19,7 @@ from ..log.logger import TDDCLogger
 class HBaseManager(happybase.ConnectionPool, TDDCLogger):
 
     def __init__(self, nodes):
+        self.status = type('HBaseStatus', (), {'alive_timestamp': 0})
         self._nodes = nodes
         self._current_node = random.choice(self._nodes)
         super(HBaseManager, self).__init__(8,
@@ -25,19 +28,41 @@ class HBaseManager(happybase.ConnectionPool, TDDCLogger):
                                            host=str(self._current_node.host),
                                            port=int(self._current_node.port))
         self._tables = []
+        gevent.spawn(self._alive_check)
+        gevent.sleep()
+
+    def _alive_check(self):
+        while True:
+            try:
+                with self.connection() as _:
+                    pass
+            except Exception as e:
+                self.exception(e)
+                self.error('HBase Connection Exception.')
+            else:
+                self.status.alive_timestamp = int(time.time())
+            gevent.sleep(5)
+
+    def get_connection_status(self):
+        return self.status
 
     def get(self, table, row_key, family=None, qualifier=None):
         try:
             with self.connection() as connection:
-                table = connection.table(table)
+                table_obj = connection.table(table)
                 if family and qualifier:
                     cf = family + ':' + qualifier
                 elif family and not qualifier:
                     cf = family
                 else:
                     return False, None
-                data = table.row(row_key, columns=[cf])
+                data = table_obj.row(row_key, columns=[cf])
                 return bool(len(data)), data
+        except TTransportException as e:
+            self.exception(e)
+            gevent.sleep(1)
+            self.debug('Try Again.')
+            return self.get(table, row_key, family, qualifier)
         except Exception as e:
             self.exception(e)
             return False, None
@@ -53,6 +78,11 @@ class HBaseManager(happybase.ConnectionPool, TDDCLogger):
         try:
             with self.connection() as connection:
                 connection.create_table(table, families)
+        except TTransportException as e:
+            self.exception(e)
+            gevent.sleep(1)
+            self.debug('Try Again.')
+            self.create(table, families)
         except Exception as e:
             self.exception(e)
             return False
@@ -89,6 +119,11 @@ class HBaseManager(happybase.ConnectionPool, TDDCLogger):
                     self._puts(b, rows)
                     b.send()
                 return True
+        except TTransportException as e:
+            self.exception(e)
+            gevent.sleep(1)
+            self.debug('Try Again.')
+            return self.puts(table_rows)
         except Exception as e:
             self.exception(e)
             return False
@@ -129,6 +164,11 @@ class HBaseManager(happybase.ConnectionPool, TDDCLogger):
                         values[cf_fmt + column] = value
                     table.put(row_key, values)
                 return True
+        except TTransportException as e:
+            self.exception(e)
+            gevent.sleep(1)
+            self.debug('Try Again.')
+            return self.put(table, row_key, items)
         except Exception as e:
             self.exception(e)
             return False

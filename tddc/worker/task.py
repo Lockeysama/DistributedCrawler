@@ -27,6 +27,33 @@ class TaskStatus(object):
     ParsedSuccess = 1200
     ParsedFailed = 1400
 
+    @classmethod
+    def next_status(cls, state):
+        status = [cls.CrawlTopic,
+                  cls.WaitCrawl,
+                  cls.CrawledSuccess,
+                  cls.WaitParse,
+                  cls.ParseModuleNotFound,
+                  cls.ParsedSuccess,
+                  cls.ParsedFailed]
+        index = status.index(state)
+        if index < 0:
+            return cls.WaitCrawl
+        if index == len(status) - 1:
+            return cls.ParsedFailed
+        return status[index + 1]
+
+
+class Task(object):
+
+    timestamp = 0
+
+    interval = 120
+
+    cur_status = 0
+
+    pre_status = 0
+
 
 class TaskManager(KeepAliveConsumer):
     '''
@@ -90,32 +117,33 @@ class TaskManager(KeepAliveConsumer):
 
     def _record_fetched(self, item):
         task = item
-        if not hasattr(task, 'id'):
+        if not hasattr(task, 'id') or not hasattr(task, 'cur_status'):
             return
-        self._task_status_changed(task)
+        task.pre_status = task.cur_status
+        task.cur_status = (TaskStatus.WaitCrawl
+                           if task.cur_status == TaskStatus.CrawlTopic
+                           else TaskStatus.WaitParse)
+        self.task_status_changed(task)
         self._totals += 1
 
     def _deserialization(self, item):
-        class Task(object):
-            cur_status = None
-            pre_status = None
         return type('TaskRecord', (Task,), item)
 
     def get(self, block=True, timeout=None):
         task = super(TaskManager, self).get(block, timeout)
         return task
 
-    def _task_status_changed(self, task):
+    def task_status_changed(self, task):
         StatusManager().update_status('{base}:{platform}'.format(base=self.task_conf.status_key_base,
                                                                  platform=task.platform),
                                       task.id,
                                       task.cur_status,
-                                      task.pre_status if task.pre_status != task.cur_status else None)
+                                      task.pre_status)
 
     def task_successed(self, task):
         self._success += 1
         self._one_minute_past_success += 1
-        self._task_status_changed(task)
+        self.task_status_changed(task)
         self.debug('[%s:%s:%s] Task Success.' % (task.platform,
                                                  task.id,
                                                  task.url))
@@ -123,7 +151,7 @@ class TaskManager(KeepAliveConsumer):
     def task_failed(self, task):
         self._failed += 1
         self._one_minute_past_failed += 1
-        self._task_status_changed(task)
+        self.task_status_changed(task)
         self.warning('[%s:%s:%s] Task Failed(%d).' % (task.platform,
                                                       task.id,
                                                       task.url,
@@ -132,7 +160,7 @@ class TaskManager(KeepAliveConsumer):
     def push_task(self, task, topic, status_update=True):
         def _pushed(_):
             if status_update:
-                self._task_status_changed(task)
+                self.task_status_changed(task)
             self.debug('[%s:%s] Pushed(Topic:%s).' % (task.platform,
                                                       task.id,
                                                       topic))

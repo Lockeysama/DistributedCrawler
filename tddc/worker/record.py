@@ -5,8 +5,6 @@ Created on 2017年5月8日
 @author: chenyitao
 '''
 
-import gevent
-
 from ..util.util import Singleton
 from ..redis.redis_client import RedisClient
 
@@ -22,38 +20,30 @@ class RecordManager(RedisClient):
     def __init__(self):
         nodes = WorkerConfigCenter().get_redis()
         if not nodes:
+            print('>>> Redis Nodes Not Found.')
             return
         nodes = [{'host': node.host,
                   'port': node.port} for node in nodes]
-        super(RedisClient, self).__init__(startup_nodes=nodes)
+        super(RecordManager, self).__init__(startup_nodes=nodes)
+        self.info('Status Manager Was Ready.')
 
     def create_record(self, name, key, record):
-        times = 0
-        while True:
-            try:
-                self.hset(name, key, record)
-            except Exception as e:
-                self.exception(e)
-                gevent.sleep(1)
-                times += 1
-                if times == 5:
-                    self.error('Create Record [%s:%s:%s] Failed.'.format(name, key, record))
-                    break
-            else:
-                break
+        def _create_record(_name, _key, _record):
+            self.hset(_name, _key, _record)
+        self.robust(_create_record, name, key, record)
 
-    def get_record(self, name, key, callback, **kwargs):
-        times = 0
-        while True:
-            try:
-                record = self.hget(name, key)
-            except Exception as e:
-                self.exception(e)
-                gevent.sleep(0.5)
-                times += 1
-                if times == 5:
-                    self.error('Get Record [%s:%s] Failed.'.format(name, key))
-                    break
-            else:
-                callback(record, **kwargs)
-                break
+    def create_records(self, name, records):
+        def _create_records(_name, _records):
+            self.hmset(_name, _records)
+        self.robust(_create_records, name, records)
+
+    def get_record_sync(self, name, key, callback, **kwargs):
+        def _get_record_sync(_name, _key, _callback, **_kwargs):
+            record = self.hget(_name, _key)
+            _callback(record, **_kwargs)
+        self.robust(_get_record_sync, name, key, callback, **kwargs)
+
+    def get_record(self, name, key):
+        def _get_record_sync(_name, _key):
+            return self.hget(_name, _key)
+        return self.robust(_get_record_sync, name, key)

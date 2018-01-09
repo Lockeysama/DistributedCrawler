@@ -22,6 +22,7 @@ class Storager(HBaseManager):
     def __init__(self):
         nodes = WorkerConfigCenter().get_hbase()
         if not nodes:
+            print('>>> HBase Nodes Not Found.')
             return
         super(Storager, self).__init__(nodes)
         self.info('Storager Is Starting.')
@@ -41,6 +42,8 @@ class Storager(HBaseManager):
                 self.put(data.table, data.row_key, data.data)
             except Exception as e:
                 self.exception(e)
+                if data and hasattr(data, 'table') and hasattr(data, 'row_key'):
+                    self._q.put((data, callback))
             else:
                 self.debug('[%s:%s] Storaged.' % (data.table, data.row_key))
                 callable(callback(data))

@@ -8,6 +8,7 @@ Created on 2017年5月2日
 import json
 
 import gevent.queue
+import time
 from kafka import KafkaConsumer
 
 from ..log.logger import TDDCLogger
@@ -19,6 +20,7 @@ class KeepAliveConsumer(KafkaConsumer, TDDCLogger):
     """
 
     def __init__(self, topics, group, pause_size, record_model_cls=None, *args, **kwargs):
+        self.status = type('KafkaStatus', (), {'alive_timestamp': 0})
         self._topics = topics
         self._group = group
         self._pause_size = pause_size
@@ -34,6 +36,9 @@ class KeepAliveConsumer(KafkaConsumer, TDDCLogger):
         gevent.spawn(self._fetch)
         gevent.sleep()
 
+    def get_connection_status(self):
+        return self.status
+
     def get(self, block=True, timeout=None):
         return self._queue.get(block, timeout)
 
@@ -47,6 +52,7 @@ class KeepAliveConsumer(KafkaConsumer, TDDCLogger):
                     pause = True
                     self.logger.info('Consumer[%s(%s)] Was Paused.' % (self._topics,
                                                                        self._group))
+                self.status.alive_timestamp = int(time.time())
                 gevent.sleep(1)
                 continue
             if pause and self._queue.qsize() < self._pause_size / 2:
@@ -55,9 +61,11 @@ class KeepAliveConsumer(KafkaConsumer, TDDCLogger):
                 self.logger.info('Consumer[%s(%s)] Was Resumed.' % (self._topics, self._group))
             partition_records = self.poll(2000, 16)
             if not len(partition_records):
+                self.status.alive_timestamp = int(time.time())
                 gevent.sleep(1)
                 continue
             for _, records in partition_records.items():
+                self.status.alive_timestamp = int(time.time())
                 for record in records:
                     self._record(record)
 
