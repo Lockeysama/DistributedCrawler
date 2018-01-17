@@ -32,7 +32,7 @@ class WorkerManager(TDDCLogger):
         ExternManager()
         gevent.spawn(self._feedback_plugin_status)
         gevent.sleep()
-        StatusManager().sadd('tddc:client:alive', '%s_%s' % (self.worker.name, self.worker.id))
+        StatusManager().sadd('tddc:client:alive', '%s|%s' % (self.worker.name, self.worker.id))
 
     def _feedback_plugin_status(self):
         while True:
@@ -45,7 +45,7 @@ class WorkerManager(TDDCLogger):
 
     def _feedback(self):
         StatusManager().set_status('tddc:status:client',
-                                   self.worker.name + self.worker.id,
+                                   '%s|%s' % (self.worker.name, self.worker.id),
                                    json.dumps({'Kafka': EventCenter().get_connection_status().alive_timestamp,
                                                'Redis': StatusManager().get_connection_status().alive_timestamp,
                                                'HBase': Storager().get_connection_status().alive_timestamp}))

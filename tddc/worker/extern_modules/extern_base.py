@@ -15,3 +15,5 @@ class ExternBase(TDDCLogger):
     feature = None
 
     version = None
+
+    valid = '1'

@@ -54,10 +54,10 @@ class ExternManager(TDDCLogger):
     @staticmethod
     @EventCenter.route(EventType.ExternModuleUpdate)
     def _models_update_event(event):
-        EventCenter().event_status_update(event,
-                                          EventStatus.Executed_Success
-                                          if ExternManager()._update(event)
-                                          else EventStatus.Executed_Failed)
+        EventCenter().update_the_status(event,
+                                        EventStatus.Executed_Success
+                                        if ExternManager()._update(event)
+                                        else EventStatus.Executed_Failed)
 
     def _get_remote_config(self, platform):
         success, config = Storager().get(self.config.config_table,

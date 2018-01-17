@@ -65,7 +65,7 @@ class EventCenter(KeepAliveConsumer):
         event = item
         if not hasattr(event, 'id'):
             return
-        self.event_status_update(event, EventStatus.Fetched)
+        self.update_the_status(event, EventStatus.Fetched)
         callback = self._dispatcher.get(event.e_type, None)
         if callback:
             callback(event)
@@ -83,9 +83,10 @@ class EventCenter(KeepAliveConsumer):
             key(event id)
             value(key from hash(name('xxx:xx:x:event_id')))
         """
-        StatusManager().set_the_hash_value_for_the_hash('tddc:event:status:' + event.platform,
+        StatusManager().set_the_hash_value_for_the_hash('tddc:event:status:' + event.event.get('platform'),
                                                         event.id,
                                                         'tddc:event:status:value:' + event.id,
-                                                        '%s_%s' % (self.worker.name, self.worker.id),
+                                                        '%s|%s' % (self.worker.name, self.worker.id),
                                                         status)
-        StatusManager().sadd('tddc:event:status:processing:%s' % event.platform)
+        StatusManager().sadd('tddc:event:status:processing:%s' % event.event.get('platform'),
+                             event.id)

@@ -114,8 +114,8 @@ class HBaseManager(happybase.ConnectionPool, TDDCLogger):
             with self.connection() as connection:
                 for table, rows in table_rows.items():
                     self._auto_create(connection, table)
-                    table = connection.table(table)
-                    b = table.batch()
+                    table_obj = connection.table(table)
+                    b = table_obj.batch()
                     self._puts(b, rows)
                     b.send()
                 return True
@@ -151,7 +151,7 @@ class HBaseManager(happybase.ConnectionPool, TDDCLogger):
         try:
             with self.connection() as connection:
                 self._auto_create(connection, table, items)
-                table = connection.table(table)
+                table_obj = connection.table(table)
                 bool_trans_to_number_dict = {True: 1, False: 0}
                 for family, data in items.items():
                     cf_fmt = family + ':'
@@ -162,7 +162,7 @@ class HBaseManager(happybase.ConnectionPool, TDDCLogger):
                                 value = bool_trans_to_number_dict.get(value)
                             value = json.dumps(value)
                         values[cf_fmt + column] = value
-                    table.put(row_key, values)
+                    table_obj.put(row_key, values)
                 return True
         except TTransportException as e:
             self.exception(e)

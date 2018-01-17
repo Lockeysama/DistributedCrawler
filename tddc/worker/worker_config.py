@@ -69,7 +69,7 @@ class WorkerConfigCenter(ConfigCenter):
                           "feature": {"field_type": "TEXT"},
                           "version": {"field_type": "TEXT"},
                           "md5": {"field_type": "TEXT"},
-                          "valid": {"field_type": "BLOB"},
+                          "valid": {"field_type": "TEXT"},
                           "update_time": {"field_type": "TEXT"},
                           "describe": {"field_type": "TEXT"}}
         return extern_modules
@@ -140,7 +140,7 @@ class WorkerConfigCenter(ConfigCenter):
         def _insert(self, platform, package):
             sql_fmt = ("INSERT INTO `extern_modules`"
                        "(`platform`,`package`,`mould`,`feature`,`version`,`md5`,`valid`,`update_time`) "
-                       "VALUES (\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",%d,datetime());")
+                       "VALUES (\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",datetime());")
             sql = sql_fmt % (platform,
                              package.package,
                              package.mould,
@@ -159,10 +159,11 @@ class WorkerConfigCenter(ConfigCenter):
 
         def _update(self, platform, package):
             sql_fmt = ("UPDATE `extern_modules` "
-                       "SET `version`=\"%s\", `md5`=\"%s\", `update_time`=datetime() "
+                       "SET `version`=\"%s\", `md5`=\"%s\", `valid`=\"%s\", `update_time`=datetime() "
                        "WHERE `feature`=\"%s\" AND `platform`=\"%s\";")
             sql = sql_fmt % (package.version,
                              package.md5,
+                             package.valid,
                              package.feature,
                              platform)
             try:

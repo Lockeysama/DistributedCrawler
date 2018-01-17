@@ -60,12 +60,11 @@ class KeepAliveConsumer(KafkaConsumer, TDDCLogger):
                 pause = False
                 self.logger.info('Consumer[%s(%s)] Was Resumed.' % (self._topics, self._group))
             partition_records = self.poll(2000, 16)
+            self.status.alive_timestamp = int(time.time())
             if not len(partition_records):
-                self.status.alive_timestamp = int(time.time())
                 gevent.sleep(1)
                 continue
             for _, records in partition_records.items():
-                self.status.alive_timestamp = int(time.time())
                 for record in records:
                     self._record(record)
 
