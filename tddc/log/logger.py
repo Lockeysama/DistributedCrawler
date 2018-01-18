@@ -45,7 +45,6 @@ class TDDCLogger(object):
     name = None
 
     def __init__(self, log_name=None, *args, **kwargs):
-        super(TDDCLogger, self).__init__()
         self.name = log_name if log_name else str(self.__class__).strip('\'<class >')
         stream = logging.StreamHandler()
         stream.name = self.name

@@ -9,6 +9,7 @@ import gevent.queue
 
 from ..util.util import Singleton
 from ..hbase.hbase import HBaseManager
+from ..log.logger import TDDCLogger
 
 from .worker_config import WorkerConfigCenter
 
@@ -22,7 +23,7 @@ class Storager(HBaseManager):
     def __init__(self):
         nodes = WorkerConfigCenter().get_hbase()
         if not nodes:
-            print('>>> HBase Nodes Not Found.')
+            TDDCLogger().warning('>>> HBase Nodes Not Found.')
             return
         super(Storager, self).__init__(nodes)
         self.info('Storager Is Starting.')

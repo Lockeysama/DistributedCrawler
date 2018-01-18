@@ -15,6 +15,7 @@ from ..log.logger import TDDCLogger
 class KeepAliveProducer(KafkaProducer, TDDCLogger):
 
     def __init__(self, bootstrap_servers):
+        TDDCLogger.__init__(self)
         self.status = type('KafkaStatus', (), {'alive_timestamp': 0})
         super(KeepAliveProducer, self).__init__(bootstrap_servers=bootstrap_servers)
         self._queue = gevent.queue.Queue()

@@ -18,6 +18,7 @@ class RedisClient(StrictRedisCluster, TDDCLogger):
     '''
 
     def __init__(self, *args, **kwargs):
+        TDDCLogger.__init__(self)
         self.status = type('RedisStatus', (), {'alive_timestamp': 0})
         super(RedisClient, self).__init__(*args, **kwargs)
         gevent.spawn(self._alive_check)

@@ -5,14 +5,14 @@ Created on 2017年5月5日
 @author: chenyitao
 '''
 
-from string import capitalize
-
 import gevent.queue
 
-from ..kafka.consumer import KeepAliveConsumer
 from ..log.logger import TDDCLogger
+from ..kafka.consumer import KeepAliveConsumer
 from ..util.util import Singleton
 from .status import StatusManager
+from .cache import CacheManager
+from .record import RecordManager
 from .worker_config import WorkerConfigCenter
 
 
@@ -36,6 +36,9 @@ class EventCenter(KeepAliveConsumer):
     _dispatcher = {}
 
     def __init__(self):
+        StatusManager()
+        CacheManager()
+        RecordManager()
         self._event_queue = gevent.queue.Queue()
         self._event_call = {}
         self.worker = WorkerConfigCenter().get_worker()
@@ -43,7 +46,7 @@ class EventCenter(KeepAliveConsumer):
         self.event_config = event_info
         kafka_info = WorkerConfigCenter().get_kafka()
         if not kafka_info:
-            print('>>> Kafka Nodes Not Found.')
+            TDDCLogger().warning('>>> Kafka Nodes Not Found.')
             return
         kafka_nodes = ','.join(['%s:%s' % (info.host, info.port) for info in kafka_info])
         super(EventCenter, self).__init__(event_info.topic,

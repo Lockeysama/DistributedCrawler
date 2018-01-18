@@ -23,10 +23,10 @@ class ExternManager(TDDCLogger):
     __metaclass__ = Singleton
 
     def __init__(self):
+        super(ExternManager, self).__init__()
         EventCenter()
         Storager()
         self.config = WorkerConfigCenter().get_extern_modules_config()
-        super(ExternManager, self).__init__()
         self._start()
 
     def _start(self):

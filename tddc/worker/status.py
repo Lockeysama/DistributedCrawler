@@ -9,6 +9,7 @@ import time
 
 from ..util.util import Singleton
 from ..redis.redis_client import RedisClient
+from ..log.logger import TDDCLogger
 
 from .worker_config import WorkerConfigCenter
 
@@ -22,7 +23,7 @@ class StatusManager(RedisClient):
     def __init__(self):
         nodes = WorkerConfigCenter().get_redis()
         if not nodes:
-            print('>>> Redis Nodes Not Found.')
+            TDDCLogger().warning('>>> Redis Nodes Not Found.')
             return
         nodes = [{'host': node.host,
                   'port': node.port} for node in nodes]

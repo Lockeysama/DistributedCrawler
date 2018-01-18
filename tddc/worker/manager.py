@@ -10,8 +10,6 @@ import gevent
 
 from .extern_modules.extern_manager import ExternManager
 from .status import StatusManager
-from .cache import CacheManager
-from .record import RecordManager
 from .event import EventCenter
 from .storager import Storager
 from .worker_config import WorkerConfigCenter
@@ -26,9 +24,6 @@ class WorkerManager(TDDCLogger):
     def __init__(self):
         super(WorkerManager, self).__init__()
         self.worker = WorkerConfigCenter().get_worker()
-        StatusManager()
-        CacheManager()
-        RecordManager()
         ExternManager()
         gevent.spawn(self._feedback_plugin_status)
         gevent.sleep()

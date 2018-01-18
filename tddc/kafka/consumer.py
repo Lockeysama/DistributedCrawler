@@ -20,11 +20,13 @@ class KeepAliveConsumer(KafkaConsumer, TDDCLogger):
     """
 
     def __init__(self, topics, group, pause_size, record_model_cls=None, *args, **kwargs):
+        TDDCLogger.__init__(self)
         self.status = type('KafkaStatus', (), {'alive_timestamp': 0})
         self._topics = topics
         self._group = group
         self._pause_size = pause_size
         self._record_model_cls = record_model_cls
+        self._queue = gevent.queue.Queue()
         super(KeepAliveConsumer, self).__init__(topics,
                                                 group_id=group,
                                                 heartbeat_interval_ms=9000,
@@ -32,7 +34,6 @@ class KeepAliveConsumer(KafkaConsumer, TDDCLogger):
                                                 max_poll_records=32,
                                                 *args,
                                                 **kwargs)
-        self._queue = gevent.queue.Queue()
         gevent.spawn(self._fetch)
         gevent.sleep()
 
@@ -88,6 +89,8 @@ class KeepAliveConsumer(KafkaConsumer, TDDCLogger):
                 self.exception(e)
             else:
                 item = self._deserialization(item)
+                if not item:
+                    return
                 self._record_fetched(item)
                 self._queue.put(item)
 

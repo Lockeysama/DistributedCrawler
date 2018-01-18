@@ -9,6 +9,7 @@ import gevent
 
 from ..kafka.consumer import KeepAliveConsumer
 from ..util.util import Singleton, object2json
+from ..log.logger import TDDCLogger
 
 from .worker_config import WorkerConfigCenter
 from .status import StatusManager
@@ -54,6 +55,12 @@ class Task(object):
 
     pre_status = 0
 
+    platform = None
+
+    feature = None
+
+    url = None
+
 
 class TaskManager(KeepAliveConsumer):
     '''
@@ -68,7 +75,7 @@ class TaskManager(KeepAliveConsumer):
         self.task_conf = WorkerConfigCenter().get_task()
         kafka_info = WorkerConfigCenter().get_kafka()
         if not kafka_info:
-            self.error('Kafka Server Info Not Found.')
+            TDDCLogger().warning('>>>Kafka Server Info Not Found.')
             return
         kafka_nodes = ','.join(['%s:%s' % (info.host, info.port) for info in kafka_info])
         super(TaskManager, self).__init__(self.task_conf.consumer_topic,
@@ -117,8 +124,6 @@ class TaskManager(KeepAliveConsumer):
 
     def _record_fetched(self, item):
         task = item
-        if not hasattr(task, 'id') or not hasattr(task, 'cur_status'):
-            return
         task.pre_status = task.cur_status
         task.cur_status = (TaskStatus.WaitCrawl
                            if task.cur_status == TaskStatus.CrawlTopic
@@ -127,6 +132,12 @@ class TaskManager(KeepAliveConsumer):
         self._totals += 1
 
     def _deserialization(self, item):
+        if not item.get('id') \
+                or item.get('cur_status', None) is None \
+                or not item.get('platform') \
+                or not item.get('feature') \
+                or not item.get('url'):
+            return None
         return type('TaskRecord', (Task,), item)
 
     def get(self, block=True, timeout=None):

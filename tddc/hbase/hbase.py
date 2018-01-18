@@ -19,6 +19,7 @@ from ..log.logger import TDDCLogger
 class HBaseManager(happybase.ConnectionPool, TDDCLogger):
 
     def __init__(self, nodes):
+        TDDCLogger.__init__(self)
         self.status = type('HBaseStatus', (), {'alive_timestamp': 0})
         self._nodes = nodes
         self._current_node = random.choice(self._nodes)
