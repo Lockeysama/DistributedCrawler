@@ -4,11 +4,9 @@ Created on 2017年5月5日
 
 @author: chenyitao
 '''
-import json
 
 import gevent.queue
 
-from .pubsub import Pubsub
 from ..log.logger import TDDCLogger
 from ..kafka.consumer import KeepAliveConsumer
 from ..util.util import Singleton
@@ -29,7 +27,7 @@ class EventStatus(object):
     Executed_Failed = 3400
 
 
-class EventCenter(Pubsub):
+class EventCenter(KeepAliveConsumer):
     '''
     classdocs
     '''
@@ -46,7 +44,15 @@ class EventCenter(Pubsub):
         self.worker = WorkerConfigCenter().get_worker()
         event_info = WorkerConfigCenter().get_event()
         self.event_config = event_info
-        super(EventCenter, self).__init__()
+        kafka_info = WorkerConfigCenter().get_kafka()
+        if not kafka_info:
+            TDDCLogger().warning('>>> Kafka Nodes Not Found.')
+            return
+        kafka_nodes = ','.join(['%s:%s' % (info.host, info.port) for info in kafka_info])
+        super(EventCenter, self).__init__(event_info.topic,
+                                          event_info.group_id,
+                                          0xffffffff,
+                                          bootstrap_servers=kafka_nodes)
         self.info('Event Manager Is Starting.')
         self._event_call = {}
         self.info('Event Manager Was Ready.')
@@ -58,27 +64,16 @@ class EventCenter(Pubsub):
             return func
         return decorator
 
-    def _subscribe_topic(self):
-        return WorkerConfigCenter().get_event().topic
-
-    def _data_fetched(self, data):
-        event = self._deserialization(data)
-        if not event or not hasattr(event, 'id'):
+    def _record_fetched(self, item):
+        event = item
+        if not hasattr(event, 'id'):
             return
         self.update_the_status(event, EventStatus.Fetched)
         callback = self._dispatcher.get(event.e_type, None)
         if callback:
             callback(event)
 
-    def _deserialization(self, data):
-        try:
-            item = json.loads(data)
-        except Exception as e:
-            self.warning('Event:"%s" | %s.' % (data, e.message))
-            return None
-        if not isinstance(item, dict):
-            self.warning('Event:"%s" is not type of dict.' % data)
-            return None
+    def _deserialization(self, item):
         return type('EventRecord', (), item)
 
     def update_the_status(self, event, status):

@@ -26,7 +26,7 @@ class RecordManager(RedisClient):
         nodes = [{'host': node.host,
                   'port': node.port} for node in nodes]
         super(RecordManager, self).__init__(startup_nodes=nodes)
-        self.info('Status Manager Was Ready.')
+        self.info('Record Manager Was Ready.')
 
     def create_record(self, name, key, record):
         def _create_record(_name, _key, _record):

@@ -1,6 +1,5 @@
 from __future__ import absolute_import
 
-from tddc.worker.status import StatusManager
 from .config.config_center import ConfigCenter
 from .hbase.hbase import HBaseManager
 from .kafka.consumer import KeepAliveConsumer
@@ -18,6 +17,8 @@ from .worker.storager import Storager
 from .worker.cache import CacheManager
 from .worker.status import StatusManager
 from .worker.record import RecordManager
+from .worker.message_queue import MessageQueue
+from .worker.pubsub import Pubsub
 from .worker.task import TaskStatus, TaskManager, Task
 from .worker.postman import Postman
 
@@ -42,5 +43,7 @@ __all__ = ['ConfigCenter',
            'CacheManager',
            'StatusManager',
            'RecordManager',
+           'MessageQueue',
+           'Pubsub',
            'TaskStatus', 'TaskManager', 'Task',
            'Postman']

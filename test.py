@@ -1,9 +1,12 @@
 # -*- coding:utf-8 -*-
+
 import gevent
 
 from tddc import ConfigCenter, Singleton, WorkerConfigCenter
-from tddc import EventCenter
+# from tddc import EventCenter
 from tddc import ExternManager
+from tddc.worker.event1 import EventCenter
+from tddc.worker.message_queue import MessageQueue
 
 
 def _callback(*args, **kwargs):
@@ -11,58 +14,36 @@ def _callback(*args, **kwargs):
 
 
 def main():
-    # abstract()
+    mq()
     # worker()
-    # exception()
     # event()
     # hbase()
     # kafka()
-    redis()
+    # redis()
     # config()
     # extern_manager()
     while True:
-        gevent.sleep(100)
+        gevent.sleep(10)
     print(1)
 
 
-def abstract():
-    import abc
-
-    class A(object):
-        __metaclass__ = abc.ABCMeta
-
-        @abc.abstractmethod
-        def foo(self):
-            pass
-
-    class B(A):
-        __metaclass__ = Singleton
-        # def foo(self):
-        #     pass
-
-    B()
-    print 1
+def mq():
+    task = WorkerConfigCenter().get_task()
+    mq = MessageQueue()
+    while True:
+        ret = mq.pull(task.consumer_topic, 3)
+        print(ret)
+        if not ret:
+            gevent.sleep(2)
 
 
 def worker():
     WorkerConfigCenter()
 
 
-def exception():
-    ExceptionCollection()
-    gevent.sleep(2)
-    ExceptionCollection().push(type('TestException',
-                                    (),
-                                    {'name': 'textexception',
-                                     'exception_type': 2001,
-                                     'timestamp': 12312312,
-                                     'host': '72.127.2.48',
-                                     'client_id': '12312as',
-                                     'id': '123rexxxxxxx'}))
-
-
 def event():
     EventCenter()
+    pass
     # while True:
     #     gevent.sleep(100)
 

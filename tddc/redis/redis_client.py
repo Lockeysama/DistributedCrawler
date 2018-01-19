@@ -20,9 +20,19 @@ class RedisClient(StrictRedisCluster, TDDCLogger):
     def __init__(self, *args, **kwargs):
         TDDCLogger.__init__(self)
         self.status = type('RedisStatus', (), {'alive_timestamp': 0})
-        super(RedisClient, self).__init__(*args, **kwargs)
+        super(RedisClient, self).__init__(max_connections=64, *args, **kwargs)
         gevent.spawn(self._alive_check)
         gevent.sleep()
+
+    @property
+    def info(self):
+        return self.logger.info
+
+    def redis_info(self, section=None):
+        if section is None:
+            return self.execute_command('INFO')
+        else:
+            return self.execute_command('INFO', section)
 
     def _alive_check(self):
         while True:

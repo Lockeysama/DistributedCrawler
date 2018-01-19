@@ -5,16 +5,15 @@ Created on 2017年4月14日
 @author: chenyitao
 '''
 
-import json
+import gevent
 
-import gevent.queue
-
-from ..log.logger import TDDCLogger
+from ..kafka.consumer import KeepAliveConsumer
 from ..util.util import Singleton, object2json
+from ..log.logger import TDDCLogger
 
 from .worker_config import WorkerConfigCenter
 from .status import StatusManager
-from .message_queue import MessageQueue
+from .postman import Postman
 
 
 class TaskStatus(object):
@@ -63,7 +62,7 @@ class Task(object):
     url = None
 
 
-class TaskManager(MessageQueue, TDDCLogger):
+class TaskManager(KeepAliveConsumer):
     '''
     classdocs
     '''
@@ -73,9 +72,16 @@ class TaskManager(MessageQueue, TDDCLogger):
         '''
         Constructor
         '''
-        TDDCLogger.__init__(self)
         self.task_conf = WorkerConfigCenter().get_task()
-        super(TaskManager, self).__init__()
+        kafka_info = WorkerConfigCenter().get_kafka()
+        if not kafka_info:
+            TDDCLogger().warning('>>>Kafka Server Info Not Found.')
+            return
+        kafka_nodes = ','.join(['%s:%s' % (info.host, info.port) for info in kafka_info])
+        super(TaskManager, self).__init__(self.task_conf.consumer_topic,
+                                          self.task_conf.consumer_group,
+                                          self.task_conf.local_task_queue_size,
+                                          bootstrap_servers=kafka_nodes)
         self.info('Task Manager Is Starting.')
         self._totals = 0
         self._minutes = 0
@@ -83,10 +89,7 @@ class TaskManager(MessageQueue, TDDCLogger):
         self._one_minute_past_success = 0
         self._failed = 0
         self._one_minute_past_failed = 0
-        self._q = gevent.queue.Queue()
         gevent.spawn(self._counter)
-        gevent.sleep()
-        gevent.spawn(self._pull)
         gevent.sleep()
         self.info('Task Manager Was Ready.')
 
@@ -119,42 +122,16 @@ class TaskManager(MessageQueue, TDDCLogger):
             self._one_minute_past_success = 0
             self._one_minute_past_failed = 0
 
-    def _pull(self):
-        while True:
-            if self._q.qsize() < self.task_conf.local_task_queue_size:
-                items = self.pull(self.task_conf.consumer_topic,
-                                  self.task_conf.local_task_queue_size)
-                if not items:
-                    gevent.sleep(2)
-                    continue
-                tasks = [self._record_fetched(item) for item in items]
-                tasks = [task for task in tasks if task]
-                for task in tasks:
-                    self._q.put(task)
-                self.info('Pulled New Task(%d).' % len(tasks))
-                gevent.sleep(2)
-            else:
-                gevent.sleep(2)
-
     def _record_fetched(self, item):
-        task = self._deserialization(item)
-        if not task:
-            self.warning('Task:%s Exception.' % item)
-            return None
+        task = item
         task.pre_status = task.cur_status
         task.cur_status = (TaskStatus.WaitCrawl
                            if task.cur_status == TaskStatus.CrawlTopic
                            else TaskStatus.WaitParse)
         self.task_status_changed(task)
         self._totals += 1
-        return task
 
     def _deserialization(self, item):
-        try:
-            item = json.loads(item)
-        except Exception as e:
-            self.warning('Task:%s Exception(%s).' % (item, e.message))
-            return None
         if not item.get('id') \
                 or item.get('cur_status', None) is None \
                 or not item.get('platform') \
@@ -164,7 +141,7 @@ class TaskManager(MessageQueue, TDDCLogger):
         return type('TaskRecord', (Task,), item)
 
     def get(self, block=True, timeout=None):
-        task = self._q.get(block, timeout)
+        task = super(TaskManager, self).get(block, timeout)
         return task
 
     def task_status_changed(self, task):
@@ -199,4 +176,4 @@ class TaskManager(MessageQueue, TDDCLogger):
                                                       task.id,
                                                       topic))
 
-        self.push(self.task_conf.producer_topic, object2json(task), _pushed)
+        Postman().push(topic, object2json(task), _pushed)

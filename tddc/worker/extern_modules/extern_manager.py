@@ -109,9 +109,12 @@ class ExternManager(TDDCLogger):
     def _load_moulds(self, package):
         rules_path_base = 'worker.extern_modules'
         try:
-            module = importlib.import_module('%s.%s.%s' % (rules_path_base,
-                                                           package.platform,
-                                                           package.package))
+            path = '%s.%s.%s' % (rules_path_base, package.platform, package.package)
+            pyc_path = path.replace('.', '/') + '.pyc'
+            if os.path.exists(pyc_path):
+                os.remove(pyc_path)
+            module = importlib.import_module(path)
+            module = reload(module)
         except Exception as e:
             self.exception(e)
             return False

@@ -26,7 +26,7 @@ class CacheManager(RedisClient):
         nodes = [{'host': node.host,
                   'port': node.port} for node in nodes]
         super(CacheManager, self).__init__(startup_nodes=nodes)
-        self.info('Status Manager Was Ready.')
+        self.info('Cache Manager Was Ready.')
 
     def get_random(self, name, pop=True):
         def _get_random(_name, _pop):
