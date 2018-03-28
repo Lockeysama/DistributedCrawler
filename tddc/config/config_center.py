@@ -8,11 +8,10 @@ Created on 2017年8月31日
 import sqlite3
 from string import capitalize
 
-from ..log.logger import TDDCLogger
 from ..util.util import Singleton
 
 
-class ConfigCenter(TDDCLogger):
+class ConfigCenter(object):
     """
     classdocs
     """

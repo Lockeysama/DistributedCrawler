@@ -4,14 +4,16 @@ Created on 2017年5月8日
 
 @author: chenyitao
 '''
-
+import logging
 import time
+
+from .models import RedisModel, DBSession
 
 from ..util.util import Singleton
 from ..redis.redis_client import RedisClient
-from ..log.logger import TDDCLogger
 
-from .worker_config import WorkerConfigCenter
+
+log = logging.getLogger(__name__)
 
 
 class StatusManager(RedisClient):
@@ -21,14 +23,14 @@ class StatusManager(RedisClient):
     __metaclass__ = Singleton
 
     def __init__(self):
-        nodes = WorkerConfigCenter().get_redis()
+        nodes = DBSession.query(RedisModel).all()
         if not nodes:
-            TDDCLogger().warning('>>> Redis Nodes Not Found.')
+            log.warning('>>> Redis Nodes Not Found.')
             return
         nodes = [{'host': node.host,
                   'port': node.port} for node in nodes]
         super(StatusManager, self).__init__(startup_nodes=nodes)
-        self.info('Status Manager Was Ready.')
+        log.info('Status Manager Was Ready.')
 
     def get_status(self, name, key):
         def _get_status(_name, _key):

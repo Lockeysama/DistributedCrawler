@@ -7,48 +7,43 @@ Created on 2017年4月20日
 
 import importlib
 import json
+import logging
 import os
 
-from ...log.logger import TDDCLogger
 from ...util.util import Singleton
-from ..worker_config import WorkerConfigCenter
+
+from ..models import DBSession, ModulesModel
 from ..event import EventType, EventCenter, EventStatus
 from ..storager import Storager
 
+log = logging.getLogger(__name__)
 
-class ExternManager(TDDCLogger):
+
+class ExternManager(object):
     '''
     classdocs
     '''
     __metaclass__ = Singleton
 
     def __init__(self):
+        log.info('Extern Modules Is Loading.')
         super(ExternManager, self).__init__()
         EventCenter()
         Storager()
-        self.config = WorkerConfigCenter().get_extern_modules_config()
-        self._start()
-
-    def _start(self):
-        '''
-        Constructor
-        '''
-        self.info('Extern Modules Is Loading.')
         self._load_local_models()
-        self.info('Extern Modules Was Loaded.')
+        log.info('Extern Modules Was Loaded.')
 
     def _load_local_models(self):
         self._rules_moulds = {}
-        conf = WorkerConfigCenter().get_extern_modules()
+        conf = DBSession.query(ModulesModel).all()
         if not conf:
             return False
-        for platform, packages in conf.items():
-            for package in packages:
-                try:
-                    self._load_moulds(package)
-                except Exception as e:
-                    self.exception(e)
-                    return False
+        for module_info in conf:
+            try:
+                self._load_moulds(module_info)
+            except Exception as e:
+                log.exception(e)
+                return False
         return True
 
     @staticmethod
@@ -60,25 +55,25 @@ class ExternManager(TDDCLogger):
                                         else EventStatus.Executed_Failed)
 
     def _get_remote_config(self, platform):
-        success, config = Storager().get(self.config.config_table,
-                                         platform,
-                                         'config',
-                                         'config')
+        success, config = Storager().hbase.get(self.config.config_table,
+                                               platform,
+                                               'config',
+                                               'config')
         return json.loads(config.get('config:config')) if success else None
 
     def _create_package(self, path, platform):
         if not os.path.exists(path):
             os.mkdir(path)
             with open(path + '__init__.py', 'a') as _:
-                self.info('Create %s Extern Modules Packages.' % platform)
+                log.info('Create %s Extern Modules Packages.' % platform)
 
     def _download_package_file(self, platform, remote_config, path):
         for feature, package in remote_config.items():
             package_package = package.get('package')
-            success, package_content = Storager().get(self.config.config_table,
-                                                      platform,
-                                                      'content',
-                                                      package_package)
+            success, package_content = Storager().hbase.get(self.config.config_table,
+                                                            platform,
+                                                            'content',
+                                                            package_package)
             if not success:
                 return False
             path_base = '%s/%s/' % (path, platform)
@@ -88,7 +83,7 @@ class ExternManager(TDDCLogger):
         return True
 
     def _update(self, event):
-        self.info('Extern Modules Is Updating...')
+        log.info('Extern Modules Is Updating...')
         platform = event.event.get('platform')
         if not platform:
             return False
@@ -103,7 +98,7 @@ class ExternManager(TDDCLogger):
             return False
         if not self._load_local_models():
             return False
-        self.info('Extern Modules Was Updated.')
+        log.info('Extern Modules Was Updated.')
         return True
 
     def _load_moulds(self, package):
@@ -116,7 +111,7 @@ class ExternManager(TDDCLogger):
             module = importlib.import_module(path)
             module = reload(module)
         except Exception as e:
-            self.exception(e)
+            log.exception(e)
             return False
         if not module:
             return False

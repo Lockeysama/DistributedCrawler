@@ -5,17 +5,19 @@ Created on 2017年5月5日
 @author: chenyitao
 '''
 import json
+import logging
 
 import gevent.queue
 
-from .pubsub import Pubsub
-from ..log.logger import TDDCLogger
-from ..kafka.consumer import KeepAliveConsumer
 from ..util.util import Singleton
+
+from .models import DBSession, WorkerModel, EventModel
+from .pubsub import Pubsub
 from .status import StatusManager
 from .cache import CacheManager
 from .record import RecordManager
-from .worker_config import WorkerConfigCenter
+
+log = logging.getLogger(__name__)
 
 
 class EventType(object):
@@ -38,18 +40,17 @@ class EventCenter(Pubsub):
     _dispatcher = {}
 
     def __init__(self):
+        log.info('Event Manager Is Starting.')
         StatusManager()
         CacheManager()
         RecordManager()
         self._event_queue = gevent.queue.Queue()
         self._event_call = {}
-        self.worker = WorkerConfigCenter().get_worker()
-        event_info = WorkerConfigCenter().get_event()
-        self.event_config = event_info
+        self.worker = DBSession.query(WorkerModel).get(1)
+        self.event_config = DBSession.query(EventModel).get(1)
         super(EventCenter, self).__init__()
-        self.info('Event Manager Is Starting.')
         self._event_call = {}
-        self.info('Event Manager Was Ready.')
+        log.info('Event Manager Was Ready.')
 
     @classmethod
     def route(cls, event_type):
@@ -59,7 +60,7 @@ class EventCenter(Pubsub):
         return decorator
 
     def _subscribe_topic(self):
-        return WorkerConfigCenter().get_event().topic
+        return self.event_config.topic
 
     def _data_fetched(self, data):
         event = self._deserialization(data)
@@ -74,10 +75,10 @@ class EventCenter(Pubsub):
         try:
             item = json.loads(data)
         except Exception as e:
-            self.warning('Event:"%s" | %s.' % (data, e.message))
+            log.warning('Event:"%s" | %s.' % (data, e.message))
             return None
         if not isinstance(item, dict):
-            self.warning('Event:"%s" is not type of dict.' % data)
+            log.warning('Event:"%s" is not type of dict.' % data)
             return None
         return type('EventRecord', (), item)
 

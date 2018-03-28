@@ -4,13 +4,15 @@ Created on 2017年5月8日
 
 @author: chenyitao
 '''
+import logging
 import gevent
 
 from ..util.util import Singleton
 from ..redis.redis_client import RedisClient
-from ..log.logger import TDDCLogger
 
-from .worker_config import WorkerConfigCenter
+from .models import RedisModel, DBSession
+
+log = logging.getLogger(__name__)
 
 
 class Pubsub(RedisClient):
@@ -20,9 +22,9 @@ class Pubsub(RedisClient):
     __metaclass__ = Singleton
 
     def __init__(self):
-        nodes = WorkerConfigCenter().get_redis()
+        nodes = DBSession.query(RedisModel).all()
         if not nodes:
-            TDDCLogger().warning('>>> Redis Nodes Not Found.')
+            log.warning('>>> Redis Nodes Not Found.')
             return
         nodes = [{'host': node.host,
                   'port': node.port} for node in nodes]
@@ -34,9 +36,9 @@ class Pubsub(RedisClient):
         def _subscribing():
             topic = self._subscribe_topic()
             if not topic:
-                self.warning('Subscribe Topic Is None.')
+                log.warning('Subscribe Topic Is None.')
                 return
-            self.info('Subscribing: %s' % topic)
+            log.info('Subscribing: %s' % topic)
             p = self.pubsub()
             p.subscribe(topic)
             for item in p.listen():

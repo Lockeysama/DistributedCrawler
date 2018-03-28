@@ -7,6 +7,8 @@ Created on 2017年4月10日
 
 import logging
 import sys
+
+
 sys.stderr = sys.stdout
 logging.CRITICAL = 35
 logging.FATAL = logging.CRITICAL
@@ -33,66 +35,18 @@ logging._levelNames = {
     'NOTSET': logging.NOTSET,
 }
 
-logging.basicConfig(format=('[%(asctime)s] [%(levelname)s] '
+logging.basicConfig(filemode='a',
+                    filename='processing.log',
+                    format=('[%(asctime)s] [%(levelname)s] '
                             '[%(name)s:%(lineno)s:%(funcName)s] '
                             ' )=> %(message)s'),
                     datefmt='%Y-%m-%d %H:%M:%S',
-                    level=logging.DEBUG,
-                    filename='Worker.log')
+                    level=logging.DEBUG)
 
-
-class TDDCLogger(object):
-    name = None
-
-    def __init__(self, log_name=None, *args, **kwargs):
-        super(TDDCLogger, self).__init__()
-        self.name = log_name if log_name else str(self.__class__).strip('\'<class >')
-        stream = logging.StreamHandler()
-        stream.name = self.name
-        stream.setLevel(logging.NOTSET)
-        stream.setFormatter(logging.Formatter(fmt=('\33[1m\33[%(levelno)dm[%(asctime)s] [%(levelname)s] '
-                                                   '[%(name)s:%(lineno)s:%(funcName)s] '
-                                                   ' )=> %(message)s\33[0m'),
-                                              datefmt='%Y-%m-%d %H:%M:%S'))
-        if stream.name in [handler.name for handler in logging.getLogger(self.name).handlers]:
-            return
-        logger = logging.getLogger(self.name)
-        logger.propagate = 0
-        logger.addHandler(stream)
-        file = logging.FileHandler('Worker.log')
-        file.name = self.name
-        file.setLevel(logging.NOTSET)
-        file.setFormatter(logging.Formatter(fmt=('[%(asctime)s] [%(levelname)s] '
-                                                 '[%(name)s:%(lineno)s:%(funcName)s] '
-                                                 ' )=> %(message)s'),
-                                            datefmt='%Y-%m-%d %H:%M:%S'))
-        logger.addHandler(file)
-
-    @property
-    def logger(self):
-        logger = logging.getLogger(self.name)
-        return logging.LoggerAdapter(logger, {self.name: self})
-
-    @property
-    def info(self):
-        return self.logger.info
-
-    @property
-    def debug(self):
-        return self.logger.debug
-
-    @property
-    def warning(self):
-        return self.logger.warning
-
-    @property
-    def error(self):
-        return self.logger.error
-
-    @property
-    def exception(self):
-        return self.logger.exception
-
-    @property
-    def critical(self):
-        return self.logger.critical
+stream = logging.StreamHandler()
+stream.setLevel(logging.NOTSET)
+stream.setFormatter(logging.Formatter(fmt=('\33[1m\33[%(levelno)dm[%(asctime)s] [%(levelname)s] '
+                                           '[%(name)s:%(lineno)s:%(funcName)s] '
+                                           ' )=> %(message)s\33[0m'),
+                                      datefmt='%Y-%m-%d %H:%M:%S'))
+logging.getLogger().addHandler(stream)

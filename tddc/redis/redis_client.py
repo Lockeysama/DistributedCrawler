@@ -4,29 +4,25 @@ Created on 2017年4月10日
 
 @author: chenyitao
 '''
+import logging
 
 import gevent
 import time
 from rediscluster import StrictRedisCluster
 
-from ..log.logger import TDDCLogger
+log = logging.getLogger(__name__)
 
 
-class RedisClient(StrictRedisCluster, TDDCLogger):
+class RedisClient(StrictRedisCluster):
     '''
     classdocs
     '''
 
     def __init__(self, *args, **kwargs):
-        TDDCLogger.__init__(self)
         self.status = type('RedisStatus', (), {'alive_timestamp': 0})
         super(RedisClient, self).__init__(max_connections=64, *args, **kwargs)
         gevent.spawn(self._alive_check)
         gevent.sleep()
-
-    @property
-    def info(self):
-        return self.logger.info
 
     def redis_info(self, section=None):
         if section is None:
@@ -40,8 +36,8 @@ class RedisClient(StrictRedisCluster, TDDCLogger):
                 if self.ping():
                     self.status.alive_timestamp = int(time.time())
             except Exception as e:
-                self.exception(e)
-                self.error('Redis Connection Exception.')
+                log.exception(e)
+                log.error('Redis Connection Exception.')
             gevent.sleep(5)
 
     def get_connection_status(self):
@@ -51,8 +47,8 @@ class RedisClient(StrictRedisCluster, TDDCLogger):
         try:
             return func(*args, **kwargs)
         except Exception as e:
-            self.exception(e)
-            self.debug('Try Again.')
+            log.exception(e)
+            log.debug('Try Again.')
             if self.connection_pool._created_connections != 0:
                 self.connection_pool.reset()
             gevent.sleep(2)
@@ -65,7 +61,7 @@ class RedisClient(StrictRedisCluster, TDDCLogger):
         with self.pipeline() as ppl:
             for value in values:
                 ppl.sadd(name, value)
-                ppl.execute()
+            ppl.execute()
 
     def smpop(self, name, count):
         '''
@@ -74,7 +70,7 @@ class RedisClient(StrictRedisCluster, TDDCLogger):
         with self.pipeline() as ppl:
             for _ in range(count):
                 ppl.spop(name)
-                ppl.execute()
+            ppl.execute()
 
     def hmdel(self, name, values):
         '''
@@ -83,7 +79,7 @@ class RedisClient(StrictRedisCluster, TDDCLogger):
         with self.pipeline() as ppl:
             for value in values:
                 ppl.hdel(name, value)
-                ppl.execute()
+            ppl.execute()
 
     def hmove(self, old_name, new_name, key, value):
         with self.pipeline() as ppl:
@@ -98,11 +94,11 @@ class RedisClient(StrictRedisCluster, TDDCLogger):
         '''
         ps = self.pubsub()
         ps.psubscribe(pattern)
-        self.logger.info('Subscribe %s...' % pattern)
+        log.info('Subscribe %s...' % pattern)
         for item in ps.listen():
             yield item
         ps.unsubscribe('spub')
-        self.logger.warning('Subscribe Was Exit.')
+        log.warning('Subscribe Was Exit.')
 
     def set_the_hash_value_for_the_hash(self, name, key, value_name, value_key, value):
         with self.pipeline() as ppl:

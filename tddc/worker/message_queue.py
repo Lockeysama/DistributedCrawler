@@ -4,12 +4,14 @@ Created on 2017年5月8日
 
 @author: chenyitao
 '''
+import logging
 
 from ..util.util import Singleton
 from ..redis.redis_client import RedisClient
-from ..log.logger import TDDCLogger
 
-from .worker_config import WorkerConfigCenter
+from .models import DBSession, RedisModel
+
+log = logging.getLogger(__name__)
 
 
 class MessageQueue(RedisClient):
@@ -19,9 +21,9 @@ class MessageQueue(RedisClient):
     __metaclass__ = Singleton
 
     def __init__(self):
-        nodes = WorkerConfigCenter().get_redis()
+        nodes = DBSession.query(RedisModel).all()
         if not nodes:
-            TDDCLogger().warning('>>> Redis Nodes Not Found.')
+            log.warning('>>> Redis Nodes Not Found.')
             return
         nodes = [{'host': node.host,
                   'port': node.port} for node in nodes]

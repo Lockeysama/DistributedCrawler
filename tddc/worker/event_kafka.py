@@ -4,16 +4,16 @@ Created on 2017年5月5日
 
 @author: chenyitao
 '''
-
+import logging
 import gevent.queue
 
-from ..log.logger import TDDCLogger
 from ..kafka.consumer import KeepAliveConsumer
 from ..util.util import Singleton
+
+from .models import DBSession, KafkaModel, EventModel, WorkerModel
 from .status import StatusManager
 from .cache import CacheManager
 from .record import RecordManager
-from .worker_config import WorkerConfigCenter
 
 
 class EventType(object):
@@ -25,6 +25,9 @@ class EventStatus(object):
     Fetched = 2001
     Executed_Success = 3200
     Executed_Failed = 3400
+
+
+log = logging.getLogger(__name__)
 
 
 class EventCenter(KeepAliveConsumer):
@@ -41,21 +44,20 @@ class EventCenter(KeepAliveConsumer):
         RecordManager()
         self._event_queue = gevent.queue.Queue()
         self._event_call = {}
-        self.worker = WorkerConfigCenter().get_worker()
-        event_info = WorkerConfigCenter().get_event()
-        self.event_config = event_info
-        kafka_info = WorkerConfigCenter().get_kafka()
+        self.worker = DBSession.query(WorkerModel).get(1)
+        self.event_config = DBSession.query(EventModel).get(1)
+        kafka_info = DBSession.query(KafkaModel).all()
         if not kafka_info:
-            TDDCLogger().warning('>>> Kafka Nodes Not Found.')
+            log.warning('>>> Kafka Nodes Not Found.')
             return
         kafka_nodes = ','.join(['%s:%s' % (info.host, info.port) for info in kafka_info])
-        super(EventCenter, self).__init__(event_info.topic,
-                                          event_info.group_id,
+        super(EventCenter, self).__init__(self.event_config.topic,
+                                          self.event_config.group_id,
                                           0xffffffff,
                                           bootstrap_servers=kafka_nodes)
-        self.info('Event Manager Is Starting.')
+        log.info('Event Manager Is Starting.')
         self._event_call = {}
-        self.info('Event Manager Was Ready.')
+        log.info('Event Manager Was Ready.')
 
     @classmethod
     def route(cls, event_type):

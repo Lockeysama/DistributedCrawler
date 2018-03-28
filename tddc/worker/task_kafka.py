@@ -4,16 +4,19 @@ Created on 2017年4月14日
 
 @author: chenyitao
 '''
+import logging
 
 import gevent
+from .models import DBSession, TaskConfigModel, KafkaModel
 
 from ..kafka.consumer import KeepAliveConsumer
 from ..util.util import Singleton, object2json
-from ..log.logger import TDDCLogger
 
-from .worker_config import WorkerConfigCenter
 from .status import StatusManager
 from .postman import Postman
+
+
+log = logging.getLogger(__name__)
 
 
 class TaskStatus(object):
@@ -72,17 +75,17 @@ class TaskManager(KeepAliveConsumer):
         '''
         Constructor
         '''
-        self.task_conf = WorkerConfigCenter().get_task()
-        kafka_info = WorkerConfigCenter().get_kafka()
+        self.task_conf = DBSession.query(TaskConfigModel).get(1)
+        kafka_info = DBSession.query(KafkaModel).all()
         if not kafka_info:
-            TDDCLogger().warning('>>>Kafka Server Info Not Found.')
+            log.warning('>>>Kafka Server Info Not Found.')
             return
         kafka_nodes = ','.join(['%s:%s' % (info.host, info.port) for info in kafka_info])
         super(TaskManager, self).__init__(self.task_conf.consumer_topic,
                                           self.task_conf.consumer_group,
                                           self.task_conf.local_task_queue_size,
                                           bootstrap_servers=kafka_nodes)
-        self.info('Task Manager Is Starting.')
+        log.info('Task Manager Is Starting.')
         self._totals = 0
         self._minutes = 0
         self._success = 0
@@ -91,7 +94,7 @@ class TaskManager(KeepAliveConsumer):
         self._one_minute_past_failed = 0
         gevent.spawn(self._counter)
         gevent.sleep()
-        self.info('Task Manager Was Ready.')
+        log.info('Task Manager Was Ready.')
 
     def _counter(self):
         fmt = ('\n'
@@ -113,12 +116,12 @@ class TaskManager(KeepAliveConsumer):
                 continue
             one_minute_past_status = current_status
             self._minutes += 1
-            self.info(fmt % (self._totals,
-                             (self._success + self._failed) / (self._minutes if self._minutes != 0 else 1),
-                             self._success,
-                             self._one_minute_past_success,
-                             self._failed,
-                             self._one_minute_past_failed))
+            log.info(fmt % (self._totals,
+                            (self._success + self._failed) / (self._minutes if self._minutes != 0 else 1),
+                            self._success,
+                            self._one_minute_past_success,
+                            self._failed,
+                            self._one_minute_past_failed))
             self._one_minute_past_success = 0
             self._one_minute_past_failed = 0
 
@@ -155,25 +158,25 @@ class TaskManager(KeepAliveConsumer):
         self._success += 1
         self._one_minute_past_success += 1
         self.task_status_changed(task)
-        self.debug('[%s:%s:%s] Task Success.' % (task.platform,
-                                                 task.id,
-                                                 task.url))
+        log.debug('[%s:%s:%s] Task Success.' % (task.platform,
+                                                task.id,
+                                                task.url))
 
     def task_failed(self, task):
         self._failed += 1
         self._one_minute_past_failed += 1
         self.task_status_changed(task)
-        self.warning('[%s:%s:%s] Task Failed(%d).' % (task.platform,
-                                                      task.id,
-                                                      task.url,
-                                                      task.cur_status))
+        log.warning('[%s:%s:%s] Task Failed(%d).' % (task.platform,
+                                                     task.id,
+                                                     task.url,
+                                                     task.cur_status))
 
     def push_task(self, task, topic, status_update=True):
         def _pushed(_):
             if status_update:
                 self.task_status_changed(task)
-            self.debug('[%s:%s] Pushed(Topic:%s).' % (task.platform,
-                                                      task.id,
-                                                      topic))
+            log.debug('[%s:%s] Pushed(Topic:%s).' % (task.platform,
+                                                     task.id,
+                                                     topic))
 
         Postman().push(topic, object2json(task), _pushed)

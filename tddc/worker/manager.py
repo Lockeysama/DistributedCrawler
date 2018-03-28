@@ -6,24 +6,26 @@ Created on 2017年6月12日
 '''
 
 import json
+import logging
 import gevent
 
+from .models import DBSession, WorkerModel
 from .extern_modules.extern_manager import ExternManager
 from .status import StatusManager
 from .event import EventCenter
 from .storager import Storager
-from .worker_config import WorkerConfigCenter
-from ..log.logger import TDDCLogger
+
+log = logging.getLogger(__name__)
 
 
-class WorkerManager(TDDCLogger):
+class WorkerManager(object):
     '''
     classdocs
     '''
 
     def __init__(self):
         super(WorkerManager, self).__init__()
-        self.worker = WorkerConfigCenter().get_worker()
+        self.worker = DBSession.query(WorkerModel).get(1)
         ExternManager()
         gevent.spawn(self._feedback_plugin_status)
         gevent.sleep()
@@ -35,15 +37,17 @@ class WorkerManager(TDDCLogger):
             try:
                 self._feedback()
             except Exception as e:
-                self.exception(e)
-                self.error('Feedback Status Exception.')
+                log.exception(e)
+                log.error('Feedback Status Exception.')
 
     def _feedback(self):
+        status = {'Kafka': EventCenter().get_connection_status().alive_timestamp,
+                  'Redis': StatusManager().get_connection_status().alive_timestamp,
+                  'HBase': Storager().hbase_status.alive_timestamp,
+                  'Mongo': Storager().mongo_status.alive_timestamp}
         StatusManager().set_status('tddc:status:client',
-                                   '%s|%s' % (self.worker.name, self.worker.id),
-                                   json.dumps({'Kafka': EventCenter().get_connection_status().alive_timestamp,
-                                               'Redis': StatusManager().get_connection_status().alive_timestamp,
-                                               'HBase': Storager().get_connection_status().alive_timestamp}))
+                                   '%s|%s' % (self.worker.name, self.worker.feature),
+                                   json.dumps(status))
 
     @staticmethod
     def start():

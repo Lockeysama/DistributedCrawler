@@ -6,21 +6,21 @@ Created on 2017年5月2日
 '''
 
 import json
+import logging
 
 import gevent.queue
 import time
 from kafka import KafkaConsumer
 
-from ..log.logger import TDDCLogger
+log = logging.getLogger(__name__)
 
 
-class KeepAliveConsumer(KafkaConsumer, TDDCLogger):
+class KeepAliveConsumer(KafkaConsumer):
     """
     Keep Alive Consumer
     """
 
     def __init__(self, topics, group, pause_size, record_model_cls=None, *args, **kwargs):
-        TDDCLogger.__init__(self)
         self.status = type('KafkaStatus', (), {'alive_timestamp': 0})
         self._topics = topics
         self._group = group
@@ -51,7 +51,7 @@ class KeepAliveConsumer(KafkaConsumer, TDDCLogger):
                     self.commit()
                     self.unsubscribe()
                     pause = True
-                    self.logger.info('Consumer[%s(%s)] Was Paused.' % (self._topics,
+                    log.info('Consumer[%s(%s)] Was Paused.' % (self._topics,
                                                                        self._group))
                 self.status.alive_timestamp = int(time.time())
                 gevent.sleep(1)
@@ -59,7 +59,7 @@ class KeepAliveConsumer(KafkaConsumer, TDDCLogger):
             if pause and self._queue.qsize() < self._pause_size / 2:
                 self.subscribe(self._topics)
                 pause = False
-                self.logger.info('Consumer[%s(%s)] Was Resumed.' % (self._topics, self._group))
+                log.info('Consumer[%s(%s)] Was Resumed.' % (self._topics, self._group))
             partition_records = self.poll(2000, 16)
             self.status.alive_timestamp = int(time.time())
             if not len(partition_records):
@@ -73,7 +73,7 @@ class KeepAliveConsumer(KafkaConsumer, TDDCLogger):
         try:
             item = json.loads(record.value)
         except Exception as e:
-            self.error('\n' + '*' * 5 + 'JSON Error' + '*' * 5 +
+            log.error('\n' + '*' * 5 + 'JSON Error' + '*' * 5 +
                        '\nException: ' + record.value + '\n' +
                        e.message + '\n' +
                        '*' * (10 + len('JSON Error')) + '\n')
@@ -84,9 +84,9 @@ class KeepAliveConsumer(KafkaConsumer, TDDCLogger):
                 if self._record_model_cls:
                     item = self._record_model_cls(item)
             except Exception as e:
-                self.warning('Item(%s) is not type of %s' % (record.value,
+                log.warning('Item(%s) is not type of %s' % (record.value,
                                                              self._record_model_cls.__name__))
-                self.exception(e)
+                log.exception(e)
             else:
                 item = self._deserialization(item)
                 if not item:
@@ -99,22 +99,3 @@ class KeepAliveConsumer(KafkaConsumer, TDDCLogger):
 
     def _deserialization(self, item):
         return item
-
-
-# import logging
-# from kafka import conn, client, cluster
-# conn.log.setLevel(logging.ERROR)
-# client.log.setLevel(logging.ERROR)
-# cluster.log.setLevel(logging.ERROR)
-# from kafka.metrics import metrics
-# metrics.logger.setLevel(logging.ERROR)
-# from kafka.coordinator import base, consumer
-# base.log.setLevel(logging.ERROR)
-# consumer.log.setLevel(logging.ERROR)
-# from kafka.consumer import fetcher
-# fetcher.log.setLevel(logging.ERROR)
-# from kafka.producer import kafka, sender
-# kafka.log.setLevel(logging.ERROR)
-# sender.log.setLevel(logging.ERROR)
-# from kafka.consumer import subscription_state
-# subscription_state.log.setLevel(logging.ERROR)

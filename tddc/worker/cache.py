@@ -4,12 +4,14 @@ Created on 2017年5月8日
 
 @author: chenyitao
 '''
+import logging
 
-from ..log.logger import TDDCLogger
 from ..util.util import Singleton
 from ..redis.redis_client import RedisClient
 
-from .worker_config import WorkerConfigCenter
+from .models import DBSession, RedisModel
+
+log = logging.getLogger(__name__)
 
 
 class CacheManager(RedisClient):
@@ -19,14 +21,14 @@ class CacheManager(RedisClient):
     __metaclass__ = Singleton
 
     def __init__(self):
-        nodes = WorkerConfigCenter().get_redis()
+        nodes = DBSession.query(RedisModel).all()
         if not nodes:
-            TDDCLogger().warning('>>> Redis Nodes Not Found.')
+            log.warning('>>> Redis Nodes Not Found.')
             return
         nodes = [{'host': node.host,
                   'port': node.port} for node in nodes]
         super(CacheManager, self).__init__(startup_nodes=nodes)
-        self.info('Cache Manager Was Ready.')
+        log.info('Cache Manager Was Ready.')
 
     def get_random(self, name, pop=True):
         def _get_random(_name, _pop):

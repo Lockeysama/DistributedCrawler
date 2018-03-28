@@ -5,10 +5,8 @@ Created on 2017年4月18日
 @author: chenyitao
 '''
 
-from tddc import TDDCLogger
 
-
-class ExternBase(TDDCLogger):
+class ExternBase(object):
 
     platform = None
 

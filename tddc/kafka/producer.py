@@ -4,18 +4,18 @@ Created on 2017年5月2日
 
 @author: chenyitao
 '''
+import logging
 
 import gevent.queue
 import time
 from kafka import KafkaProducer
 
-from ..log.logger import TDDCLogger
+log = logging.getLogger(__name__)
 
 
-class KeepAliveProducer(KafkaProducer, TDDCLogger):
+class KeepAliveProducer(KafkaProducer):
 
     def __init__(self, bootstrap_servers):
-        TDDCLogger.__init__(self)
         self.status = type('KafkaStatus', (), {'alive_timestamp': 0})
         super(KeepAliveProducer, self).__init__(bootstrap_servers=bootstrap_servers)
         self._queue = gevent.queue.Queue()
@@ -29,7 +29,7 @@ class KeepAliveProducer(KafkaProducer, TDDCLogger):
             try:
                 self.send('ping', 'pong')
             except Exception as e:
-                self.exception(e)
+                log.exception(e)
                 self._sender.wakeup()
             else:
                 self.status.alive_timestamp = int(time.time())
@@ -47,7 +47,7 @@ class KeepAliveProducer(KafkaProducer, TDDCLogger):
             try:
                 self.send(topic, data)
             except Exception as e:
-                self.exception(e)
+                log.exception(e)
             else:
                 if callback:
                     callback(data)

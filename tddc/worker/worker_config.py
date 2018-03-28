@@ -90,6 +90,8 @@ class WorkerConfigCenter(ConfigCenter):
                 'producer_topic': {"field_type": "TEXT"},
                 'status_key_base': {"field_type": "TEXT",
                                     "default_value": "tddc:task:status"},
+                'cache_key_base': {"field_type": "TEXT",
+                                   "default_value": "tddc:task:cache"},
                 'record_key_base': {"field_type": "TEXT",
                                     "default_value": "tddc:task:record"},
                 'local_task_queue_size': {"field_type": "INTEGER",
@@ -114,6 +116,9 @@ class WorkerConfigCenter(ConfigCenter):
 
     def get_hbase(self):
         return self.get_services('hbase')
+
+    def get_mongo(self):
+        return self.get_services('mongo')
 
     def get_zookeeper(self):
         return self.get_services('zookeeper')
