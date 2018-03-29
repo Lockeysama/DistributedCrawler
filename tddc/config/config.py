@@ -48,9 +48,18 @@ CurrentConfig = config['default']
 
 
 def register_config_cls(config_type, cls):
+    """
+    注册自定义配置文件
+    :param config_type: config的key
+    :param cls: 配置类，config的value
+    """
     config[config_type] = cls
 
 
 def switch_config(config_type):
+    """
+    切换配置
+    :param config_type:
+    """
     global CurrentConfig
     CurrentConfig = config.get(config_type)

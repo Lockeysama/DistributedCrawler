@@ -67,7 +67,7 @@ class Event(object):
 
 class EventCenter(Pubsub):
     '''
-    classdocs
+    事件中心
     '''
     __metaclass__ = Singleton
 
@@ -88,6 +88,11 @@ class EventCenter(Pubsub):
 
     @classmethod
     def route(cls, event_type):
+        """
+        绑定事件与回调函数
+        :param event_type:
+        :return:
+        """
         def decorator(func):
             EventCenter._dispatcher[event_type] = func
             return func
@@ -106,6 +111,11 @@ class EventCenter(Pubsub):
             callback(event)
 
     def _deserialization(self, data):
+        """
+        转化event
+        :param data:
+        :return:
+        """
         try:
             item = json.loads(data)
         except Exception as e:

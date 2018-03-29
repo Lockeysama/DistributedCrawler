@@ -20,7 +20,7 @@ log = logging.getLogger(__name__)
 
 class WorkerManager(object):
     '''
-    classdocs
+    Worker管理
     '''
 
     def __init__(self):
@@ -32,6 +32,9 @@ class WorkerManager(object):
         StatusManager().sadd('tddc:client:alive', '%s|%s' % (self.worker.name, self.worker.id))
 
     def _feedback_plugin_status(self):
+        """
+        将个服务模块状态写入Redis
+        """
         while True:
             gevent.sleep(15)
             try:

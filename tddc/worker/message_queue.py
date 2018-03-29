@@ -16,7 +16,7 @@ log = logging.getLogger(__name__)
 
 class MessageQueue(RedisClient):
     '''
-    classdocs
+    消息队列
     '''
     __metaclass__ = Singleton
 

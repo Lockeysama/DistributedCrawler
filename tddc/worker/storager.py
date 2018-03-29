@@ -18,7 +18,7 @@ log = logging.getLogger(__name__)
 
 class Storager(object):
     '''
-    classdocs
+    存储管理、目前支持HBase、MongoDB
     '''
     __metaclass__ = Singleton
 

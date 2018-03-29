@@ -70,6 +70,10 @@ class TaskRecordManager(RecordManager):
     task_conf = DBSession.query(TaskConfigModel).get(1)
 
     def create_record(self, task):
+        """
+        创建任务记录
+        :param task:
+        """
         key = '{base}:{platform}:{task_id}'.format(base=self.task_conf.record_key_base,
                                                    platform=task.platform,
                                                    task_id=task.id)
@@ -79,6 +83,12 @@ class TaskRecordManager(RecordManager):
         self.robust(_create_record, key, task.to_dict())
 
     def get_records(self, name):
+        """
+        获取任务记录
+        :param name: 任务索引
+        :return:
+        """
+
         def _get_record(_name):
             return self.hgetall(_name)
 
@@ -86,16 +96,29 @@ class TaskRecordManager(RecordManager):
         return Task(**task) if task else None
 
     def changing_status(self, task):
+        """
+        更改任务状态
+        :param task:
+        """
         key = '{base}:{platform}:{task_id}'.format(base=self.task_conf.record_key_base,
                                                    platform=task.platform,
                                                    task_id=task.id)
         self.set_record_item_value(key, 'status', task.status)
 
     def start_task_timer(self, task, count=300):
+        """
+        设置任务回收倒计时
+        :param task:
+        :param count:
+        """
         task_index = 'tddc:task:record:{}:{}:countdown'.format(task.platform, task.id)
         self.setex(task_index, count, task.status)
 
     def stop_task_timer(self, task):
+        """
+        取消任务回收倒计时
+        :param task:
+        """
         task_index = 'tddc:task:record:{}:{}:countdown'.format(task.platform, task.id)
         self.delete(task_index)
 
@@ -106,11 +129,21 @@ class TaskCacheManager(CacheManager):
     task_conf = DBSession.query(TaskConfigModel).get(1)
 
     def set_cache(self, task, content):
+        """
+        设置任务缓存
+        :param task:
+        :param content:
+        """
         key = '{base}:{platform}'.format(base=self.task_conf.cache_key_base,
                                          platform=task.platform)
         self.hset(key, task.id, content)
 
     def get_cache(self, task):
+        """
+        获取任务缓存
+        :param task:
+        :return:
+        """
         key = '{base}:{platform}'.format(base=self.task_conf.cache_key_base,
                                          platform=task.platform)
         return self.hget(key, task.id)
@@ -118,7 +151,7 @@ class TaskCacheManager(CacheManager):
 
 class TaskManager(MessageQueue):
     '''
-    classdocs
+    任务管理器
     '''
     __metaclass__ = Singleton
 

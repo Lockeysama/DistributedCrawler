@@ -18,6 +18,9 @@ log = logging.getLogger(__name__)
 
 
 class HBaseManager(happybase.ConnectionPool):
+    """
+    HBase管理类
+    """
 
     def __init__(self, nodes):
         self.status = type('HBaseStatus', (), {'alive_timestamp': 0})
@@ -33,6 +36,9 @@ class HBaseManager(happybase.ConnectionPool):
         gevent.sleep()
 
     def _alive_check(self):
+        """
+        HBase存活检测
+        """
         while True:
             try:
                 with self.connection() as _:
@@ -48,6 +54,14 @@ class HBaseManager(happybase.ConnectionPool):
         return self.status
 
     def get(self, table, row_key, family=None, qualifier=None):
+        """
+        从HBase里获取数据（参数定义同HBase）
+        :param table:
+        :param row_key:
+        :param family:
+        :param qualifier:
+        :return:
+        """
         try:
             with self.connection() as connection:
                 table_obj = connection.table(table)
@@ -69,6 +83,17 @@ class HBaseManager(happybase.ConnectionPool):
             return False, None
 
     def get_async(self, callback, table, row_key, family=None, qualifier=None, *args, **kwargs):
+        """
+        从HBase里异步获取数据（参数定义同HBase）
+        :param callback:
+        :param table:
+        :param row_key:
+        :param family:
+        :param qualifier:
+        :param args:
+        :param kwargs:
+        :return:
+        """
         def _get(_callback, _table, _row_key, _family=None, _qualifier=None):
             ret = self.get(_table, _row_key, _family, _qualifier)
             _callback(ret, *args, **kwargs)
@@ -76,6 +101,12 @@ class HBaseManager(happybase.ConnectionPool):
         gevent.sleep()
 
     def create(self, table, families):
+        """
+        建表
+        :param table:
+        :param families:
+        :return:
+        """
         try:
             with self.connection() as connection:
                 connection.create_table(table, families)
@@ -91,6 +122,13 @@ class HBaseManager(happybase.ConnectionPool):
             return True
 
     def _auto_create(self, connection, table, items=None):
+        """
+        自动建表
+        :param connection:
+        :param table:
+        :param items:
+        :return:
+        """
         keys = items.keys() if items else ['source', 'valuable', 'task']
         for cnt in range(2):
             if table not in self._tables:

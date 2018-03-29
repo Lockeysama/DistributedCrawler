@@ -16,6 +16,9 @@ log = logging.getLogger(__name__)
 
 
 class MongoDBManager(pymongo.MongoClient):
+    """
+    MongodbDB 管理类
+    """
 
     def __init__(self, nodes):
         if not nodes:
@@ -30,6 +33,9 @@ class MongoDBManager(pymongo.MongoClient):
         gevent.sleep()
 
     def _alive_check(self):
+        """
+        MongoDB 存活检测
+        """
         while True:
             if not self['local']:
                 gevent.sleep(5)

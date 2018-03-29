@@ -31,6 +31,9 @@ class RedisClient(StrictRedisCluster):
             return self.execute_command('INFO', section)
 
     def _alive_check(self):
+        """
+        Redis 存活检测
+        """
         while True:
             try:
                 if self.ping():
@@ -44,6 +47,13 @@ class RedisClient(StrictRedisCluster):
         return self.status
 
     def robust(self, func, *args, **kwargs):
+        """
+        对命令进行bobust的封装
+        :param func:
+        :param args:
+        :param kwargs:
+        :return:
+        """
         try:
             return func(*args, **kwargs)
         except Exception as e:

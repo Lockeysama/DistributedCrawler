@@ -10,6 +10,10 @@ import time
 
 
 class Singleton(type):
+    """
+    单例metaclass
+    """
+
     def __init__(cls, name, bases, dict):
         super(Singleton, cls).__init__(name, bases, dict)
         cls._instance = None

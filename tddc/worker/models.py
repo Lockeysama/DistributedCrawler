@@ -21,6 +21,10 @@ logging.getLogger('sqlalchemy').setLevel(logging.WARN)
 
 Base = declarative_base()
 
+"""
+程序配置ORM Model
+"""
+
 
 class ServerInfoModel(Base):
     __tablename__ = 'server_info'
@@ -34,6 +38,9 @@ class ServerInfoModel(Base):
 
 
 class RedisModel(Base):
+    """
+    Redis服务配置
+    """
     __tablename__ = 'redis_info'
 
     id = Column(Integer, primary_key=True)
@@ -45,6 +52,9 @@ class RedisModel(Base):
 
 
 class HBaseModel(Base):
+    """
+    HBase 服务配置
+    """
     __tablename__ = 'hbase_info'
 
     id = Column(Integer, primary_key=True)
@@ -56,6 +66,9 @@ class HBaseModel(Base):
 
 
 class KafkaModel(Base):
+    """
+    Kafka 服务配置
+    """
     __tablename__ = 'kafka_info'
 
     id = Column(Integer, primary_key=True)
@@ -67,6 +80,9 @@ class KafkaModel(Base):
 
 
 class MongoModel(Base):
+    """
+    MongoDB 服务配置
+    """
     __tablename__ = 'mongo_info'
 
     id = Column(Integer, primary_key=True)
@@ -78,6 +94,9 @@ class MongoModel(Base):
 
 
 class WorkerModel(Base):
+    """
+    Worker 配置：platform：[crawler | parser | proxy | ...]
+    """
     __tablename__ = 'worker_info'
 
     id = Column(Integer, primary_key=True)
@@ -87,6 +106,9 @@ class WorkerModel(Base):
 
 
 class EventModel(Base):
+    """
+    事件中心配置
+    """
     __tablename__ = 'event_info'
 
     id = Column(Integer, primary_key=True)
@@ -96,6 +118,9 @@ class EventModel(Base):
 
 
 class ModulesModel(Base):
+    """
+    扩展模块信息
+    """
     __tablename__ = 'extra_modules'
 
     id = Column(Integer, primary_key=True)
@@ -129,6 +154,9 @@ class ModulesModel(Base):
 
 
 class TaskConfigModel(Base):
+    """
+    任务管理配置
+    """
     __tablename__ = 'task_config'
 
     id = Column(Integer, primary_key=True)

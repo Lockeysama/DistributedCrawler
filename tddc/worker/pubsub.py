@@ -49,10 +49,17 @@ class Pubsub(RedisClient):
         self.robust(_subscribing)
 
     def _subscribe_topic(self):
-        return None
+        """
+        返回订阅的topic
+        """
+        raise NotImplementedError
 
     def _data_fetched(self, data):
-        pass
+        """
+        解析接收到订阅的内容
+        :param data:
+        """
+        raise NotImplementedError
 
     def publish_robust(self, channel, message):
         def _publish(_channel, _message):
