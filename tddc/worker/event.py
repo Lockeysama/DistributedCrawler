@@ -9,6 +9,7 @@ import logging
 
 import gevent.queue
 
+from tddc import ShortUUID, time
 from ..util.util import Singleton
 
 from .models import DBSession, WorkerModel, EventModel
@@ -20,15 +21,48 @@ from .record import RecordManager
 log = logging.getLogger(__name__)
 
 
-class EventType(object):
-    ExternModuleUpdate = 1001
+class Event(object):
+    class Type(object):
+        ExternModuleUpdate = 1001
 
+    class Status(object):
+        Pushed = 1001
+        Fetched = 2001
+        Executed_Success = 3200
+        Executed_Failed = 3400
 
-class EventStatus(object):
-    Pushed = 1001
-    Fetched = 2001
-    Executed_Success = 3200
-    Executed_Failed = 3400
+    id = None
+
+    own = None
+
+    platform = None
+
+    feature = None
+
+    url = None
+
+    file_md5 = None
+
+    package = None
+
+    mould = None
+
+    version = None
+
+    valid = None
+
+    status = None
+
+    timestamp = None
+
+    def __init__(self, **kwargs):
+        for k, v in kwargs.items():
+            self.__dict__[k] = v
+        self.id = kwargs.get('id', ShortUUID.UUID())
+        self.timestamp = kwargs.get('timestamp', int(time.time()))
+
+    def to_dict(self):
+        return self.__dict__
 
 
 class EventCenter(Pubsub):
@@ -66,7 +100,7 @@ class EventCenter(Pubsub):
         event = self._deserialization(data)
         if not event or not hasattr(event, 'id'):
             return
-        self.update_the_status(event, EventStatus.Fetched)
+        self.update_the_status(event, Event.Status.Fetched)
         callback = self._dispatcher.get(event.e_type, None)
         if callback:
             callback(event)

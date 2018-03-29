@@ -41,8 +41,7 @@ class WorkerManager(object):
                 log.error('Feedback Status Exception.')
 
     def _feedback(self):
-        status = {'Kafka': EventCenter().get_connection_status().alive_timestamp,
-                  'Redis': StatusManager().get_connection_status().alive_timestamp,
+        status = {'Redis': EventCenter().get_connection_status().alive_timestamp,
                   'HBase': Storager().hbase_status.alive_timestamp,
                   'Mongo': Storager().mongo_status.alive_timestamp}
         StatusManager().set_status('tddc:status:client',

@@ -10,10 +10,12 @@ import json
 import logging
 import os
 
+import requests
+
 from ...util.util import Singleton
 
 from ..models import DBSession, ModulesModel
-from ..event import EventType, EventCenter, EventStatus
+from ..event import EventCenter, Event
 from ..storager import Storager
 
 log = logging.getLogger(__name__)
@@ -24,6 +26,8 @@ class ExternManager(object):
     classdocs
     '''
     __metaclass__ = Singleton
+
+    update_success_callback = []
 
     def __init__(self):
         log.info('Extern Modules Is Loading.')
@@ -47,12 +51,12 @@ class ExternManager(object):
         return True
 
     @staticmethod
-    @EventCenter.route(EventType.ExternModuleUpdate)
+    @EventCenter.route(Event.Type.ExternModuleUpdate)
     def _models_update_event(event):
         EventCenter().update_the_status(event,
-                                        EventStatus.Executed_Success
+                                        Event.Status.Executed_Success
                                         if ExternManager()._update(event)
-                                        else EventStatus.Executed_Failed)
+                                        else Event.Status.Executed_Failed)
 
     def _get_remote_config(self, platform):
         success, config = Storager().hbase.get(self.config.config_table,
@@ -67,38 +71,39 @@ class ExternManager(object):
             with open(path + '__init__.py', 'a') as _:
                 log.info('Create %s Extern Modules Packages.' % platform)
 
-    def _download_package_file(self, platform, remote_config, path):
-        for feature, package in remote_config.items():
-            package_package = package.get('package')
-            success, package_content = Storager().hbase.get(self.config.config_table,
-                                                            platform,
-                                                            'content',
-                                                            package_package)
-            if not success:
-                return False
-            path_base = '%s/%s/' % (path, platform)
-            self._create_package(path_base, platform)
-            with open(path_base + package.get('package') + '.py', 'w') as f:
-                f.write(package_content.get('content:' + package_package))
-        return True
+    def _download_package_file(self, event_mould, path):
+        path_base = '%s/%s/' % (path, event_mould.platform)
+        self._create_package(path_base, event_mould.platform)
+        try:
+            content = requests.get(event_mould.url).content
+            with open(path_base + event_mould.package + '.py', 'w') as f:
+                f.write(content)
+        except Exception as e:
+            log.exception(e)
+            log.warning(e)
+        else:
+            return True
+        return False
 
     def _update(self, event):
         log.info('Extern Modules Is Updating...')
-        platform = event.event.get('platform')
-        if not platform:
-            return False
-        remote_config = self._get_remote_config(platform)
-        if not remote_config:
+        event_model = Event(**event.event)
+        if not event_model.platform:
             return False
         path = os.popen('find . -name extern_modules').readlines()[0].strip()
-        if not self._download_package_file(platform, remote_config, path):
+        if not self._download_package_file(event_model, path):
             return False
-        local_config = [type('PackageInfo', (), config) for _, config in remote_config.items()]
-        if not WorkerConfigCenter().set_extern_modules(platform, local_config):
-            return False
+        module = DBSession.query(ModulesModel).filter_by(platform=event_model.platform,
+                                                         feature=event_model.feature).first()
+        module = module or ModulesModel()
+        module.update(event_model)
+        DBSession.add(module)
+        DBSession.commit()
         if not self._load_local_models():
             return False
         log.info('Extern Modules Was Updated.')
+        for cb in self.update_success_callback:
+            cb()
         return True
 
     def _load_moulds(self, package):
@@ -123,8 +128,11 @@ class ExternManager(object):
         cls = getattr(module, mould)
         if not cls:
             return False
-        feature = cls.__dict__.get('feature', None)
+        feature = getattr(cls, 'feature', None)
         if not feature:
+            return False
+        valid = getattr(cls, 'valid', None)
+        if valid != '1':
             return False
         if not self._rules_moulds.get(platform, None):
             self._rules_moulds[platform] = {}

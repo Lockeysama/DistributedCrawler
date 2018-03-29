@@ -121,7 +121,6 @@ class ModulesModel(Base):
         self.file_md5 = new_modules.file_md5
         self.valid = new_modules.valid
         self.timestamp = new_modules.timestamp
-        db.session.commit()
 
     def to_dict(self):
         kws = copy.deepcopy(self.__dict__)

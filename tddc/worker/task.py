@@ -50,6 +50,8 @@ class Task(object):
 
     status = None
 
+    retry = None
+
     timestamp = None
 
     def __init__(self, **kwargs):
@@ -72,9 +74,9 @@ class TaskRecordManager(RecordManager):
                                                    platform=task.platform,
                                                    task_id=task.id)
 
-        def _create_record(_name, _key, _record):
-            self.hset(_name, _key, _record)
-        self.robust(_create_record, key, task.id, task.to_dict())
+        def _create_record(_key, _records):
+            self.hmset(_key, _records)
+        self.robust(_create_record, key, task.to_dict())
 
     def get_records(self, name):
         def _get_record(_name):
@@ -179,7 +181,7 @@ class TaskManager(MessageQueue):
                     gevent.sleep(2)
                     continue
                 tasks = [self._trans_to_task_obj(item) for item in items]
-                tasks = [task for task in tasks if task.platform and task.feature and task.url]
+                tasks = [task for task in tasks if task and task.platform and task.feature and task.url]
                 for task in tasks:
                     self._q.put(task)
                 log.info('Pulled New Task(%d).' % len(tasks))
@@ -189,6 +191,8 @@ class TaskManager(MessageQueue):
 
     def _trans_to_task_obj(self, task_index):
         task = TaskRecordManager().get_records(task_index)
+        if not task:
+            return None
         task.status = Task.Status.WaitCrawl \
             if self.worker.platform == 'crawler' \
             else Task.Status.WaitParse
