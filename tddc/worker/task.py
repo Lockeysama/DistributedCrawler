@@ -95,6 +95,10 @@ class TaskRecordManager(RecordManager):
         task_index = 'tddc:task:record:{}:{}:countdown'.format(task.platform, task.id)
         self.setex(task_index, count, task.status)
 
+    def stop_task_timer(self, task):
+        task_index = 'tddc:task:record:{}:{}:countdown'.format(task.platform, task.id)
+        self.delete(task_index)
+
 
 class TaskCacheManager(CacheManager):
     __metaclass__ = Singleton
@@ -209,6 +213,7 @@ class TaskManager(MessageQueue):
         self._success += 1
         self._one_minute_past_success += 1
         TaskRecordManager().changing_status(task)
+        TaskRecordManager().stop_task_timer(task)
         log.debug('[%s:%s:%s] Task Success.' % (task.platform,
                                                 task.id,
                                                 task.url))
@@ -217,6 +222,7 @@ class TaskManager(MessageQueue):
         self._failed += 1
         self._one_minute_past_failed += 1
         TaskRecordManager().changing_status(task)
+        TaskRecordManager().stop_task_timer(task)
         log.warning('[%s:%s:%s] Task Failed(%s).' % (task.platform,
                                                      task.id,
                                                      task.url,
