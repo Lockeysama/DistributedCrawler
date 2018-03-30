@@ -97,6 +97,20 @@ class TaskRecordManager(RecordManager):
         task = self.robust(_get_record, name)
         return Task(**task) if task else None
 
+    def delete_record(self, task):
+        """
+        删除任务记录
+        :param task:
+        """
+        key = '{base}:{platform}:{task_id}'.format(base=self.task_conf.record_key_base,
+                                                   platform=task.platform,
+                                                   task_id=task.id)
+
+        def _delete_record(_key):
+            self.delete(_key)
+
+        self.robust(_delete_record, key)
+
     def changing_status(self, task):
         """
         更改任务状态
