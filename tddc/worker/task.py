@@ -8,6 +8,8 @@ import logging
 import gevent.queue
 import time
 
+import zlib
+
 from .models import TaskConfigModel, DBSession, WorkerModel
 from .record import RecordManager
 from .cache import CacheManager
@@ -103,7 +105,10 @@ class TaskRecordManager(RecordManager):
         key = '{base}:{platform}:{task_id}'.format(base=self.task_conf.record_key_base,
                                                    platform=task.platform,
                                                    task_id=task.id)
-        self.set_record_item_value(key, 'status', task.status)
+
+        def _changing_status(_key, _status):
+            self.set_record_item_value(_key, 'status', _status)
+        self.robust(_changing_status, key, task.status)
 
     def start_task_timer(self, task, count=300):
         """
@@ -112,7 +117,10 @@ class TaskRecordManager(RecordManager):
         :param count:
         """
         task_index = 'tddc:task:record:{}:{}:countdown'.format(task.platform, task.id)
-        self.setex(task_index, count, task.status)
+
+        def _start_task_timer(_task_index, _count, _status):
+            self.setex(_task_index, _count, _status)
+        self.robust(_start_task_timer, task_index, count, task.status)
 
     def stop_task_timer(self, task):
         """
@@ -120,7 +128,10 @@ class TaskRecordManager(RecordManager):
         :param task:
         """
         task_index = 'tddc:task:record:{}:{}:countdown'.format(task.platform, task.id)
-        self.delete(task_index)
+
+        def _stop_task_timer(_task_index):
+            self.delete(_task_index)
+        self.robust(_stop_task_timer, task_index)
 
 
 class TaskCacheManager(CacheManager):
@@ -136,7 +147,11 @@ class TaskCacheManager(CacheManager):
         """
         key = '{base}:{platform}'.format(base=self.task_conf.cache_key_base,
                                          platform=task.platform)
-        self.hset(key, task.id, content)
+        cmp_content = zlib.compress(content)
+
+        def _set_cache(_key, _task, _content):
+            self.hset(_key, _task.id, _content)
+        self.robust(_set_cache, key, task, cmp_content)
 
     def get_cache(self, task):
         """
@@ -146,7 +161,20 @@ class TaskCacheManager(CacheManager):
         """
         key = '{base}:{platform}'.format(base=self.task_conf.cache_key_base,
                                          platform=task.platform)
-        return self.hget(key, task.id)
+
+        def _get_cache(_key, _task):
+            return self.hget(key, _task.id)
+        cmp_content = self.robust(_get_cache, key, task)
+        content = zlib.decompress(cmp_content) if cmp_content else None
+        return content
+
+    def delete_cachce(self, task):
+        key = '{base}:{platform}'.format(base=self.task_conf.cache_key_base,
+                                         platform=task.platform)
+
+        def _delete_cache(_key):
+            return self.delete(_key)
+        return self.robust(_delete_cache, key)
 
 
 class TaskManager(MessageQueue):
@@ -247,19 +275,17 @@ class TaskManager(MessageQueue):
         self._one_minute_past_success += 1
         TaskRecordManager().changing_status(task)
         TaskRecordManager().stop_task_timer(task)
-        log.debug('[%s:%s:%s] Task Success.' % (task.platform,
-                                                task.id,
-                                                task.url))
+        log.debug('[%s:%s] Task Success.' % (task.platform,
+                                             task.id))
 
     def task_failed(self, task):
         self._failed += 1
         self._one_minute_past_failed += 1
         TaskRecordManager().changing_status(task)
         TaskRecordManager().stop_task_timer(task)
-        log.warning('[%s:%s:%s] Task Failed(%s).' % (task.platform,
-                                                     task.id,
-                                                     task.url,
-                                                     task.status))
+        log.warning('[%s:%s] Task Failed(%s).' % (task.platform,
+                                                  task.id,
+                                                  task.status))
 
     def push_task(self, task, topic):
         def _pushed(_):
