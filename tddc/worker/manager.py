@@ -29,7 +29,7 @@ class WorkerManager(object):
         ExternManager()
         gevent.spawn(self._feedback_plugin_status)
         gevent.sleep()
-        StatusManager().sadd('tddc:client:alive', '%s|%s' % (self.worker.name, self.worker.id))
+        StatusManager().sadd('tddc:client:alive', '%s|%s' % (self.worker.name, self.worker.feature))
 
     def _feedback_plugin_status(self):
         """
