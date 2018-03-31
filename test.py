@@ -92,8 +92,89 @@ def type_test():
     print(a)
 
 
+def spilt_test():
+    keys = ['tddc:task:cache:cheok',
+            'tddc:task:cache:che300',
+            'tddc:task:queue:crawler',
+            'tddc:proxy:source',
+            'tddc:proxy:pool']
+
+    keyr = {'tddc': {'task': {'cache': {'cheok': None, 'che300': None},
+                              'queue': {'crawler': None}},
+                     'proxy': {'source': None,
+                               'pool': None}}}
+
+    def list_dict(d, l):
+        if not len(l):
+            return
+        first = l[0]
+        d[first] = {}
+        l = l[1:]
+        if len(l) > 0:
+            list_dict(d[first], l)
+
+    def merge_dict(d1, d2):
+        keys1 = d1.keys()
+        keys2 = d2.keys()
+        for i in range(len(keys1) if len(keys1) < len(keys2) else len(keys2)):
+            if keys1[i] != keys2[i]:
+                if isinstance(keys1, list):
+                    if keys2[i] in keys1:
+                        merge_dict(d1[keys2[i]], d2[keys2[i]])
+                        continue
+                d1[keys2[i]] = d2[keys2[i]]
+                return
+            else:
+                merge_dict(d1[keys1[i]], d2[keys1[i]])
+
+    def make_nodes(data, nodes):
+        for key, value in data.items():
+            node = {'text': key,
+                    'nodes': []}
+            if value:
+                make_nodes(value, node['nodes'])
+            nodes.append(node)
+
+    all_fields = []
+    result = {}
+    for index, key in enumerate(keys):
+        ks = key.split(':')
+        tmp = {}
+        list_dict(tmp, ks)
+        all_fields.append(tmp)
+
+    for i in range(len(all_fields) - 1):
+        d1 = all_fields[0]
+        d2 = all_fields[i + 1]
+        merge_dict(d1, d2)
+
+    nodes = []
+    make_nodes(all_fields[0], nodes)
+
+    result = {}
+    tmp = result
+    for j, k in enumerate(all_fields[i]):
+        _jks = [fields[j] if len(fields) > j else None for fields in all_fields]
+        print(_jks)
+        for tag in _jks:
+            if not tmp.get(tag):
+                tmp[tag] = {}
+        tmp = tmp[tag]
+
+
+    print(ks)
+
+
+def mongo_test():
+    from pymongo import MongoClient
+    client = MongoClient('72.127.2.216', 27017)
+    print(client)
+
+
 def main():
-    type_test()
+    mongo_test()
+    # spilt_test()
+    # type_test()
     # cerely_test()
     # map_test()
     # juz()
