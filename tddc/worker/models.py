@@ -51,6 +51,21 @@ class RedisModel(Base):
     passwd = Column(String(32))
 
 
+class MySQLModel(Base):
+    """
+    Redis服务配置
+    """
+    __tablename__ = 'mysql_info'
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(32))
+    host = Column(String(32))
+    port = Column(Integer)
+    username = Column(String(32))
+    passwd = Column(String(32))
+    db = Column(String(32))
+
+
 class HBaseModel(Base):
     """
     HBase 服务配置

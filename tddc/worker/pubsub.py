@@ -44,7 +44,10 @@ class Pubsub(RedisClient):
             for item in p.listen():
                 if item.get('type') == 'message':
                     data = item.get('data')
-                    self._data_fetched(data)
+                    try:
+                        self._data_fetched(data)
+                    except Exception as e:
+                        log.warning(e)
             p.unsubscribe(topic)
         self.robust(_subscribing)
 

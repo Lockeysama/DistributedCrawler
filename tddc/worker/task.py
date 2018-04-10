@@ -164,8 +164,9 @@ class TaskCacheManager(CacheManager):
         cmp_content = zlib.compress(content)
 
         def _set_cache(_key, _task, _content):
-            self.hset(_key, _task.id, _content)
-        self.robust(_set_cache, key, task, cmp_content)
+            ret = self.hset(_key, _task.id, _content)
+            return ret
+        return self.robust(_set_cache, key, task, cmp_content)
 
     def get_cache(self, task):
         """
@@ -186,9 +187,9 @@ class TaskCacheManager(CacheManager):
         key = '{base}:{platform}'.format(base=self.task_conf.cache_key_base,
                                          platform=task.platform)
 
-        def _delete_cache(_key):
-            return self.delete(_key)
-        return self.robust(_delete_cache, key)
+        def _delete_cache(_key, _task):
+            return self.hdel(_key, _task.id)
+        return self.robust(_delete_cache, key, task)
 
 
 class TaskManager(MessageQueue):
@@ -261,9 +262,16 @@ class TaskManager(MessageQueue):
                     continue
                 tasks = [self._trans_to_task_obj(item) for item in items]
                 tasks = [task for task in tasks if task and task.platform and task.feature and task.url]
-                for task in tasks:
-                    self._q.put(task)
-                log.info('Pulled New Task(%d).' % len(tasks))
+                if len(tasks):
+                    for task in tasks:
+                        self._totals += 1
+                        task.status = Task.Status.WaitCrawl \
+                            if self.worker.platform == 'crawler' \
+                            else Task.Status.WaitParse
+                        TaskRecordManager().changing_status(task)
+                        TaskRecordManager().start_task_timer(task)
+                        self._q.put(task)
+                    log.info('Pulled New Task(%d).' % len(tasks))
                 gevent.sleep(2)
             else:
                 gevent.sleep(2)
@@ -272,12 +280,6 @@ class TaskManager(MessageQueue):
         task = TaskRecordManager().get_records(task_index)
         if not task:
             return None
-        task.status = Task.Status.WaitCrawl \
-            if self.worker.platform == 'crawler' \
-            else Task.Status.WaitParse
-        TaskRecordManager().changing_status(task)
-        TaskRecordManager().start_task_timer(task)
-        self._totals += 1
         return task
 
     def get(self, block=True, timeout=None):

@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 
+from .config.config import *
 from .hbase.hbase import *
 from .mongodb.mongodbm import *
 from .log import logger

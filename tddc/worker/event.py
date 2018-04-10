@@ -6,10 +6,11 @@ Created on 2017年5月5日
 '''
 import json
 import logging
+import time
 
 import gevent.queue
 
-from tddc import ShortUUID, time
+from ..util.short_uuid import ShortUUID
 from ..util.util import Singleton
 
 from .models import DBSession, WorkerModel, EventModel
