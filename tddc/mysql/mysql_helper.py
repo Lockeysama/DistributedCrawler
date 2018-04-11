@@ -76,10 +76,9 @@ class MySQLHelper(object):
             query_str = ''
         sql = 'SELECT {} FROM {}{};'.format(fields, table, query_str)
         try:
-            cursor.execute(sql)
-            ret = cursor.fetchone()[0]
+            ret = cursor.execute(sql)
         except Exception as e:
-            ret = None
+            ret = 0
             log.warning(e)
         finally:
             cursor.close()

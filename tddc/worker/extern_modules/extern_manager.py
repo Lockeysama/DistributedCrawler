@@ -28,7 +28,7 @@ class ExternManager(object):
     __metaclass__ = Singleton
 
     # 扩展模块更新成功回调
-    update_success_callback = []
+    update_success_callback = set()
 
     def __init__(self):
         log.info('Extern Modules Is Loading.')
