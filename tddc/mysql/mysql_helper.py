@@ -27,7 +27,8 @@ class MySQLHelper(object):
                                   port=self.conf.port,
                                   user=self.conf.username,
                                   passwd=self.conf.passwd,
-                                  db=self.conf.db)
+                                  db=self.conf.db,
+                                  charset='utf8')
 
     def replace(self, table, **fields_values):
         cursor = self.db.cursor()
@@ -77,6 +78,8 @@ class MySQLHelper(object):
         sql = 'SELECT {} FROM {}{};'.format(fields, table, query_str)
         try:
             ret = cursor.execute(sql)
+            if ret:
+                ret = cursor.fetchone()[0]
         except Exception as e:
             ret = 0
             log.warning(e)

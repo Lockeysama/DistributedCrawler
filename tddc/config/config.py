@@ -44,9 +44,9 @@ config = {
 }
 
 
-# CurrentConfig = config['default']
+CurrentConfig = config['default']
 # CurrentConfig = config['testing']
-CurrentConfig = config['production']
+# CurrentConfig = config['production']
 
 
 def register_config_cls(config_type, cls):
