@@ -124,11 +124,18 @@ class RedisClient(StrictRedisCluster):
 
     def clean(self, pattern='*'):
         def _clean(_pattern):
-            for key in self.keys(pattern):
-                self.delete(key)
-            else:
-                return True
+            self.delete(*self.keys(pattern))
+            return True
         return self.robust(_clean, pattern)
+
+    def hmgetall(self, *names):
+        def _hmgetall(*_names):
+            with self.pipeline(transaction=False) as ppl:
+                for name in _names:
+                    ppl.hgetall(name)
+                ret = ppl.execute()
+            return ret
+        return self.robust(_hmgetall, *names)
 
     @staticmethod
     def timer(seconds, callback, *args, **kwargs):
@@ -250,11 +257,17 @@ class SingleRedisClient(Redis):
 
     def clean(self, pattern='*'):
         def _clean(_pattern):
-            for key in self.keys(pattern):
-                self.delete(key)
-            else:
-                return True
+            self.delete(*self.keys(pattern))
         return self.robust(_clean, pattern)
+
+    def hmgetall(self, *names):
+        def _hmgetall(*_names):
+            with self.pipeline(transaction=False) as ppl:
+                for name in _names:
+                    ppl.hgetall(name)
+                ret = ppl.execute()
+            return ret
+        return self.robust(_hmgetall, *names)
 
     @staticmethod
     def timer(seconds, callback, *args, **kwargs):
