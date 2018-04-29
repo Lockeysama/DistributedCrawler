@@ -9,7 +9,7 @@ import logging
 import gevent
 import time
 from rediscluster import StrictRedisCluster
-from redis import Redis
+from redis import Redis, ConnectionPool
 
 log = logging.getLogger(__name__)
 
@@ -124,7 +124,10 @@ class RedisClient(StrictRedisCluster):
 
     def clean(self, pattern='*'):
         def _clean(_pattern):
-            self.delete(*self.keys(pattern))
+            keys = self.keys(pattern)
+            if not keys:
+                return True
+            self.delete(*keys)
             return True
         return self.robust(_clean, pattern)
 
@@ -153,11 +156,19 @@ class SingleRedisClient(Redis):
         self.status = type('RedisStatus', (), {'alive_timestamp': 0})
         startup_nodes = kwargs.get('startup_nodes')
         if startup_nodes:
-            kwargs['host'] = startup_nodes[0].get('host')
-            kwargs['port'] = startup_nodes[0].get('port')
-            del kwargs['startup_nodes']
-            kwargs['password'] = DBSession.query(RedisModel).get(1).passwd
-        super(SingleRedisClient, self).__init__(max_connections=64, *args, **kwargs)
+            host = startup_nodes[0].get('host')
+            password = DBSession.query(RedisModel).get(1).passwd
+            if 'redis' not in host:
+                kwargs['host'] = host
+                kwargs['port'] = startup_nodes[0].get('port')
+                del kwargs['startup_nodes']
+                kwargs['password'] = password
+            else:
+                url = host.format(password=password)
+                connection_pool = ConnectionPool.from_url(url, db=0, **kwargs)
+                kwargs['connection_pool'] = connection_pool
+                del kwargs['startup_nodes']
+        super(SingleRedisClient, self).__init__(max_connections=128, *args, **kwargs)
         gevent.spawn(self._alive_check)
         gevent.sleep()
 
@@ -165,6 +176,7 @@ class SingleRedisClient(Redis):
         """
         Redis 存活检测
         """
+        gevent.sleep(3)
         while True:
             try:
                 if self.ping():
@@ -268,6 +280,15 @@ class SingleRedisClient(Redis):
                 ret = ppl.execute()
             return ret
         return self.robust(_hmgetall, *names)
+
+    def hmget_all(self, names, field='all'):
+        def _hmget_all(_names, _field):
+            with self.pipeline(transaction=False) as ppl:
+                for name in _names:
+                    ppl.hget(name, _field)
+                ret = ppl.execute()
+            return ret
+        return self.robust(_hmget_all, names, field)
 
     @staticmethod
     def timer(seconds, callback, *args, **kwargs):

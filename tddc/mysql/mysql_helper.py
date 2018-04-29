@@ -28,7 +28,8 @@ class MySQLHelper(object):
                                   user=self.conf.username,
                                   passwd=self.conf.passwd,
                                   db=self.conf.db,
-                                  charset='utf8')
+                                  charset='utf8',
+                                  autocommit=True)
 
     def replace(self, table, **fields_values):
         cursor = self.db.cursor()
@@ -44,33 +45,73 @@ class MySQLHelper(object):
             cursor.close()
         self.db.commit()
 
-    def replace_mutil(self, table, *fields_values):
+    # def replace_mutil(self, table, fields, *fields_values):
+    #     if not len(fields_values):
+    #         return
+    #     fields.sort()
+    #     fields_str = ','.join(fields)
+    #     values = []
+    #     for fv in fields_values:
+    #         ks = fv.keys()
+    #         ks.sort()
+    #         fv_values = [fv[k].encode('utf-8')
+    #                      if isinstance(fv.get(k), unicode)
+    #                      else (fv.get(k) if fv.get(k) is not None else 'null')
+    #                      for k in fields]
+    #         v = ', '.join(['\'{}\''.format(v.encode('utf-8'))
+    #                        if isinstance(v, str) and v != 'null'
+    #                        else str(v)
+    #                        for v in fv_values])
+    #         values.append('({})'.format(v))
+    #     cursor = self.db.cursor()
+    #     vs_str = ', '.join(values)
+    #     sql = 'REPLACE INTO {} ({}) VALUES {};'.format(table, fields_str, vs_str)
+    #     try:
+    #         cursor.execute(sql)
+    #     except Exception as e:
+    #         log.warning(e)
+    #     finally:
+    #         cursor.close()
+
+    def replace_mutil(self, table, fields, *fields_values):
         if not len(fields_values):
             return
-        cursor = self.db.cursor()
-        ks = fields_values[0].keys()
-        ks.sort()
-        fields = ','.join(ks)
+        fields.sort()
+        fields_str = ','.join(fields)
         values = []
         for fv in fields_values:
             ks = fv.keys()
             ks.sort()
-            fv_values = [fv[k].encode('utf-8') if isinstance(fv[k], unicode) else fv[k]
-                         for k in ks]
+            fv_values = [fv[k].encode('utf-8')
+                         if isinstance(fv.get(k), unicode)
+                         else (fv.get(k) if fv.get(k) is not None else 0)
+                         for k in fields]
             v = ', '.join(['\'{}\''.format(v.encode('utf-8'))
                            if isinstance(v, str) and v != 'null'
                            else str(v)
                            for v in fv_values])
             values.append('({})'.format(v))
-        values = ', '.join(values)
-        sql = 'REPLACE INTO {} ({}) VALUES {};'.format(table, fields, values)
+        _values = []
+        if len(values) > 100:
+            pre_index = 0
+            for index in range(100, len(values), 100):
+                _values.append(values[pre_index:index])
+                pre_index = index
+            if pre_index + 100 > len(values):
+                _values.append(values[-(len(values) - pre_index):])
+        else:
+            _values.append(values)
+        cursor = self.db.cursor()
         try:
-            cursor.execute(sql)
+            for vs in _values:
+                vs_str = ', '.join(vs)
+                sql = 'REPLACE INTO {} ({}) VALUES {};'.format(table, fields_str, vs_str)
+                cursor.execute(sql)
         except Exception as e:
             log.warning(e)
         finally:
             cursor.close()
-        self.db.commit()
+            self.db.commit()
 
     def update(self, table, query, **update_values):
         cursor = self.db.cursor()

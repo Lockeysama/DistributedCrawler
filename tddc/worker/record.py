@@ -32,7 +32,16 @@ class RecordManager(RedisClient):
 
     def create_records(self, name, records):
         def _create_records(_name, _records):
-            self.hmset(_name, _records)
+            if not _name and isinstance(_records, list):
+                with self.pipeline(transaction=False) as ppl:
+                    for key, _record in _records:
+                        ppl.hmset(key, _record)
+                    ret = ppl.execute()
+                return ret
+            else:
+                self.hmset(_name, _records)
+        if not records:
+            return None
         self.robust(_create_records, name, records)
 
     def get_record_sync(self, name, key, callback, **kwargs):

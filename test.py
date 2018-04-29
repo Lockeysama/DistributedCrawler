@@ -193,30 +193,31 @@ def main():
 
 
 def req():
-    from PIL import Image
-    import pytesseract
-    pytesseract.pytesseract.tesseract_cmd = '/usr/local/bin/tesseract'
-    path = '/Users/chenyitao/git/tuodao/tddc_tools/tools/captcha_identity/captchas/hello1/other/'
-    name = '2b9q_2.jpg'
-    print(pytesseract.image_to_string(Image.open(path + name)))
-
-    import requests
-    x = requests.get('https://www.che300.com/pinggu/v12c12m19571r2008-1g1?click=homepage&rt=1516269251291',
-                     headers={'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.79 Safari/537.36'},
-                     proxies={'http': 'http://1.194.162.229:52460'})
-    timestamp = re.search('window.location.href,t="(.*?)",', x.content).groups()[0]
-    spidercooskie, spidercode = re.findall('document.cookie="(.*?)="', x.content)
-    _m = hashlib.md5()
-    _m.update(timestamp)
-    code = _m.hexdigest()
-    code = code[16:] + code[:16]
-    set_cookie = [cookie for cookie in self.response.headers.getlist('Set-Cookie')
-                  if '_che300' in cookie][-1].split(';')[0].split('=')[1]
-    task.cookies = {spidercooskie: timestamp,
-                    spidercode: code,
-                    '_che300': set_cookie}
-
-    print(x)
+    pass
+    # from PIL import Image
+    # import pytesseract
+    # pytesseract.pytesseract.tesseract_cmd = '/usr/local/bin/tesseract'
+    # path = '/Users/chenyitao/git/tuodao/tddc_tools/tools/captcha_identity/captchas/hello1/other/'
+    # name = '2b9q_2.jpg'
+    # print(pytesseract.image_to_string(Image.open(path + name)))
+    #
+    # import requests
+    # x = requests.get('https://www.che300.com/pinggu/v12c12m19571r2008-1g1?click=homepage&rt=1516269251291',
+    #                  headers={'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.79 Safari/537.36'},
+    #                  proxies={'http': 'http://1.194.162.229:52460'})
+    # timestamp = re.search('window.location.href,t="(.*?)",', x.content).groups()[0]
+    # spidercooskie, spidercode = re.findall('document.cookie="(.*?)="', x.content)
+    # _m = hashlib.md5()
+    # _m.update(timestamp)
+    # code = _m.hexdigest()
+    # code = code[16:] + code[:16]
+    # set_cookie = [cookie for cookie in self.response.headers.getlist('Set-Cookie')
+    #               if '_che300' in cookie][-1].split(';')[0].split('=')[1]
+    # task.cookies = {spidercooskie: timestamp,
+    #                 spidercode: code,
+    #                 '_che300': set_cookie}
+    #
+    # print(x)
 
 
 def mq():
