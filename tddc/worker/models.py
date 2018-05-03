@@ -45,7 +45,7 @@ class RedisModel(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String(32))
-    host = Column(String(32))
+    host = Column(String(128))
     port = Column(Integer)
     username = Column(String(32))
     passwd = Column(String(32))
@@ -59,7 +59,7 @@ class MySQLModel(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String(32))
-    host = Column(String(32))
+    host = Column(String(128))
     port = Column(Integer)
     username = Column(String(32))
     passwd = Column(String(32))

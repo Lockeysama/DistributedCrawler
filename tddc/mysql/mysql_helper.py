@@ -134,7 +134,6 @@ class MySQLHelper(object):
             log.warning(e)
         finally:
             cursor.close()
-        self.db.commit()
 
     def select(self, table, *fields, **query):
         cursor = self.db.cursor()

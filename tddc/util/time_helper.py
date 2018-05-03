@@ -61,3 +61,21 @@ class TimeHelper(object):
                                                  self.get_minutes()),
                                    "%Y-%m-%d %H:%M")
         return int(time.mktime(time_array))
+
+    def get_5min_area_timestamp(self):
+        return self.get_minute_timestamp() - ((self.get_minutes() % 5) * 60)
+
+    def get_15min_area_timestamp(self):
+        return self.get_minute_timestamp() - ((self.get_minutes() % 15) * 60)
+
+    def get_30min_area_timestamp(self):
+        return self.get_minute_timestamp() - ((self.get_minutes() % 30) * 60)
+
+    def get_1h_area_timestamp(self):
+        return self.get_minute_timestamp() - ((self.get_minutes() % 60) * 60)
+
+    def get_4h_area_timestamp(self):
+        time_array = time.strptime('%s %s:0' % (self.get_y_m_d(),
+                                                self.get_hour() - self.get_hour() % 4),
+                                   "%Y-%m-%d %H:%M")
+        return int(time.mktime(time_array))

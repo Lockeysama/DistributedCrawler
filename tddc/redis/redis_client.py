@@ -158,7 +158,7 @@ class SingleRedisClient(Redis):
         if startup_nodes:
             host = startup_nodes[0].get('host')
             password = DBSession.query(RedisModel).get(1).passwd
-            if 'redis' not in host:
+            if 'redis://' not in host:
                 kwargs['host'] = host
                 kwargs['port'] = startup_nodes[0].get('port')
                 del kwargs['startup_nodes']

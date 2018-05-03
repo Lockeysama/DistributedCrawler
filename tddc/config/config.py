@@ -44,8 +44,8 @@ config = {
 }
 
 
-# CurrentConfig = config['default']
-CurrentConfig = config['testing']
+CurrentConfig = config['default']
+# CurrentConfig = config['testing']
 # CurrentConfig = config['production']
 
 
