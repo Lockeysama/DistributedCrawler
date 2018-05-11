@@ -7,6 +7,7 @@ Created on 2017年5月5日
 
 import json
 import time
+import datetime
 
 
 class Singleton(type):
@@ -41,3 +42,13 @@ def timer(func):
         end = time.time()
         print(end-start)
     return _deco
+
+
+def count_time(func):
+    def int_time(*args, **kwargs):
+        start_time = datetime.datetime.now()
+        func(*args, **kwargs)
+        over_time = datetime.datetime.now()
+        total_time = (over_time-start_time).total_seconds()
+        print(func, total_time)
+    return int_time

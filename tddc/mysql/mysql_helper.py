@@ -12,8 +12,7 @@ import logging
 import MySQLdb
 
 from ..worker.models import MySQLModel, DBSession
-from ..util.util import Singleton
-
+from ..util.util import Singleton, count_time
 
 log = logging.getLogger(__name__)
 
