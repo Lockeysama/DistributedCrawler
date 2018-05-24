@@ -106,6 +106,15 @@ class MySQLHelper(object):
                 vs_str = ', '.join(vs)
                 sql = 'REPLACE INTO {} ({}) VALUES {};'.format(table, fields_str, vs_str)
                 cursor.execute(sql)
+        except MySQLdb.OperationalError as e:
+            log.error(e)
+            self.db = MySQLdb.Connect(host=self.conf.host,
+                                      port=self.conf.port,
+                                      user=self.conf.username,
+                                      passwd=self.conf.passwd,
+                                      db=self.conf.db,
+                                      charset='utf8',
+                                      autocommit=True)
         except Exception as e:
             log.warning(e)
         finally:

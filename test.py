@@ -167,12 +167,38 @@ def spilt_test():
 
 def mongo_test():
     from pymongo import MongoClient
-    client = MongoClient('72.127.2.216', 27017)
+    client = MongoClient('192.168.0.103', 27017)
     print(client)
 
 
+def subprocess_test():
+    import gevent.monkey
+    import gevent.queue
+    gevent.monkey.patch_all()
+    import multiprocessing
+
+    def _g1(q):
+        while True:
+            print(q.get())
+            gevent.sleep(1)
+
+    def _p1():
+        q = gevent.queue.Queue()
+        gevent.spawn(_g1, q)
+        gevent.sleep()
+        while True:
+            # print(1)
+            q.put(1)
+            gevent.sleep(1)
+
+    multiprocessing.Process(target=_p1).start()
+    while True:
+        gevent.sleep(10)
+
+
 def main():
-    mongo_test()
+    subprocess_test()
+    # mongo_test()
     # spilt_test()
     # type_test()
     # cerely_test()

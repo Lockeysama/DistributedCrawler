@@ -90,5 +90,6 @@ class Storager(object):
                 if db and table and data and isinstance(data, list):
                     self._q_mongo.put((db, table, data, callback))
             else:
-                log.debug('[%s:%s] Storaged.' % (data.table, data.row_key))
-                callable(callback(data))
+                log.debug('[%s:%s] Storaged(%s).' % (db, table, len(data)))
+                if callback:
+                    callback(data)
