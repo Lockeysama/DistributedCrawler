@@ -2,6 +2,7 @@
 import hashlib
 import re
 
+import MySQLdb
 import gevent
 
 # from tddc import ConfigCenter, Singleton, WorkerConfigCenter
@@ -10,6 +11,10 @@ import gevent
 # from tddc.worker.event import EventCenter
 # from tddc.worker.message_queue import MessageQueue
 import time
+
+from websocket import WebSocketApp
+
+from tddc.mysql.mysql_helper import MySQLHelper
 
 
 def _callback(*args, **kwargs):
@@ -196,8 +201,130 @@ def subprocess_test():
         gevent.sleep(10)
 
 
+def mysql_test():
+    aliyun = 'rm-bp1eq3q0ni7376g35no.mysql.rds.aliyuncs.com'
+    aws = 'public-1.cluster-cvt1rggskuer.ap-northeast-1.rds.amazonaws.com'
+    db = MySQLdb.Connect(host=aliyun,
+                         port=3306,
+                         user='bishi',
+                         passwd='Zheshimima123',
+                         db='bishi',
+                         charset='utf8',
+                         autocommit=True)
+    aws_db = MySQLdb.Connect(host=aws,
+                             port=3306,
+                             user='bishi',
+                             passwd='Zheshimima123',
+                             db='bishi',
+                             charset='utf8',
+                             autocommit=True)
+    c = db.cursor()
+    sql = ('select code, high, open, low, close, volume, date '
+           'from bishi_kline_1h where date >= 1527564600 and date < 1527570000 limit 150000;')
+    aws_c = aws_db.cursor()
+    try:
+        print('fetch data.')
+        ret = c.execute(sql)
+        if ret:
+            records = c.fetchall()
+            print(len(records))
+            times = len(records) / 100 + 1
+            sql_base = ('replace into bishi_kline_1h '
+                        '(code, high, open, low, close, volume, date) '
+                        'values {};')
+            print('write data.')
+            for index in range(times):
+                if index == times - 1:
+                    items = records[100 * index:]
+                else:
+                    items = records[100 * index: 100 * (index + 1)]
+                items = [['\'{}\''.format(v) if isinstance(v, unicode) else str(v) for v in item]
+                         for item in items]
+                v_str_list = [u' ({}) '.format(u','.join(item))
+                              for item in items]
+                v_str = ', '.join(v_str_list)
+                rp_sql = sql_base.format(v_str)
+                aws_c.execute(rp_sql)
+                print(index)
+    except Exception as e:
+        print(e)
+    aws_c.close()
+    c.close()
+    aws_db.close()
+    db.close()
+    print('done.')
+
+
+def subprocess_test2():
+    import subprocess
+    import gevent
+    import multiprocessing
+    from os import getpid
+    
+    # class A(subprocess.Popen):
+    #     def __init__(self):
+    #         super(A, self).__init__(multiprocessing.Process)
+    #         print(2)
+    #
+    # A()
+    q = multiprocessing.Queue()
+
+    def _g():
+        while True:
+            print(getpid())
+            gevent.sleep(1)
+
+    gevent.spawn(_g)
+    gevent.sleep()
+
+    def p(q):
+        while True:
+            x = q.get()
+            print(getpid(), x)
+
+    multiprocessing.Process(target=p, args=(q,)).start()
+    multiprocessing.Process(target=p, args=(q,)).start()
+    i = 1
+    while i:
+        # print(1)
+        q.put(i)
+        i += 1
+        gevent.sleep(1)
+
+
+def try_test():
+    while True:
+        try:
+            print(1)
+            a = 1
+            a += '1'
+        except TypeError as e:
+            print(e)
+            time.sleep(1)
+        except Exception as e:
+            print('exit')
+            time.sleep(1)
+            raise
+
+
+def ws_test():
+    def on_message(ws, message):
+        print(message)
+
+    def on_open(ws):
+        ws.send('{"req":"market.btcusdt.kline.1min","id":"kline1528184226049"}')
+
+    ws = WebSocketApp(url='ws://cex.plus/ws/huobipro',
+                      on_message=on_message, on_open=on_open)
+    ws.run_forever(http_proxy_host='127.0.0.1', http_proxy_port=8118)
+
+
 def main():
-    subprocess_test()
+    ws_test()
+    # try_test()
+    # subprocess_test2()
+    # mysql_test()
+    # subprocess_test()
     # mongo_test()
     # spilt_test()
     # type_test()
