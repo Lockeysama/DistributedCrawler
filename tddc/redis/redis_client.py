@@ -35,6 +35,7 @@ class RedisClient(StrictRedisCluster):
         """
         Redis 存活检测
         """
+        gevent.sleep(5)
         while True:
             try:
                 if self.ping():
