@@ -9,7 +9,7 @@ import logging
 import gevent
 import time
 from rediscluster import StrictRedisCluster
-from redis import Redis, ConnectionPool
+from redis import Redis, ConnectionPool, ResponseError
 
 log = logging.getLogger(__name__)
 
@@ -200,6 +200,10 @@ class SingleRedisClient(Redis):
         """
         try:
             return func(*args, **kwargs)
+        except ResponseError as e:
+            log.exception(e)
+            log.debug(e)
+            return None
         except Exception as e:
             log.exception(e)
             log.debug('Try Again.')
