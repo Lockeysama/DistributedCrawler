@@ -119,9 +119,9 @@ class ExternManager(object):
         rules_path_base = 'worker.extern_modules'
         try:
             path = '%s.%s.%s' % (rules_path_base, package.platform, package.package)
-            pyc_path = path.replace('.', '/') + '.pyc'
-            if os.path.exists(pyc_path):
-                os.remove(pyc_path)
+            # pyc_path = path.replace('.', '/') + '.pyc'
+            # if os.path.exists(pyc_path):
+            #     os.remove(pyc_path)
             module = importlib.import_module(path)
             module = reload(module)
         except Exception as e:
