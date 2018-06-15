@@ -1,6 +1,7 @@
 # -*- coding:utf-8 -*-
 import hashlib
 import re
+import zlib
 
 import MySQLdb
 import gevent
@@ -309,7 +310,7 @@ def try_test():
 
 def ws_test():
     def on_message(ws, message):
-        print(message)
+        print(zlib.decompress(message, 16 + zlib.MAX_WBITS))
 
     def on_open(ws):
         ws.send('{"req":"market.btcusdt.kline.1min","id":"kline1528184226049"}')
