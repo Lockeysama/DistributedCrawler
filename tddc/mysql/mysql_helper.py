@@ -85,7 +85,7 @@ class MySQLHelper(object):
                          if isinstance(fv.get(k), unicode)
                          else (fv.get(k) if fv.get(k) is not None else 0)
                          for k in fields]
-            v = ', '.join(['\'{}\''.format(v.encode('utf-8'))
+            v = ', '.join(['\'{}\''.format(v)
                            if isinstance(v, str) and v != 'null'
                            else str(v)
                            for v in fv_values])
