@@ -49,7 +49,13 @@ class Pubsub(RedisClient):
                     except Exception as e:
                         log.warning(e)
             p.unsubscribe(topic)
-        self.robust(_subscribing)
+
+        while True:
+            try:
+                self.robust(_subscribing)
+            except Exception as e:
+                log.warning(e)
+            gevent.sleep(5)
 
     def _subscribe_topic(self):
         """
