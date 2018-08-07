@@ -6,8 +6,10 @@ Created on 2017年4月10日
 '''
 
 import logging
+import os
+import re
 import sys
-
+from logging.handlers import TimedRotatingFileHandler
 
 sys.stderr = sys.stdout
 logging.CRITICAL = 35
@@ -35,13 +37,41 @@ logging._levelNames = {
     'NOTSET': logging.NOTSET,
 }
 
-logging.basicConfig(filemode='a',
-                    filename='processing.log',
-                    format=('[%(asctime)s] [%(levelname)s] '
-                            '[%(name)s:%(lineno)s:%(funcName)s] '
-                            ' )=> %(message)s'),
-                    datefmt='%Y-%m-%d %H:%M:%S',
-                    level=logging.DEBUG)
+if not os.path.exists('./logs'):
+    os.mkdir('./logs')
+
+logging.basicConfig(
+    filemode='a', filename='processing.log', datefmt='%Y-%m-%d %H:%M:%S', level=logging.DEBUG
+)
+
+log_fmt = '[%(asctime)s] [%(levelname)s] [%(name)s:%(lineno)s:%(funcName)s] )=> %(message)s'
+formatter = logging.Formatter(log_fmt)
+log_file_handler = TimedRotatingFileHandler(
+    filename="./logs/processing.log", when="D", interval=1, backupCount=7
+)
+log_file_handler.suffix = "%Y-%m-%d_%H:%M:%S.log"
+log_file_handler.extMatch = re.compile(r"^\d{4}-\d{2}-\d{2}_\d{2}:\d{2}:\d{2}.log$")
+log_file_handler.setFormatter(formatter)
+log_file_handler.setLevel(logging.INFO)
+logging.getLogger().addHandler(log_file_handler)
+
+warning_handler = TimedRotatingFileHandler(
+    filename="./logs/warning.log", when="D", interval=1, backupCount=7
+)
+warning_handler.suffix = "%Y-%m-%d_%H:%M:%S.log"
+warning_handler.extMatch = re.compile(r"^\d{4}-\d{2}-\d{2}_\d{2}:\d{2}:\d{2}.log$")
+warning_handler.setFormatter(formatter)
+warning_handler.setLevel(logging.WARNING)
+logging.getLogger().addHandler(warning_handler)
+
+error_handler = TimedRotatingFileHandler(
+    filename="./logs/error.log", when="D", interval=1, backupCount=7
+)
+error_handler.suffix = "%Y-%m-%d_%H:%M:%S.log"
+error_handler.extMatch = re.compile(r"^\d{4}-\d{2}-\d{2}_\d{2}:\d{2}:\d{2}.log$")
+error_handler.setFormatter(formatter)
+error_handler.setLevel(logging.ERROR)
+logging.getLogger().addHandler(error_handler)
 
 stream = logging.StreamHandler()
 stream.setLevel(logging.NOTSET)
