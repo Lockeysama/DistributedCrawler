@@ -7,7 +7,10 @@
 @file: time_helper.py
 @time: 2018/4/12 21:48
 """
+import datetime
 import time
+
+import pytz
 
 
 class TimeHelper(object):
@@ -79,3 +82,12 @@ class TimeHelper(object):
                                                 self.get_hour() - self.get_hour() % 4),
                                    "%Y-%m-%d %H:%M")
         return int(time.mktime(time_array))
+
+    def utc(self, utc_format='%Y-%m-%dT%H:%M:%S.000Z'):
+        local_tz = pytz.timezone('Asia/Chongqing')
+        local_format = "%Y-%m-%d %H:%M:%S"
+        time_str = time.strftime(local_format, time.localtime(local_ts))
+        dt = datetime.datetime.strptime(time_str, local_format)
+        local_dt = local_tz.localize(dt, is_dst=None)
+        utc_dt = local_dt.astimezone(pytz.utc)
+        return utc_dt.strftime(utc_format)
