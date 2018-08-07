@@ -22,13 +22,12 @@ class MySQLHelper(object):
 
     def __init__(self):
         self.conf = DBSession.query(MySQLModel).get(1)
-        self.db = MySQLdb.Connect(host=self.conf.host,
-                                  port=self.conf.port,
-                                  user=self.conf.username,
-                                  passwd=self.conf.passwd,
-                                  db=self.conf.db,
-                                  charset='utf8',
-                                  autocommit=True)
+        self.db = self.connect()
+
+    def connect(self):
+        return MySQLdb.Connect(
+            host=self.conf.host, port=self.conf.port, user=self.conf.username,
+            passwd=self.conf.passwd, db=self.conf.db, charset='utf8', autocommit=True)
 
     def replace(self, table, **fields_values):
         cursor = self.db.cursor()
@@ -38,6 +37,10 @@ class MySQLHelper(object):
         sql = 'REPLACE INTO {} ({}) VALUES ({});'.format(table, fields, values)
         try:
             cursor.execute(sql)
+        except MySQLdb.OperationalError as e:
+            log.exception(e)
+            self.db = self.connect()
+            return self.replace(table, **fields_values)
         except Exception as e:
             log.warning(e)
         finally:
@@ -107,14 +110,9 @@ class MySQLHelper(object):
                 sql = 'REPLACE INTO {} ({}) VALUES {};'.format(table, fields_str, vs_str)
                 cursor.execute(sql)
         except MySQLdb.OperationalError as e:
-            log.error(e)
-            self.db = MySQLdb.Connect(host=self.conf.host,
-                                      port=self.conf.port,
-                                      user=self.conf.username,
-                                      passwd=self.conf.passwd,
-                                      db=self.conf.db,
-                                      charset='utf8',
-                                      autocommit=True)
+            log.exception(e)
+            self.db = self.connect()
+            return self.replace_mutil(table, fields, *fields_values)
         except Exception as e:
             log.warning(e)
         finally:
@@ -138,6 +136,10 @@ class MySQLHelper(object):
         sql = 'UPDATE {} SET {}{};'.format(table, new_values, query_str)
         try:
             cursor.execute(sql)
+        except MySQLdb.OperationalError as e:
+            log.exception(e)
+            self.db = self.connect()
+            return self.update(table, query, **update_values)
         except Exception as e:
             log.warning(e)
         finally:
@@ -160,6 +162,10 @@ class MySQLHelper(object):
             ret = cursor.execute(sql)
             if ret:
                 ret = cursor.fetchall()
+        except MySQLdb.OperationalError as e:
+            log.exception(e)
+            self.db = self.connect()
+            return self.select(table, *fields, **query)
         except Exception as e:
             ret = 0
             log.warning(e)
