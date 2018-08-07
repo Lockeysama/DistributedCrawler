@@ -37,6 +37,8 @@ class MessageQueue(RedisClient):
         self.robust(_push, topic, values, callback)
 
     def pull(self, topic, count=0, timeout=2):
+        count = int(count)
+
         def _pull(_topic, _count, _timeout):
             if count == 0:
                 return self.brpop(_topic, timeout)
