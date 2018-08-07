@@ -25,6 +25,7 @@ log = logging.getLogger(__name__)
 class Event(object):
     class Type(object):
         ExternModuleUpdate = 1001
+        TaskFilterUpdate = 2001
 
     class Status(object):
         Pushed = 1001
