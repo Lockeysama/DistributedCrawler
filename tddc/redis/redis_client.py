@@ -274,7 +274,11 @@ class SingleRedisClient(Redis):
 
     def clean(self, pattern='*'):
         def _clean(_pattern):
-            self.delete(*self.keys(pattern))
+            keys = self.keys(pattern)
+            if not keys:
+                return True
+            self.delete(*keys)
+            return True
         return self.robust(_clean, pattern)
 
     def hmgetall(self, *names):
