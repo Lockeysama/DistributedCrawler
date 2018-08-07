@@ -6,7 +6,6 @@ Created on 2017年4月20日
 '''
 
 import importlib
-import json
 import logging
 import os
 
