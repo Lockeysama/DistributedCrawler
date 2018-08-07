@@ -47,8 +47,9 @@ def timer(func):
 def count_time(func):
     def int_time(*args, **kwargs):
         start_time = datetime.datetime.now()
-        func(*args, **kwargs)
+        ret = func(*args, **kwargs)
         over_time = datetime.datetime.now()
         total_time = (over_time-start_time).total_seconds()
         print(func, total_time)
+        return ret
     return int_time
