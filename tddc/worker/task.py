@@ -10,6 +10,7 @@ import time
 
 import zlib
 
+from .event import EventCenter, Event
 from .models import TaskConfigModel, DBSession, WorkerModel
 from .record import RecordManager
 from .cache import CacheManager
@@ -34,11 +35,15 @@ class Task(object):
         ParsedSuccess = 1200
         ParsedFailed = 1400
 
+        Interrupt = 10001
+
     id = None
 
     platform = None
 
     feature = None
+
+    priority = None
 
     url = None
 
@@ -53,6 +58,14 @@ class Task(object):
     status = None
 
     retry = None
+
+    cookies = None
+
+    json = None
+
+    data = None
+
+    response = None
 
     timestamp = None
 
@@ -206,6 +219,8 @@ class TaskManager(MessageQueue):
         self.worker = DBSession.query(WorkerModel).get(1)
         super(TaskManager, self).__init__()
         log.info('Task Manager Is Starting.')
+        self.filter_table = {}
+        self.task_filter_update()
         self._totals = 0
         self._minutes = 0
         self._success = 0
@@ -250,13 +265,10 @@ class TaskManager(MessageQueue):
             self._one_minute_past_failed = 0
 
     def _pull(self):
-        topic = self.task_conf.crawler_topic \
-            if self.worker.platform == 'crawler' \
-            else self.task_conf.parser_topic
         while True:
             if self._q.qsize() < self.task_conf.max_queue_size:
-                items = self.pull(topic,
-                                  self.task_conf.max_queue_size)
+                items = self._pull_task_old()
+                items.extend(self._pull_task())
                 if not items:
                     gevent.sleep(2)
                     continue
@@ -264,6 +276,8 @@ class TaskManager(MessageQueue):
                 tasks = [task for task in tasks if task and task.platform and task.feature and task.url]
                 if len(tasks):
                     for task in tasks:
+                        if self.task_filter(task):
+                            continue
                         self._totals += 1
                         task.status = Task.Status.WaitCrawl \
                             if self.worker.platform == 'crawler' \
@@ -271,43 +285,125 @@ class TaskManager(MessageQueue):
                         TaskRecordManager().changing_status(task)
                         TaskRecordManager().start_task_timer(task)
                         self._q.put(task)
-                    log.info('Pulled New Task(%d).' % len(tasks))
+                    log.info('Pulled New Task({}).'.format(len(tasks)))
                 gevent.sleep(2)
             else:
                 gevent.sleep(2)
 
-    def _trans_to_task_obj(self, task_index):
-        task = TaskRecordManager().get_records(task_index)
-        if not task:
-            return None
-        return task
+    def _pull_task_old(self):
+        topic = self.task_conf.crawler_topic \
+            if self.worker.platform == 'crawler' \
+            else self.task_conf.parser_topic
+        items = self.pull(topic, self.task_conf.max_queue_size)
+        return items or []
+
+    def _pull_task(self):
+        topic_base = self.task_conf.crawler_topic \
+            if self.worker.platform == 'crawler' \
+            else self.task_conf.parser_topic
+        high_weight, middle_weight, low_weight = 0.5, 0.35, 0.15
+        share = self.task_conf.max_queue_size * 2 - self._q.qsize()
+        if share <= 0:
+            return []
+        tasks = []
+        topic = '{}:{}'.format(topic_base, 'high')
+        high_pri_max_share = share * high_weight
+        items = self.pull(topic, high_pri_max_share) or []
+        share -= (len(items) if items else 0)
+        tasks.extend(items)
+        topic = '{}:{}'.format(topic_base, 'middle')
+        middle_pri_max_share = share * (middle_weight / (middle_weight + low_weight))
+        items = self.pull(topic, middle_pri_max_share) or []
+        share -= (len(items) if items else 0)
+        tasks.extend(items)
+        topic = '{}:{}'.format(topic_base, 'low')
+        items = self.pull(topic, share) or []
+        tasks.extend(items)
+        return tasks
+
+    @staticmethod
+    def _trans_to_task_obj(task_index):
+        return TaskRecordManager().get_records(task_index) or None
 
     def get(self, block=True, timeout=None):
-        task = self._q.get(block, timeout)
-        return task
+        while True:
+            task = self._q.get(block, timeout)
+            if self.task_filter(task):
+                continue
+            return task
 
-    def task_successed(self, task):
+    def put(self, task):
+        self._q.put(task)
+
+    def task_success(self, task):
+        if self.task_filter(task):
+            TaskRecordManager().stop_task_timer(task)
+            log.debug('[{}:{}:{}] Task Filter.'.format(
+                task.platform, task.feature, task.url
+            ))
+            return False
         self._success += 1
         self._one_minute_past_success += 1
         TaskRecordManager().changing_status(task)
         TaskRecordManager().stop_task_timer(task)
-        log.debug('[%s:%s] Task Success.' % (task.platform,
-                                             task.id))
+        log.debug('[{}:{}:{}] Task Success.'.format(
+            task.platform, task.feature, task.url
+        ))
+        return True
+
+    def task_successed(self, task):
+        return self.task_success(task)
 
     def task_failed(self, task):
+        if self.task_filter(task):
+            TaskRecordManager().stop_task_timer(task)
+            log.debug('[{}:{}:{}] Task Filter.'.format(
+                task.platform, task.feature, task.url
+            ))
+            return
         self._failed += 1
         self._one_minute_past_failed += 1
         TaskRecordManager().changing_status(task)
         TaskRecordManager().stop_task_timer(task)
-        log.warning('[%s:%s] Task Failed(%s).' % (task.platform,
-                                                  task.id,
-                                                  task.status))
+        log.warning('[{}:{}:{}] Task Failed({}).'.format(
+            task.platform, task.feature, task.url, task.status
+        ))
 
     def push_task(self, task, topic):
-        def _pushed(_):
-            log.debug('[%s:%s] Pushed(Topic:%s).' % (task.platform,
-                                                     task.id,
-                                                     topic))
+        if self.task_filter(task):
+            TaskRecordManager().stop_task_timer(task)
+            log.debug('[{}:{}:{}] Task Filter.'.format(
+                task.platform, task.feature, task.url
+            ))
+            return
 
-        task_index = 'tddc:task:record:{}:{}'.format(task.platform, task.id)
-        self.push(topic, task_index, _pushed)
+        if not hasattr(task, 'priority') or not task.priority:
+            def _pushed(_):
+                log.debug('[{}:{}] Pushed(Topic:{}).'.format(
+                    task.platform, task.feature, topic
+                ))
+
+            task_index = 'tddc:task:record:{}:{}'.format(task.platform, task.id)
+            self.push(topic, task_index, _pushed)
+        else:
+            topic = '{}:{}'.format(topic, task.priority)
+
+            def _pushed(_):
+                log.debug('[{}:{}] Pushed(Topic:{}).'.format(
+                    task.platform, task.feature, topic
+                ))
+
+            task_index = 'tddc:task:record:{}:{}'.format(task.platform, task.id)
+            self.push(topic, task_index, _pushed)
+
+    @EventCenter.route(Event.Type.TaskFilterUpdate)
+    def task_filter_update(self):
+        self.filter_table = RecordManager().hgetall('tddc:task:filter') or {}
+
+    def task_filter(self, task):
+        filter_features = self.filter_table.get(task.platform)
+        if filter_features:
+            if filter_features == '*' or task.feature in filter_features:
+                TaskRecordManager().delete_record(task)
+                return True
+        return False
