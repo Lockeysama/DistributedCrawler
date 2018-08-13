@@ -66,6 +66,8 @@ class Task(object):
 
     data = None
 
+    is_need_recovery = True
+
     response = None
 
     timestamp = None
@@ -148,6 +150,8 @@ class TaskRecordManager(RecordManager):
         :param task:
         :param count:
         """
+        if not task.is_need_recovery:
+            return
         task_index = 'tddc:task:record:{}:{}:countdown'.format(task.platform, task.id)
 
         def _start_task_timer(_task_index, _count, _status):
@@ -159,6 +163,8 @@ class TaskRecordManager(RecordManager):
         取消任务回收倒计时
         :param task:
         """
+        if not task.is_need_recovery:
+            return
         task_index = 'tddc:task:record:{}:{}:countdown'.format(task.platform, task.id)
 
         def _stop_task_timer(_task_index):
