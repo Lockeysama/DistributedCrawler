@@ -68,7 +68,7 @@ class Task(object):
 
     data = None
 
-    is_need_recovery = True
+    is_recovery = True
 
     response = None
 
@@ -152,7 +152,7 @@ class TaskRecordManager(RecordManager):
         :param task:
         :param count:
         """
-        if not task.is_need_recovery:
+        if not task.is_recovery:
             return
         task_index = 'tddc:task:record:{}:{}:countdown'.format(task.platform, task.id)
 
@@ -165,7 +165,7 @@ class TaskRecordManager(RecordManager):
         取消任务回收倒计时
         :param task:
         """
-        if not task.is_need_recovery:
+        if not task.is_recovery:
             return
         task_index = 'tddc:task:record:{}:{}:countdown'.format(task.platform, task.id)
 
@@ -233,7 +233,7 @@ class TaskManager(MessageQueue):
         super(TaskManager, self).__init__()
         log.info('Task Manager Is Starting.')
         self.filter_table = defaultdict(list)
-        self.task_filter_update()
+        self._task_filter_update()
         self._totals = 0
         self._minutes = 0
         self._success = 0
@@ -409,8 +409,17 @@ class TaskManager(MessageQueue):
             task_index = 'tddc:task:record:{}:{}'.format(task.platform, task.id)
             self.push(topic, task_index, _pushed)
 
+    @staticmethod
     @EventCenter.route(Event.Type.TaskFilterUpdate)
-    def task_filter_update(self):
+    def task_filter_update(event):
+        EventCenter().update_the_status(event,
+                                        Event.Status.Executed_Success
+                                        if TaskManager()._task_filter_update()
+                                        else Event.Status.Executed_Failed)
+        log.info('Task Filter Update.')
+
+    def _task_filter_update(self):
+        self.filter_table = defaultdict(list)
         filter_table = RecordManager().hgetall('tddc:task:filter') or {}
         if filter_table:
             for k, v in filter_table.items():
@@ -418,6 +427,7 @@ class TaskManager(MessageQueue):
                     continue
                 features = v.split(',')
                 self.filter_table[k] = features
+        return True
 
     def task_filter(self, task):
         filter_features = self.filter_table.get(task.platform)
