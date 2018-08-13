@@ -6,6 +6,8 @@ Created on 2017年4月14日
 '''
 import copy
 import logging
+from collections import defaultdict
+
 import gevent.queue
 import time
 
@@ -65,6 +67,8 @@ class Task(object):
     json = None
 
     data = None
+
+    is_recovery = True
 
     response = None
 
@@ -148,6 +152,8 @@ class TaskRecordManager(RecordManager):
         :param task:
         :param count:
         """
+        if not task.is_recovery:
+            return
         task_index = 'tddc:task:record:{}:{}:countdown'.format(task.platform, task.id)
 
         def _start_task_timer(_task_index, _count, _status):
@@ -159,6 +165,8 @@ class TaskRecordManager(RecordManager):
         取消任务回收倒计时
         :param task:
         """
+        if not task.is_recovery:
+            return
         task_index = 'tddc:task:record:{}:{}:countdown'.format(task.platform, task.id)
 
         def _stop_task_timer(_task_index):
@@ -224,8 +232,8 @@ class TaskManager(MessageQueue):
         self.worker = DBSession.query(WorkerModel).get(1)
         super(TaskManager, self).__init__()
         log.info('Task Manager Is Starting.')
-        self.filter_table = {}
-        self.task_filter_update()
+        self.filter_table = defaultdict(list)
+        self._task_filter_update()
         self._totals = 0
         self._minutes = 0
         self._success = 0
@@ -401,14 +409,30 @@ class TaskManager(MessageQueue):
             task_index = 'tddc:task:record:{}:{}'.format(task.platform, task.id)
             self.push(topic, task_index, _pushed)
 
+    @staticmethod
     @EventCenter.route(Event.Type.TaskFilterUpdate)
-    def task_filter_update(self):
-        self.filter_table = RecordManager().hgetall('tddc:task:filter') or {}
+    def task_filter_update(event):
+        EventCenter().update_the_status(event,
+                                        Event.Status.Executed_Success
+                                        if TaskManager()._task_filter_update()
+                                        else Event.Status.Executed_Failed)
+        log.info('Task Filter Update.')
+
+    def _task_filter_update(self):
+        self.filter_table = defaultdict(list)
+        filter_table = RecordManager().hgetall('tddc:task:filter') or {}
+        if filter_table:
+            for k, v in filter_table.items():
+                if not v:
+                    continue
+                features = v.split(',')
+                self.filter_table[k] = features
+        return True
 
     def task_filter(self, task):
         filter_features = self.filter_table.get(task.platform)
         if filter_features:
-            if filter_features == '*' or task.feature in filter_features:
+            if task.feature in filter_features:
                 TaskRecordManager().delete_record(task)
                 return True
         return False
