@@ -6,6 +6,8 @@ Created on 2017年4月14日
 '''
 import copy
 import logging
+from collections import defaultdict
+
 import gevent.queue
 import time
 
@@ -230,7 +232,7 @@ class TaskManager(MessageQueue):
         self.worker = DBSession.query(WorkerModel).get(1)
         super(TaskManager, self).__init__()
         log.info('Task Manager Is Starting.')
-        self.filter_table = {}
+        self.filter_table = defaultdict(list)
         self.task_filter_update()
         self._totals = 0
         self._minutes = 0
@@ -409,12 +411,18 @@ class TaskManager(MessageQueue):
 
     @EventCenter.route(Event.Type.TaskFilterUpdate)
     def task_filter_update(self):
-        self.filter_table = RecordManager().hgetall('tddc:task:filter') or {}
+        filter_table = RecordManager().hgetall('tddc:task:filter') or {}
+        if filter_table:
+            for k, v in filter_table.items():
+                if not v:
+                    continue
+                features = v.split(',')
+                self.filter_table[k] = features
 
     def task_filter(self, task):
         filter_features = self.filter_table.get(task.platform)
         if filter_features:
-            if filter_features == '*' or task.feature in filter_features:
+            if task.feature in filter_features:
                 TaskRecordManager().delete_record(task)
                 return True
         return False
