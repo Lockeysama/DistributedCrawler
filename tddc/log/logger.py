@@ -40,20 +40,30 @@ logging._levelNames = {
 if not os.path.exists('./logs'):
     os.mkdir('./logs')
 
-logging.basicConfig(
-    filemode='a', filename='processing.log', datefmt='%Y-%m-%d %H:%M:%S', level=logging.DEBUG
-)
+# logging.basicConfig(
+    #filemode='a', filename='./logs/debug.log', datefmt='%Y-%m-%d %H:%M:%S', level=logging.DEBUG
+# )
 
 log_fmt = '[%(asctime)s] [%(levelname)s] [%(name)s:%(lineno)s:%(funcName)s] )=> %(message)s'
 formatter = logging.Formatter(log_fmt)
-log_file_handler = TimedRotatingFileHandler(
-    filename="./logs/processing.log", when="D", interval=1, backupCount=7
+
+debug_file_handler = TimedRotatingFileHandler(
+    filename="./logs/debug.log", when="D", interval=1, backupCount=3
 )
-log_file_handler.suffix = "%Y-%m-%d_%H:%M:%S.log"
-log_file_handler.extMatch = re.compile(r"^\d{4}-\d{2}-\d{2}_\d{2}:\d{2}:\d{2}.log$")
-log_file_handler.setFormatter(formatter)
-log_file_handler.setLevel(logging.INFO)
-logging.getLogger().addHandler(log_file_handler)
+debug_file_handler.suffix = "%Y-%m-%d_%H:%M:%S.log"
+debug_file_handler.extMatch = re.compile(r"^\d{4}-\d{2}-\d{2}_\d{2}:\d{2}:\d{2}.log$")
+debug_file_handler.setFormatter(formatter)
+debug_file_handler.setLevel(logging.INFO)
+logging.getLogger().addHandler(debug_file_handler)
+
+info_file_handler = TimedRotatingFileHandler(
+    filename="./logs/info.log", when="D", interval=1, backupCount=3
+)
+info_file_handler.suffix = "%Y-%m-%d_%H:%M:%S.log"
+info_file_handler.extMatch = re.compile(r"^\d{4}-\d{2}-\d{2}_\d{2}:\d{2}:\d{2}.log$")
+info_file_handler.setFormatter(formatter)
+info_file_handler.setLevel(logging.INFO)
+logging.getLogger().addHandler(info_file_handler)
 
 warning_handler = TimedRotatingFileHandler(
     filename="./logs/warning.log", when="D", interval=1, backupCount=7
