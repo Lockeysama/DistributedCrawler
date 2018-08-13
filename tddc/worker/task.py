@@ -4,6 +4,7 @@ Created on 2017年4月14日
 
 @author: chenyitao
 '''
+import copy
 import logging
 import gevent.queue
 import time
@@ -76,7 +77,11 @@ class Task(object):
         self.timestamp = kwargs.get('timestamp', int(time.time()))
 
     def to_dict(self):
-        return self.__dict__
+        kws = copy.deepcopy(self.__dict__)
+        for k, v in kws.items():
+            if v is None:
+                del kws[k]
+        return kws
 
 
 class TaskRecordManager(RecordManager):
