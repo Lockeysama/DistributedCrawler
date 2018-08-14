@@ -26,7 +26,7 @@ class SnowFlakeID(object):
 
     timestamp_left_shift = 22L
 
-    def __init__(self, worker_id):
+    def __init__(self, worker_id=512):
         self.worker_id = worker_id
         self.sequence = 0L
         self.max_worker_id = -1L ^ (-1L << self.worker_id_bits)
