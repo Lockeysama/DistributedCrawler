@@ -86,7 +86,7 @@ class TimeHelper(object):
     def utc(self, utc_format='%Y-%m-%dT%H:%M:%S.000Z'):
         local_tz = pytz.timezone('Asia/Chongqing')
         local_format = "%Y-%m-%d %H:%M:%S"
-        time_str = time.strftime(local_format, time.localtime(local_ts))
+        time_str = time.strftime(local_format, time.localtime(int(self.timestamp)))
         dt = datetime.datetime.strptime(time_str, local_format)
         local_dt = local_tz.localize(dt, is_dst=None)
         utc_dt = local_dt.astimezone(pytz.utc)
