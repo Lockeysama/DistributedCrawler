@@ -368,6 +368,7 @@ class TaskManager(MessageQueue):
         return self.task_success(task)
 
     def task_failed(self, task):
+        TaskRecordManager().delete_record(task)
         if self.task_filter(task):
             TaskRecordManager().stop_task_timer(task)
             log.debug('[{}:{}:{}] Task Filter.'.format(
@@ -376,7 +377,6 @@ class TaskManager(MessageQueue):
             return
         self._failed += 1
         self._one_minute_past_failed += 1
-        TaskRecordManager().changing_status(task)
         TaskRecordManager().stop_task_timer(task)
         log.warning('[{}:{}:{}] Task Failed({}).'.format(
             task.platform, task.feature, task.url, task.status

@@ -10,8 +10,7 @@ from .util.util import *
 from .util.snowflake import *
 from .worker import *
 
-__all__ = ['ExceptionCollection',
-           'HBaseManager',
+__all__ = ['HBaseManager',
            'MongoDBManager',
            'CacheManager',
            'RecordManager',
@@ -30,4 +29,5 @@ __all__ = ['ExceptionCollection',
            'RecordManager',
            'MessageQueue',
            'Pubsub',
-           'TaskManager', 'Task', 'TaskRecordManager', 'TaskCacheManager']
+           'TaskManager', 'Task', 'TaskRecordManager', 'TaskCacheManager',
+           'MySQLModel', 'DBSession']
