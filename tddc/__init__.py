@@ -10,7 +10,8 @@ from .util.util import *
 from .util.snowflake import *
 from .worker import *
 
-__all__ = ['HBaseManager',
+__all__ = ['WorkerModel',
+           'HBaseManager',
            'MongoDBManager',
            'CacheManager',
            'RecordManager',
