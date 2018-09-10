@@ -7,7 +7,6 @@ Created on 2017年4月10日
 
 import logging
 import os
-import re
 import sys
 from logging.handlers import TimedRotatingFileHandler
 
@@ -37,48 +36,38 @@ logging._levelNames = {
     'NOTSET': logging.NOTSET,
 }
 
+
 if not os.path.exists('./logs'):
     os.mkdir('./logs')
 
-# logging.basicConfig(
-    #filemode='a', filename='./logs/debug.log', datefmt='%Y-%m-%d %H:%M:%S', level=logging.DEBUG
-# )
 
 log_fmt = '[%(asctime)s] [%(levelname)s] [%(name)s:%(lineno)s:%(funcName)s] )=> %(message)s'
 formatter = logging.Formatter(log_fmt)
 
 debug_file_handler = TimedRotatingFileHandler(
-    filename="./logs/debug.log", when="D", interval=1, backupCount=3
+    filename="./logs/debug.log", when="midnight", backupCount=3
 )
-debug_file_handler.suffix = "%Y-%m-%d_%H:%M:%S.log"
-debug_file_handler.extMatch = re.compile(r"^\d{4}-\d{2}-\d{2}_\d{2}:\d{2}:\d{2}.log$")
 debug_file_handler.setFormatter(formatter)
-debug_file_handler.setLevel(logging.INFO)
+debug_file_handler.setLevel(logging.DEBUG)
 logging.getLogger().addHandler(debug_file_handler)
 
 info_file_handler = TimedRotatingFileHandler(
-    filename="./logs/info.log", when="D", interval=1, backupCount=3
+    filename="./logs/info.log", when="midnight", backupCount=3
 )
-info_file_handler.suffix = "%Y-%m-%d_%H:%M:%S.log"
-info_file_handler.extMatch = re.compile(r"^\d{4}-\d{2}-\d{2}_\d{2}:\d{2}:\d{2}.log$")
 info_file_handler.setFormatter(formatter)
 info_file_handler.setLevel(logging.INFO)
 logging.getLogger().addHandler(info_file_handler)
 
 warning_handler = TimedRotatingFileHandler(
-    filename="./logs/warning.log", when="D", interval=1, backupCount=7
+    filename="./logs/warning.log", when="midnight", backupCount=3
 )
-warning_handler.suffix = "%Y-%m-%d_%H:%M:%S.log"
-warning_handler.extMatch = re.compile(r"^\d{4}-\d{2}-\d{2}_\d{2}:\d{2}:\d{2}.log$")
 warning_handler.setFormatter(formatter)
 warning_handler.setLevel(logging.WARNING)
 logging.getLogger().addHandler(warning_handler)
 
 error_handler = TimedRotatingFileHandler(
-    filename="./logs/error.log", when="D", interval=1, backupCount=7
+    filename="./logs/error.log", when="midnight", backupCount=3
 )
-error_handler.suffix = "%Y-%m-%d_%H:%M:%S.log"
-error_handler.extMatch = re.compile(r"^\d{4}-\d{2}-\d{2}_\d{2}:\d{2}:\d{2}.log$")
 error_handler.setFormatter(formatter)
 error_handler.setLevel(logging.ERROR)
 logging.getLogger().addHandler(error_handler)

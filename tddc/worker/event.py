@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-'''
+"""
 Created on 2017年5月5日
 
 @author: chenyitao
-'''
+"""
 import json
 import logging
 import time
@@ -26,6 +26,7 @@ class Event(object):
     class Type(object):
         ExternModuleUpdate = 1001
         TaskFilterUpdate = 2001
+        LOG_ONLINE = 3001
 
     class Status(object):
         Pushed = 1001
@@ -138,10 +139,14 @@ class EventCenter(Pubsub):
             key(event id)
             value(key from hash(name('xxx:xx:x:event_id')))
         """
-        StatusManager().set_the_hash_value_for_the_hash('tddc:event:status:' + event.event.get('platform'),
-                                                        event.id,
-                                                        'tddc:event:status:value:' + event.id,
-                                                        '%s|%s' % (self.worker.name, self.worker.id),
-                                                        status)
-        StatusManager().sadd('tddc:event:status:processing:%s' % event.event.get('platform'),
-                             event.id)
+        StatusManager().set_the_hash_value_for_the_hash(
+            'tddc:event:status:' + event.event.get('platform'),
+            event.id,
+            'tddc:event:status:value:' + event.id,
+            '%s|%s' % (self.worker.name, self.worker.id),
+            status
+        )
+        StatusManager().sadd(
+            'tddc:event:status:processing:%s' % event.event.get('platform'),
+            event.id
+        )

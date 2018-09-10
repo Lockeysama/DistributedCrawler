@@ -364,7 +364,12 @@ def WS():
 
 
 def log_test():
+    import gevent.monkey; gevent.monkey.patch_all()
     import logging
+    from tddc.worker.event import EventCenter
+    from tddc.worker import logging_ext
+    logging_ext.patch()
+    EventCenter()
     log = logging.getLogger(__name__)
     while True:
         log.debug(time.ctime())
