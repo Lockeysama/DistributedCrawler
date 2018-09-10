@@ -348,7 +348,7 @@ class TaskManager(MessageQueue):
     def put(self, task):
         self._q.put(task)
 
-    def task_success(self, task):
+    def task_success(self, task, the_end=False):
         if self.task_filter(task):
             TaskRecordManager().stop_task_timer(task)
             log.debug('[{}:{}:{}] Task Filter.'.format(
@@ -362,10 +362,13 @@ class TaskManager(MessageQueue):
         log.debug('[{}:{}:{}] Task Success.'.format(
             task.platform, task.feature, task.url
         ))
+        if the_end:
+            TaskCacheManager().delete_cachce(task)
+            TaskRecordManager().delete_record(task)
         return True
 
-    def task_successed(self, task):
-        return self.task_success(task)
+    def task_successed(self, task, the_end=False):
+        return self.task_success(task, the_end)
 
     def task_failed(self, task):
         TaskRecordManager().delete_record(task)
@@ -381,6 +384,14 @@ class TaskManager(MessageQueue):
         log.warning('[{}:{}:{}] Task Failed({}).'.format(
             task.platform, task.feature, task.url, task.status
         ))
+        TaskCacheManager().sadd(
+            'tddc:task:failed:{}:{}:{}'.format(
+                task.platform, task.feature, task.status
+            ),
+            task.url
+        )
+        TaskCacheManager().delete_cachce(task)
+        TaskRecordManager().delete_record(task)
 
     def push_task(self, task, topic):
         if self.task_filter(task):
