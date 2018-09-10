@@ -32,3 +32,6 @@ __all__ = ['WorkerModel',
            'Pubsub',
            'TaskManager', 'Task', 'TaskRecordManager', 'TaskCacheManager',
            'MySQLModel', 'DBSession']
+
+from tddc.worker import logging_ext
+logging_ext.patch()
