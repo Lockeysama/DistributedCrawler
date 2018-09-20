@@ -8,6 +8,7 @@ Created on 2017年5月5日
 import json
 import time
 import datetime
+from collections import defaultdict
 
 
 class Singleton(type):
@@ -17,12 +18,13 @@ class Singleton(type):
 
     def __init__(cls, name, bases, dict):
         super(Singleton, cls).__init__(name, bases, dict)
-        cls._instance = None
+        cls._instance = defaultdict()
 
     def __call__(cls, *args, **kw):
-        if cls._instance is None:
-            cls._instance = super(Singleton, cls).__call__(*args, **kw)
-        return cls._instance
+        tag = kw.get('tag') or 'default'
+        if cls._instance.get(tag) is None:
+            cls._instance[tag] = super(Singleton, cls).__call__(*args, **kw)
+        return cls._instance[tag]
 
 
 def object2json(obj):

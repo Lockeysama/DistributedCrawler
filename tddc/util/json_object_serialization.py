@@ -7,6 +7,7 @@
 @file    : JosnObjectSerialization.py
 @time    : 2018/9/18 14:55
 """
+import json
 
 
 class JsonObjectSerialization(object):
@@ -21,3 +22,9 @@ class JsonObjectSerialization(object):
 
     def to_dict(self):
         return {k: self.__dict__.get(k) for k in self.fields if self.__dict__.get(k)}
+
+    def to_json(self):
+        return json.dumps(self.to_dict())
+
+    def __str__(self):
+        return str(self.to_dict())
