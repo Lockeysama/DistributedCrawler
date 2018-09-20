@@ -7,6 +7,7 @@
 @file    : register.py
 @time    : 2018/9/10 17:53
 """
+import json
 import os
 import setproctitle
 
@@ -14,17 +15,28 @@ import logging
 
 from ..config import default_config
 from ..util.device_info import Device
-from .message_queue import MessageQueue
+from ..util.util import Singleton
+from .mq import MQ
 
 log = logging.getLogger(__name__)
 
 
-class Authorization(MessageQueue):
+class Authorization(MQ):
+
+    __metaclass__ = Singleton
+
+    _register_info = {}
 
     def __init__(self):
         super(Authorization, self).__init__()
         self.register()
-        self.login self.login()
+        self.logged = self.login()
+
+    def nodes(self):
+        nodes = [{'host': node.get('host'),
+                  'port': node.get('port')}
+                 for node in default_config.AUTH_REDIS_NODES]
+        return nodes
 
     @property
     def register_info(self):
@@ -41,23 +53,25 @@ class Authorization(MessageQueue):
         return self._register_info
 
     def register(self):
-        self.push('tddc:worker:register', self.register_info)
+        self.push('tddc:worker:register', json.dumps(self.register_info))
         log.info('In The Register.')
 
     def login(self):
+        log.info('Waiting For Authorization.')
         while True:
             result = self.pull(
-                'tddc:worker:register:pass:{}:{}:{}'.format(
+                topic='tddc:worker:register:pass:{}:{}:{}'.format(
                     self.register_info.get('ip'),
                     self.register_info.get('platform'),
                     self.register_info.get('pid')
                 ),
-                5
+                timeout=5
             )
             if result:
+                result = json.loads(result[1])
                 if result.get('code') == 0:
-                    log.info('Register Success.')
+                    log.info('Authorization Success.')
                     return True
                 else:
-                    log.info('Register Failed().'.format(result))
+                    log.info('Authorization Failed().'.format(result))
                     return False

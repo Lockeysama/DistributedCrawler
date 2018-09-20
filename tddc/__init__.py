@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 from .config.config import *
+from .config import default_config
 from .hbase.hbase import *
 from .mongodb.mongodbm import *
 from .log import logger
@@ -11,6 +12,11 @@ from .util.snowflake import *
 from .worker import *
 
 __all__ = ['WorkerModel',
+           'default_config',
+           'Authorization',
+           'OnlineConfig',
+           'MQ',
+           'Worker',
            'HBaseManager',
            'MongoDBManager',
            'CacheManager',
@@ -33,5 +39,5 @@ __all__ = ['WorkerModel',
            'TaskManager', 'Task', 'TaskRecordManager', 'TaskCacheManager',
            'MySQLModel', 'DBSession']
 
-from tddc.worker import logging_ext
+from .worker import logging_ext
 logging_ext.patch()

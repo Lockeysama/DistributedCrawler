@@ -157,7 +157,7 @@ def critical(self, msg, *args, **kwargs):
 
 
 def online_print_switch(event):
-    if event.e_type != Event.Type.LOG_ONLINE:
+    if event.e_type != Event.Type.LogOnlineSwitch:
         return
     lv = event.event.get('lv')
     activate = event.event.get('activate')
@@ -167,7 +167,7 @@ def online_print_switch(event):
 
 
 def patch():
-    EventCenter._dispatcher[Event.Type.LOG_ONLINE] = online_print_switch
+    EventCenter._dispatcher[Event.Type.LogOnlineSwitch] = online_print_switch
     logging.LogRecord.__str__ = log_record_str
     logging.Logger._log = _log
     logging.Logger.debug = debug

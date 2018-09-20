@@ -8,15 +8,20 @@
 @time    : 2018/9/11 11:24
 """
 import setproctitle
-import gevent.monkey; gevent.monkey.patch_all()
+import gevent.monkey
+import logging
+
 import gevent
-from tddc.worker import logging_ext; logging_ext.patch()
+import logging_ext
 
 from ..config import default_config
 from ..util.util import Singleton
 
-from .register import Register
+from .authorization import Authorization
 from .online_config import OnlineConfig
+from .monitor import Monitor
+
+log = logging.getLogger(__name__)
 
 
 class Worker(object):
@@ -24,13 +29,43 @@ class Worker(object):
     __metaclass__ = Singleton
 
     def __init__(self):
-        super(Process, self).__init__()
+        super(Worker, self).__init__()
         setproctitle.setproctitle(default_config.PLATFORM)
-        Register()
+        gevent.monkey.patch_all()
+        logging_ext.patch()
+        log.info('{} Is Start.'.format(default_config.PLATFORM))
+        Authorization()
+        if not Authorization().logged:
+            return
         OnlineConfig()
-        self.worker_cls()()
-        while True:
-            gevent.sleep(100)
+        if OnlineConfig().first:
+            return
+        Monitor()
+        self._start_plugins()
 
-    def worker_cls(self):
+    @classmethod
+    def start(cls):
+        cls()
+        log.info('{} Is Running.'.format(default_config.PLATFORM))
+        while Authorization().logged and not OnlineConfig().first:
+            gevent.sleep(10)
+        if not Authorization().logged:
+            log.error('Process Exit(Authorization Failed).')
+        elif OnlineConfig().first:
+            log.error('Process Exit(Online Config Must Be Edit).')
+
+    def _start_plugins(self):
+        for plugin_cls, args, kwargs in self.plugins():
+            if not plugin_cls:
+                continue
+            if not args and not kwargs:
+                plugin_cls()
+            elif args and not kwargs:
+                plugin_cls(*args)
+            elif not args and kwargs:
+                plugin_cls(**kwargs)
+            else:
+                plugin_cls(*args, **kwargs)
+
+    def plugins(self):
         raise NotImplementedError

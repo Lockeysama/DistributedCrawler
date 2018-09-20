@@ -12,3 +12,7 @@ from .record import *
 from .status import *
 from .storager import *
 from .task import *
+from .worker import Worker
+from .authorization import Authorization
+from .online_config import OnlineConfig
+from .mq import MQ

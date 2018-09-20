@@ -26,7 +26,9 @@ class Event(object):
     class Type(object):
         ExternModuleUpdate = 1001
         TaskFilterUpdate = 2001
-        LOG_ONLINE = 3001
+        LogOnlineSwitch = 3001
+        OnlineConfigFlush = 4001
+        LongTaskStatusChange = 5001
 
     class Status(object):
         Pushed = 1001
@@ -69,9 +71,9 @@ class Event(object):
 
 
 class EventCenter(Pubsub):
-    '''
+    """
     事件中心
-    '''
+    """
     __metaclass__ = Singleton
 
     _dispatcher = {}
