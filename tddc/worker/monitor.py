@@ -41,10 +41,14 @@ class Monitor(object):
             date = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(min_ts))
             process_snapshot = Device.process_snapshot()
             disk_snapshot = Device.disk_snapshot()
+            cpu_snapshot = Device.cpu_snapshot()
+            memory_snapshot = Device.memory_snapshot()
             StatusManager().hmset(
                 name, {
                     'process': json.dumps(process_snapshot),
                     'disk': json.dumps(disk_snapshot),
+                    'cpu': json.dumps(cpu_snapshot),
+                    'memory': json.dumps(memory_snapshot),
                     'date': date
                 }
             )
