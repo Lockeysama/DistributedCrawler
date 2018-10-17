@@ -8,18 +8,22 @@
 @time    : 2018/9/11 11:24
 """
 import setproctitle
+import time
+
 import gevent.monkey
 import logging
 
 import gevent
 import logging_ext
 
+from ..util.device_info import Device
 from ..config import default_config
 from ..util.util import Singleton
 
 from .authorization import Authorization
 from .online_config import OnlineConfig
 from .monitor import Monitor
+from .redisex import RedisEx
 
 log = logging.getLogger(__name__)
 
@@ -42,6 +46,20 @@ class Worker(object):
             return
         Monitor()
         self._start_plugins()
+        gevent.spawn(self._heart)
+        gevent.sleep()
+
+    @staticmethod
+    def _heart():
+        while True:
+            RedisEx().hset(
+                'tddc:worker:monitor:health:{}'.format(default_config.PLATFORM),
+                '{}|{}'.format(
+                    Device.ip(), default_config.FEATURE
+                ),
+                time.time()
+            )
+            gevent.sleep(15)
 
     @classmethod
     def start(cls):

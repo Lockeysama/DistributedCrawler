@@ -25,7 +25,7 @@ log = logging.getLogger(__name__)
 
 class TaskPadEvent(JsonObjectSerialization):
 
-    fields = ('id', 'timestamp', 'owner', 'valid', 'task_id')
+    fields = ('id', 'timestamp', 'owner', 'head', 'valid', 'task_id')
 
     def __init__(self, fields=None, **kwargs):
         super(TaskPadEvent, self).__init__(fields, **kwargs)
@@ -40,7 +40,7 @@ class TaskPadTask(JsonObjectSerialization):
         Running = 2
         Stop = 3
 
-    fields = ('id', 'timestamp', 'valid', 'owner', 'platform', 'feature', 'status', 'proxy')
+    fields = ('id', 'timestamp', 'valid', 'owner', 'head', 'platform', 'feature', 'status', 'proxy')
 
     def __init__(self, fields=None, **kwargs):
         super(TaskPadTask, self).__init__(fields, **kwargs)
