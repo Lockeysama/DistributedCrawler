@@ -13,15 +13,15 @@ import setproctitle
 
 import logging
 
-from ..config import default_config
-from ..util.device_info import Device
-from ..util.util import Singleton
-from .mq import MQ
+from ..default_config import default_config
+from ..base.util import Device, Singleton
+
+from redisex import RedisEx
 
 log = logging.getLogger(__name__)
 
 
-class Authorization(MQ):
+class Authorization(RedisEx):
 
     __metaclass__ = Singleton
 
@@ -32,11 +32,8 @@ class Authorization(MQ):
         self.register()
         self.logged = self.login()
 
-    def nodes(self):
-        nodes = [{'host': node.get('host'),
-                  'port': node.get('port')}
-                 for node in default_config.AUTH_REDIS_NODES]
-        return nodes
+    def nodes(self, tag):
+        return default_config.DEFAULT_REDIS_NODES
 
     @property
     def register_info(self):

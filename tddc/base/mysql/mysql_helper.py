@@ -11,8 +11,7 @@ import logging
 
 import MySQLdb
 
-from ..worker.models import MySQLModel, DBSession
-from ..util.util import Singleton, count_time
+from ..util.util import Singleton
 
 log = logging.getLogger(__name__)
 
@@ -20,8 +19,9 @@ log = logging.getLogger(__name__)
 class MySQLHelper(object):
     __metaclass__ = Singleton
 
-    def __init__(self):
-        self.conf = DBSession.query(MySQLModel).get(1)
+    def __init__(self, conf, tag='default'):
+        super(MySQLHelper, self).__init__()
+        self.conf = conf
         self.db = self.connect()
 
     def connect(self):
@@ -46,34 +46,6 @@ class MySQLHelper(object):
         finally:
             cursor.close()
         self.db.commit()
-
-    # def replace_mutil(self, table, fields, *fields_values):
-    #     if not len(fields_values):
-    #         return
-    #     fields.sort()
-    #     fields_str = ','.join(fields)
-    #     values = []
-    #     for fv in fields_values:
-    #         ks = fv.keys()
-    #         ks.sort()
-    #         fv_values = [fv[k].encode('utf-8')
-    #                      if isinstance(fv.get(k), unicode)
-    #                      else (fv.get(k) if fv.get(k) is not None else 'null')
-    #                      for k in fields]
-    #         v = ', '.join(['\'{}\''.format(v.encode('utf-8'))
-    #                        if isinstance(v, str) and v != 'null'
-    #                        else str(v)
-    #                        for v in fv_values])
-    #         values.append('({})'.format(v))
-    #     cursor = self.db.cursor()
-    #     vs_str = ', '.join(values)
-    #     sql = 'REPLACE INTO {} ({}) VALUES {};'.format(table, fields_str, vs_str)
-    #     try:
-    #         cursor.execute(sql)
-    #     except Exception as e:
-    #         log.warning(e)
-    #     finally:
-    #         cursor.close()
 
     def replace_mutil(self, table, fields, *fields_values):
         if not len(fields_values):

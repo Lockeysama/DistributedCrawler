@@ -10,21 +10,17 @@ import time
 
 import gevent.queue
 
-from ..util.short_uuid import ShortUUID
-from ..util.util import Singleton
+from ..base.util import ShortUUID, Singleton
+from ..default_config import default_config
 
-from .models import DBSession, WorkerModel, EventModel
-from .pubsub import Pubsub
-from .status import StatusManager
-from .cache import CacheManager
-from .record import RecordManager
+from redisex import RedisEx
 
 log = logging.getLogger(__name__)
 
 
 class Event(object):
     class Type(object):
-        ExternModuleUpdate = 1001
+        ExtraModuleUpdate = 1001
         TaskFilterUpdate = 2001
         LogOnlineSwitch = 3001
         OnlineConfigFlush = 4001
@@ -70,7 +66,7 @@ class Event(object):
         return self.__dict__
 
 
-class EventCenter(Pubsub):
+class EventCenter(RedisEx):
     """
     事件中心
     """
@@ -80,15 +76,14 @@ class EventCenter(Pubsub):
 
     def __init__(self):
         log.info('Event Manager Is Starting.')
-        StatusManager()
-        CacheManager()
-        RecordManager()
         self._event_queue = gevent.queue.Queue()
         self._event_call = {}
-        self.worker = DBSession.query(WorkerModel).get(1)
-        self.event_config = DBSession.query(EventModel).get(1)
+        from online_config import OnlineConfig
+        self.event_config = OnlineConfig().event
         super(EventCenter, self).__init__()
         self._event_call = {}
+        gevent.spawn_later(3, self.subscribing)
+        gevent.sleep()
         log.info('Event Manager Was Ready.')
 
     @classmethod
@@ -141,14 +136,14 @@ class EventCenter(Pubsub):
             key(event id)
             value(key from hash(name('xxx:xx:x:event_id')))
         """
-        StatusManager().set_the_hash_value_for_the_hash(
-            'tddc:event:status:' + event.event.get('platform'),
-            event.id,
-            'tddc:event:status:value:' + event.id,
-            '%s|%s' % (self.worker.name, self.worker.id),
+        RedisEx().set_the_hash_value_for_the_hash(
+            'tddc:event:status:{}'.format(event.event.get('platform')),
+            str(event.id),
+            'tddc:event:status:value:{}'.format(event.id),
+            '{}|{}'.format(default_config.PLATFORM, default_config.FEATURE),
             status
         )
-        StatusManager().sadd(
+        RedisEx().sadd(
             'tddc:event:status:processing:%s' % event.event.get('platform'),
             event.id
         )

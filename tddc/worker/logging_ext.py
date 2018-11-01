@@ -10,9 +10,10 @@
 import logging
 import sys
 
-from .event import EventCenter, Event
-from .models import DBSession, WorkerModel
-from .publish import Publish
+from ..default_config import default_config
+
+from event import EventCenter, Event
+from redisex import RedisEx
 
 
 """
@@ -27,9 +28,6 @@ ONLINE = {
     logging.ERROR: False,
     logging.CRITICAL: False
 }
-
-
-WORKER_CONF = DBSession.query(WorkerModel).get(1)
 
 
 def log_record_str(self):
@@ -78,9 +76,9 @@ def debug(self, msg, *args, **kwargs):
     if self.isEnabledFor(logging.DEBUG):
         record = self._log(logging.DEBUG, msg, args, **kwargs)
         if ONLINE.get(logging.DEBUG):
-            Publish().publish(
-                'tddc:log:{}'.format(WORKER_CONF.platform),
-                '{}==>{}'.format(WORKER_CONF.feature, record)
+            RedisEx().publish(
+                'tddc:log:{}'.format(default_config.PLATFORM),
+                '{}==>{}'.format(default_config.FEATURE, record)
             )
 
 
@@ -96,9 +94,9 @@ def info(self, msg, *args, **kwargs):
     if self.isEnabledFor(logging.INFO):
         record = self._log(logging.INFO, msg, args, **kwargs)
         if ONLINE.get(logging.INFO):
-            Publish().publish(
-                'tddc:log:{}'.format(WORKER_CONF.platform),
-                '{}==>{}'.format(WORKER_CONF.feature, record)
+            RedisEx().publish(
+                'tddc:log:{}'.format(default_config.PLATFORM),
+                '{}==>{}'.format(default_config.FEATURE, record)
             )
 
 
@@ -114,9 +112,9 @@ def warning(self, msg, *args, **kwargs):
     if self.isEnabledFor(logging.WARNING):
         record = self._log(logging.WARNING, msg, args, **kwargs)
         if ONLINE.get(logging.WARNING):
-            Publish().publish(
-                'tddc:log:{}'.format(WORKER_CONF.platform),
-                '{}==>{}'.format(WORKER_CONF.feature, record)
+            RedisEx().publish(
+                'tddc:log:{}'.format(default_config.PLATFORM),
+                '{}==>{}'.format(default_config.FEATURE, record)
             )
 
 
@@ -132,9 +130,9 @@ def error(self, msg, *args, **kwargs):
     if self.isEnabledFor(logging.ERROR):
         record = self._log(logging.ERROR, msg, args, **kwargs)
         if ONLINE.get(logging.ERROR):
-            Publish().publish(
-                'tddc:log:{}'.format(WORKER_CONF.platform),
-                '{}==>{}'.format(WORKER_CONF.feature, record)
+            RedisEx().publish(
+                'tddc:log:{}'.format(default_config.PLATFORM),
+                '{}==>{}'.format(default_config.FEATURE, record)
             )
 
 
@@ -150,9 +148,9 @@ def critical(self, msg, *args, **kwargs):
     if self.isEnabledFor(logging.CRITICAL):
         record = self._log(logging.CRITICAL, msg, args, **kwargs)
         if ONLINE.get(logging.CRITICAL):
-            Publish().publish(
-                'tddc:log:{}'.format(WORKER_CONF.platform),
-                '{}==>{}'.format(WORKER_CONF.feature, record)
+            RedisEx().publish(
+                'tddc:log:{}'.format(default_config.PLATFORM),
+                '{}==>{}'.format(default_config.FEATURE, record)
             )
 
 

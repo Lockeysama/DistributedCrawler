@@ -7,13 +7,14 @@
 @file    : pymysql_ex.py
 @time    : 2018/8/15 11:06
 """
-import MySQLdb
-from MySQLdb.cursors import DictCursor
+import pymysql
 from collections import defaultdict
 from gevent.queue import Queue
 import logging
 
-from tddc import MySQLModel, DBSession, Singleton
+from pymysql.cursors import DictCursor
+
+from ..util.util import Singleton
 
 log = logging.getLogger(__name__)
 
@@ -22,17 +23,15 @@ class PyMySQLEx(object):
 
     __metaclass__ = Singleton
 
-    def __init__(self, conf=None, size=10):
+    def __init__(self, conf=None, size=10, tag='default'):
+        super(PyMySQLEx, self).__init__()
         self.dbs = defaultdict(Queue)
-        self.conf = defaultdict(MySQLModel)
-        all_conf = DBSession.query(MySQLModel).all() if not conf else [conf]
-        for conf in all_conf:
-            [self.dbs[conf.name].put(self.connect(conf)) for _ in range(size)]
-            self.conf[conf.name] = conf
+        self.conf = conf
+        self.dbs = self.connect(conf)
 
     @staticmethod
     def connect(conf):
-        return MySQLdb.Connect(
+        return pymysql.Connect(
             host=conf.host, port=conf.port, user=conf.username,
             passwd=conf.passwd, db=conf.db, charset='utf8', autocommit=True,
             cursorclass=DictCursor
@@ -52,7 +51,7 @@ class PyMySQLEx(object):
             cursor.execute(sql)
             records = cursor.fetchall()
             cursor.close()
-        except MySQLdb.OperationalError as e:
+        except pymysql.OperationalError as e:
             cursor.close()
             log.exception(e)
             self.dbs.get(db_instance_name).put(self.connect(self.conf.get(db_instance_name)))

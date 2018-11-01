@@ -21,6 +21,8 @@ class Device(object):
         try:
             s.connect(('8.8.8.8', 80))
             ip = s.getsockname()[0]
+        except:
+            ip = None
         finally:
             s.close()
         return ip
@@ -58,7 +60,7 @@ class Device(object):
     def cpu_snapshot(cls):
         return {
             'cpu_count': psutil.cpu_count(),
-            'cpu_percent': psutil.cpu_percent(0, True)
+            'cpu_percent': psutil.cpu_percent(1, True)
         }
 
     @classmethod

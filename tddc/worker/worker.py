@@ -9,6 +9,8 @@
 """
 import setproctitle
 import time
+from os import getpid
+from string import lower
 
 import gevent.monkey
 import logging
@@ -16,14 +18,14 @@ import logging
 import gevent
 import logging_ext
 
-from ..util.device_info import Device
-from ..config import default_config
-from ..util.util import Singleton
+from ..base.util import Device, Singleton
+from ..default_config import default_config
 
-from .authorization import Authorization
-from .online_config import OnlineConfig
-from .monitor import Monitor
-from .redisex import RedisEx
+from authorization import Authorization
+from online_config import OnlineConfig
+from monitor import Monitor
+from redisex import RedisEx
+from extern_modules import ExternManager
 
 log = logging.getLogger(__name__)
 
@@ -35,7 +37,6 @@ class Worker(object):
     def __init__(self):
         super(Worker, self).__init__()
         setproctitle.setproctitle(default_config.PLATFORM)
-        gevent.monkey.patch_all()
         logging_ext.patch()
         log.info('{} Is Start.'.format(default_config.PLATFORM))
         Authorization()
@@ -45,6 +46,7 @@ class Worker(object):
         if OnlineConfig().first:
             return
         Monitor()
+        ExternManager()
         self._start_plugins()
         gevent.spawn(self._heart)
         gevent.sleep()
@@ -52,8 +54,10 @@ class Worker(object):
     @staticmethod
     def _heart():
         while True:
+            if default_config.PID != getpid():
+                return
             RedisEx().hset(
-                'tddc:worker:monitor:health:{}'.format(default_config.PLATFORM),
+                'tddc:worker:monitor:health:{}'.format(lower(default_config.PLATFORM)),
                 '{}|{}'.format(
                     Device.ip(), default_config.FEATURE
                 ),

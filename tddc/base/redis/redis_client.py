@@ -4,12 +4,16 @@ Created on 2017年4月10日
 
 @author: chenyitao
 '''
+import json
 import logging
+from string import upper
 
 import gevent
 import time
+
+from redis.client import pairs_to_dict
 from rediscluster import StrictRedisCluster
-from redis import Redis, ConnectionPool, ResponseError
+from redis import Redis, ConnectionPool, ResponseError, ConnectionError, TimeoutError
 
 log = logging.getLogger(__name__)
 
@@ -22,6 +26,7 @@ class RedisClient(StrictRedisCluster):
     def __init__(self, *args, **kwargs):
         self.status = type('RedisStatus', (), {'alive_timestamp': 0})
         super(RedisClient, self).__init__(max_connections=64, *args, **kwargs)
+        self.set_response_callback()
         gevent.spawn(self._alive_check)
         gevent.sleep()
 
@@ -153,12 +158,11 @@ class RedisClient(StrictRedisCluster):
 class SingleRedisClient(Redis):
 
     def __init__(self, *args, **kwargs):
-        from ..worker.models import DBSession, RedisModel
         self.status = type('RedisStatus', (), {'alive_timestamp': 0})
         startup_nodes = kwargs.get('startup_nodes')
         if startup_nodes:
             host = startup_nodes[0].get('host')
-            password = DBSession.query(RedisModel).get(1).passwd
+            password = startup_nodes[0].get('password')
             if 'redis://' not in host:
                 kwargs['host'] = host
                 kwargs['port'] = startup_nodes[0].get('port')
@@ -170,14 +174,107 @@ class SingleRedisClient(Redis):
                 kwargs['connection_pool'] = connection_pool
                 del kwargs['startup_nodes']
         super(SingleRedisClient, self).__init__(max_connections=128, *args, **kwargs)
+        self.set_response_callback('GET', self._get)
+        self.set_response_callback('HGETALL', self._hgetall)
+        self.set_response_callback('HGET', self._hget)
+        self.set_response_callback('HMGET', self._hmget)
         gevent.spawn(self._alive_check)
         gevent.sleep()
+
+    # COMMAND EXECUTION AND PROTOCOL PARSING
+    def execute_command(self, *args, **options):
+        "Execute a command and return a parsed response"
+        pool = self.connection_pool
+        command_name = args[0]
+        connection = pool.get_connection(command_name, **options)
+        try:
+            connection.send_command(*args)
+            if upper(command_name) in ['HGETALL', 'HGET', 'HMGET', 'GET']:
+                options['args'] = args
+            return self.parse_response(connection, command_name, **options)
+        except (ConnectionError, TimeoutError) as e:
+            connection.disconnect()
+            if not connection.retry_on_timeout and isinstance(e, TimeoutError):
+                raise
+            connection.send_command(*args)
+            return self.parse_response(connection, command_name, **options)
+        finally:
+            pool.release(connection)
+
+    @staticmethod
+    def _get(response, **option):
+        field = option.get('args')[1].split(':')[-1]
+        if response is not None:
+            field_prefix = field[:2]
+            if field_prefix == 'i_':
+                response = int(response)
+            elif field_prefix == 'f_':
+                response = float(response)
+            elif field_prefix == 'b_':
+                response = response not in ['0', 'False', 'false']
+            elif field_prefix in ['d_', 'l_']:
+                response = json.loads(response)
+        return response
+
+    @staticmethod
+    def _hgetall(response, **option):
+        response = pairs_to_dict(response)
+        for k, v in response.items():
+            if v is None:
+                response[k] = v
+                continue
+            field_prefix = k[:2]
+            if field_prefix == 'i_':
+                response[k] = int(v)
+            elif field_prefix == 'f_':
+                response[k] = float(v)
+            elif field_prefix == 'b_':
+                response[k] = v not in ['0', 'False', 'false']
+            elif field_prefix in ['d_', 'l_']:
+                response[k] = json.loads(v)
+        return response
+
+    @staticmethod
+    def _hget(response, **option):
+        field = option.get('args')[2]
+        if response is not None:
+            field_prefix = field[:2]
+            if field_prefix == 'i_':
+                response = int(response)
+            elif field_prefix == 'f_':
+                response = float(response)
+            elif field_prefix == 'b_':
+                response = response not in ['0', 'False', 'false']
+            elif field_prefix in ['d_', 'l_']:
+                response = json.loads(response)
+        return response
+
+    @staticmethod
+    def _hmget(response, **option):
+        _response = {}
+        fields = option.get('args')[2:]
+        for field, value in zip(fields, response):
+            if value is None:
+                _response[field] = value
+                continue
+            field_prefix = field[:2]
+            if field_prefix == 'i_':
+                _response[field] = int(value)
+            elif field_prefix == 'f_':
+                _response[field] = float(value)
+            elif field_prefix == 'b_':
+                _response[field] = value not in ['0', 'False', 'false']
+            elif field_prefix in ['d_', 'l_']:
+                _response[field] = json.loads(value)
+            else:
+                _response[field] = value
+        return _response
 
     def _alive_check(self):
         """
         Redis 存活检测
         """
-        gevent.sleep(3)
+        gevent.sleep(5)
         while True:
             try:
                 if self.ping():

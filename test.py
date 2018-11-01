@@ -425,7 +425,7 @@ def req():
     # code = code[16:] + code[:16]
     # set_cookie = [cookie for cookie in self.response.headers.getlist('Set-Cookie')
     #               if '_che300' in cookie][-1].split(';')[0].split('=')[1]
-    # task.cookies = {spidercooskie: timestamp,
+    # task.s_cookies = {spidercooskie: timestamp,
     #                 spidercode: code,
     #                 '_che300': set_cookie}
     #
@@ -549,7 +549,7 @@ def redis():
     print(CacheManager().get_random('tddc:proxy:pool:che300'))
     CacheManager().logger.info('Cache')
     StatusManager()
-    print(StatusManager().get_status('tddc.task.status.che300.1200',
+    print(StatusManager().get_status('tddc.Task.Status.che300.1200',
                                      'XRTDepEFx255UPyqEZEJsG'))
     StatusManager().logger.error('Status')
 

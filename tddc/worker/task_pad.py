@@ -12,25 +12,23 @@ from os import getpid
 
 import logging
 
-from ..util.json_object_serialization import JsonObjectSerialization
-from ..util.snowflake import SnowFlakeID
-from ..util import Singleton
-from ..config import default_config
+from ..base.util import JsonObjectSerialization, SnowFlakeID, Singleton
+from ..default_config import default_config
 
-from .event import EventCenter, Event
-from .redisex import RedisEx
+from event import EventCenter, Event
+from redisex import RedisEx
 
 log = logging.getLogger(__name__)
 
 
 class TaskPadEvent(JsonObjectSerialization):
 
-    fields = ('id', 'timestamp', 'owner', 'head', 'valid', 'task_id')
+    fields = ('s_id', 'i_timestamp', 's_owner', 's_head', 'b_valid', 's_task_id')
 
     def __init__(self, fields=None, **kwargs):
         super(TaskPadEvent, self).__init__(fields, **kwargs)
-        self.id = kwargs.get('id', SnowFlakeID().get_id())
-        self.timestamp = kwargs.get('timestamp', int(time.time()))
+        self.s_id = kwargs.get('s_id', SnowFlakeID().get_id())
+        self.i_timestamp = kwargs.get('i_timestamp', int(time.time()))
 
 
 class TaskPadTask(JsonObjectSerialization):
@@ -38,14 +36,18 @@ class TaskPadTask(JsonObjectSerialization):
     class Status(object):
         Dispatched = 1
         Running = 2
-        Stop = 3
+        Reconnect = 3
+        Stop = 4
 
-    fields = ('id', 'timestamp', 'valid', 'owner', 'head', 'platform', 'feature', 'status', 'proxy')
+    fields = (
+        's_id', 'i_timestamp', 'b_valid', 's_owner', 's_head',
+        's_platform', 's_feature', 'i_status', 's_proxy'
+    )
 
     def __init__(self, fields=None, **kwargs):
         super(TaskPadTask, self).__init__(fields, **kwargs)
-        self.id = kwargs.get('id', SnowFlakeID().get_id())
-        self.timestamp = kwargs.get('timestamp', int(time.time()))
+        self.s_id = kwargs.get('s_id', SnowFlakeID().get_id())
+        self.i_timestamp = kwargs.get('i_timestamp', int(time.time()))
 
 
 class TaskPadManager(object):
@@ -65,9 +67,9 @@ class TaskPadManager(object):
         TaskPadManager().task_status_change(event_model)
 
     def task_status_change(self, event):
-        name = 'tddc:task_pad:tasks:{}'.format(event.owner)
+        name = 'tddc:task_pad:config:{}'.format(event.s_owner)
         task = RedisEx().hgetall(
-            name, event.task_id
+            name, event.s_task_id
         )
         if not task:
             log.warning('Task Not Found.{}'.format(event))
@@ -75,12 +77,12 @@ class TaskPadManager(object):
         if event.valid:
             self.start_task(task)
             RedisEx().set_record_item_value(
-                name, event.task_id, TaskPadTask.Status.Running
+                name, event.s_task_id, TaskPadTask.Status.Running
             )
         else:
             self.stop_task(task)
             RedisEx().set_record_item_value(
-                name, event.task_id, TaskPadTask.Status.Stop
+                name, event.s_task_id, TaskPadTask.Status.Stop
             )
 
     def start_task(self, task):

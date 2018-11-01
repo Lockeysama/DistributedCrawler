@@ -9,7 +9,7 @@
 """
 import time
 
-from tddc import Singleton
+from .util import Singleton
 
 
 class SnowFlakeID(object):

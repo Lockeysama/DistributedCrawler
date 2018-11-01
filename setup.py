@@ -9,7 +9,20 @@ from setuptools import setup, find_packages
 
 setup(
     name='tddc',
-    version='1.0',
-    packages=find_packages(), install_requires=['gevent', 'happybase', 'pymongo', 'thriftpy', 'sqlalchemy',
-                                                'requests']
+    version='1.1',
+    packages=find_packages(),
+    install_requires=[
+        'gevent',
+        'happybase',
+        'pymongo',
+        'requests',
+        'mysql-python',
+        'pymysql',
+        'redis-py-cluster',
+        'logging',
+        'netifaces',
+        'psutil',
+        'setproctitle',
+        'pytz'
+    ]
 )
