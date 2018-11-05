@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-'''
+"""
 Created on 2017年4月20日
 
 @author: chenyitao
-'''
+"""
 
 import importlib
 import logging
@@ -19,9 +19,9 @@ log = logging.getLogger(__name__)
 
 
 class ExternManager(object):
-    '''
+    """
     扩展模块管理
-    '''
+    """
     __metaclass__ = Singleton
 
     # 扩展模块更新成功回调

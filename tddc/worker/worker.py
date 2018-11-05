@@ -36,7 +36,9 @@ class Worker(object):
 
     def __init__(self):
         super(Worker, self).__init__()
-        setproctitle.setproctitle(default_config.PLATFORM)
+        setproctitle.setproctitle(
+            'TDDC-{}-{}'.format(default_config.PLATFORM, default_config.FEATURE)
+        )
         logging_ext.patch()
         log.info('{} Is Start.'.format(default_config.PLATFORM))
         Authorization()

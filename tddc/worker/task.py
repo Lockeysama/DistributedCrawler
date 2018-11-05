@@ -264,7 +264,7 @@ class TaskManager(RedisEx):
             ))
             return
 
-        if not hasattr(task, 'priority') or not task.s_priority:
+        if not hasattr(task, 's_priority') or not task.s_priority:
             def _pushed(_):
                 log.debug('[{}:{}] Pushed(Topic:{}).'.format(
                     task.s_platform, task.s_feature, topic

@@ -9,6 +9,7 @@
 """
 import logging
 import sys
+from string import lower
 
 from ..default_config import default_config
 
@@ -77,7 +78,7 @@ def debug(self, msg, *args, **kwargs):
         record = self._log(logging.DEBUG, msg, args, **kwargs)
         if ONLINE.get(logging.DEBUG):
             RedisEx().publish(
-                'tddc:log:{}'.format(default_config.PLATFORM),
+                'tddc:log:{}'.format(lower(default_config.PLATFORM)),
                 '{}==>{}'.format(default_config.FEATURE, record)
             )
 
@@ -95,7 +96,7 @@ def info(self, msg, *args, **kwargs):
         record = self._log(logging.INFO, msg, args, **kwargs)
         if ONLINE.get(logging.INFO):
             RedisEx().publish(
-                'tddc:log:{}'.format(default_config.PLATFORM),
+                'tddc:log:{}'.format(lower(default_config.PLATFORM)),
                 '{}==>{}'.format(default_config.FEATURE, record)
             )
 
@@ -113,7 +114,7 @@ def warning(self, msg, *args, **kwargs):
         record = self._log(logging.WARNING, msg, args, **kwargs)
         if ONLINE.get(logging.WARNING):
             RedisEx().publish(
-                'tddc:log:{}'.format(default_config.PLATFORM),
+                'tddc:log:{}'.format(lower(default_config.PLATFORM)),
                 '{}==>{}'.format(default_config.FEATURE, record)
             )
 
@@ -131,7 +132,7 @@ def error(self, msg, *args, **kwargs):
         record = self._log(logging.ERROR, msg, args, **kwargs)
         if ONLINE.get(logging.ERROR):
             RedisEx().publish(
-                'tddc:log:{}'.format(default_config.PLATFORM),
+                'tddc:log:{}'.format(lower(default_config.PLATFORM)),
                 '{}==>{}'.format(default_config.FEATURE, record)
             )
 
@@ -149,7 +150,7 @@ def critical(self, msg, *args, **kwargs):
         record = self._log(logging.CRITICAL, msg, args, **kwargs)
         if ONLINE.get(logging.CRITICAL):
             RedisEx().publish(
-                'tddc:log:{}'.format(default_config.PLATFORM),
+                'tddc:log:{}'.format(lower(default_config.PLATFORM)),
                 '{}==>{}'.format(default_config.FEATURE, record)
             )
 
