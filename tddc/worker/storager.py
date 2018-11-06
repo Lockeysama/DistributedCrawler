@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-'''
+"""
 Created on 2017年4月14日
 
 @author: chenyitao
-'''
+"""
 import logging
 
 import gevent.queue
@@ -18,9 +18,9 @@ log = logging.getLogger(__name__)
 
 
 class Storager(object):
-    '''
+    """
     存储管理、目前支持HBase、MongoDB
-    '''
+    """
     __metaclass__ = Singleton
 
     def __init__(self):
@@ -35,6 +35,23 @@ class Storager(object):
         gevent.sleep()
         super(Storager, self).__init__()
         log.info('Storager Was Started.')
+
+    def mongodb(self, db):
+        try:
+            if not self.mongo:
+                self.mongo = MongoDBManager(OnlineConfig().mongodb)
+                self.mongo[db].authenticate(
+                    OnlineConfig().mongodb.get(db).user,
+                    OnlineConfig().mongodb.get(db).password
+                )
+        except Exception as e:
+            log.exception(e)
+            self.mongo[db].authenticate(
+                OnlineConfig().mongodb.get(db).user,
+                OnlineConfig().mongodb.get(db).password
+            )
+        finally:
+            return self.mongo[db]
 
     @property
     def hbase_status(self):

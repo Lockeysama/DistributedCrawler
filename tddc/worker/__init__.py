@@ -11,6 +11,7 @@
 from logging_ext import patch; patch()
 
 from redisex import RedisEx
+from mysqlex import MySQLEx
 from authorization import Authorization
 from online_config import OnlineConfig
 from event import Event, EventCenter
