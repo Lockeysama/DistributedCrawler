@@ -20,14 +20,16 @@ class MongoDBManager(pymongo.MongoClient):
     MongodbDB 管理类
     """
 
-    def __init__(self, nodes):
-        if not nodes:
+    def __init__(self, conf):
+        if not conf:
             log.info('MongoDB Node Not Found.')
             return
-        self._nodes = nodes
-        self._current_node = random.choice(self._nodes)
-        super(MongoDBManager, self).__init__(self._current_node.host,
-                                             self._current_node.port)
+        self._conf = conf
+        super(MongoDBManager, self).__init__(
+            host=self._conf.get('host'),
+            port=int(self._conf.get('port'))
+        )
+        self[self._conf.get('db')].authenticate(self._conf.get('user'), self._conf.get('password'))
         self.status = type('MongoDBStatus', (), {'alive_timestamp': 0})
         gevent.spawn(self._alive_check)
         gevent.sleep()
