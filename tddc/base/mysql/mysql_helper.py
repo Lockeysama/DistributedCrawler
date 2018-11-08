@@ -12,8 +12,6 @@ import logging
 import MySQLdb
 from MySQLdb.cursors import DictCursor
 
-from ..util.util import Singleton
-
 log = logging.getLogger(__name__)
 
 
@@ -22,14 +20,15 @@ class MySQLHelper(object):
     def __init__(self, conf):
         super(MySQLHelper, self).__init__()
         self.conf = {
-            'charset': 'utf-8',
+            'charset': 'utf8',
             'autocommit': True,
             'cursorclass': DictCursor,
             'port': int(conf['port']),
             'host': conf['host'],
             'user': conf['user'],
             'passwd': conf['password'],
-            'db': conf['db']
+            'db': conf['db'],
+            'connect_timeout': 10
         }
         self.db = self.connect()
 

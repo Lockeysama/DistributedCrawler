@@ -21,7 +21,9 @@ class JsonObjectSerialization(object):
             self.__dict__[k] = kwargs.get(k, None)
 
     def to_dict(self):
-        return {k: self.__dict__.get(k) for k in self.fields if self.__dict__.get(k) is not None}
+        return {k: self.__dict__.get(k)
+                for k in self.fields
+                if self.__dict__.get(k) is not None}
 
     def to_json(self):
         return json.dumps(self.to_dict())
