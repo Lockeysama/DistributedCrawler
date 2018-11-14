@@ -9,6 +9,7 @@
 """
 import logging
 import sys
+import time
 from string import lower
 
 from ..default_config import default_config
@@ -38,7 +39,10 @@ def log_record_str(self):
         'line': self.lineno,
         'name': self.name,
         'func': self.funcName,
-        'msg': self.msg
+        'msg': self.msg,
+        'date': self.asctime,
+        'wf': default_config.FEATURE,
+        'wp': default_config.PLATFORM
     })
 
 
