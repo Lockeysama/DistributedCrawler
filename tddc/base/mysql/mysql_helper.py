@@ -150,3 +150,26 @@ class MySQLHelper(object):
         finally:
             cursor.close()
         return ret
+
+    def select_with(self, table, fields=None, query=None):
+        fields_str = ','.join(fields) if fields else '*'
+        query_str = 'where {}'.format(query) if query else ''
+        sql = 'select {} from {} {};'.format(
+            fields_str, table, query_str
+        )
+        results = []
+        cursor = self.db.cursor()
+        log.debug(sql)
+        try:
+            if cursor.execute(sql):
+                results = cursor.fetchall()
+        except MySQLdb.OperationalError as e:
+            log.exception(e)
+            self.db = self.connect()
+            return self.select_with(table, fields, query)
+        except Exception as e:
+            log.exception(e)
+        finally:
+            cursor.close()
+        log.debug('Fetch {} Data.({})'.format(table, len(results)))
+        return results

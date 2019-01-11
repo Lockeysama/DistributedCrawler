@@ -7,10 +7,9 @@
 @file    : __init__.py.py
 @time    : 2018/10/23 14:49
 """
-import logging
-
 from gevent.monkey import patch_all; patch_all()
 
+import logging
 from base.log import logger
 
 log = logging.getLogger(__name__)
