@@ -58,13 +58,16 @@ class Worker(object):
         while True:
             if default_config.PID != getpid():
                 return
-            RedisEx().hset(
-                'tddc:worker:monitor:health:{}'.format(lower(default_config.PLATFORM)),
-                '{}|{}'.format(
-                    Device.ip(), default_config.FEATURE
-                ),
-                time.time()
-            )
+            try:
+                RedisEx().hset(
+                    'tddc:worker:monitor:health:{}'.format(lower(default_config.PLATFORM)),
+                    '{}|{}'.format(
+                        Device.ip(), default_config.FEATURE
+                    ),
+                    time.time()
+                )
+            except Exception:
+                pass
             gevent.sleep(15)
 
     @classmethod
