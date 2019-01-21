@@ -5,6 +5,7 @@ Created on 2017年4月14日
 @author: chenyitao
 """
 import logging
+import random
 import time
 from collections import defaultdict
 from os import getpid
@@ -147,28 +148,29 @@ class TaskManager(RedisEx):
 
     def _pull_task_old(self):
         topic = self.task_conf.in_queue_topic
-        items = self.pull(topic, self.task_conf.queue_size)
+        items = self.pull(topic, random.randint(1, 5))
         return items or []
 
     def _pull_task(self):
         topic_base = self.task_conf.in_queue_topic
-        high_weight, middle_weight, low_weight = 0.5, 0.35, 0.15
+        high_weight, middle_weight, low_weight = 0.6, 0.3, 0.1
         share = self.task_conf.queue_size * 2 - self._q.qsize()
         if share <= 0:
             return []
         tasks = []
+        limit = 10
         topic = '{}:{}'.format(topic_base, 'high')
-        high_pri_max_share = share * high_weight
+        high_pri_max_share = limit * high_weight
         items = self.pull(topic, high_pri_max_share) or []
-        share -= (len(items) if items else 0)
+        limit -= (len(items) if items else 0)
         tasks.extend(items)
         topic = '{}:{}'.format(topic_base, 'middle')
-        middle_pri_max_share = share * (middle_weight / (middle_weight + low_weight))
+        middle_pri_max_share = limit * (middle_weight / (middle_weight + low_weight))
         items = self.pull(topic, middle_pri_max_share) or []
-        share -= (len(items) if items else 0)
+        limit -= (len(items) if items else 0)
         tasks.extend(items)
         topic = '{}:{}'.format(topic_base, 'low')
-        items = self.pull(topic, share) or []
+        items = self.pull(topic, limit) or []
         tasks.extend(items)
         return tasks
 
