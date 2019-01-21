@@ -40,7 +40,7 @@ class RedisClient(StrictRedisCluster):
         """
         Redis 存活检测
         """
-        gevent.sleep(5)
+        gevent.sleep(30)
         while True:
             try:
                 if self.ping():
@@ -48,7 +48,7 @@ class RedisClient(StrictRedisCluster):
             except Exception as e:
                 log.exception(e)
                 log.error('Redis Connection Exception.')
-            gevent.sleep(5)
+            gevent.sleep(15)
 
     def get_connection_status(self):
         return self.status
