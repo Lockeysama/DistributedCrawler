@@ -48,15 +48,18 @@ class Monitor(object):
             disk_snapshot = Device.disk_snapshot()
             cpu_snapshot = Device.cpu_snapshot()
             memory_snapshot = Device.memory_snapshot()
-            RedisEx().hmset(
-                name, {
-                    'process': json.dumps(process_snapshot),
-                    'disk': json.dumps(disk_snapshot),
-                    'cpu': json.dumps(cpu_snapshot),
-                    'memory': json.dumps(memory_snapshot),
-                    'date': date
-                }
-            )
+            try:
+                RedisEx().hmset(
+                    name, {
+                        'process': json.dumps(process_snapshot),
+                        'disk': json.dumps(disk_snapshot),
+                        'cpu': json.dumps(cpu_snapshot),
+                        'memory': json.dumps(memory_snapshot),
+                        'date': date
+                    }
+                )
+            except Exception:
+                pass
             gevent.sleep(60)
 
     @staticmethod
@@ -69,12 +72,15 @@ class Monitor(object):
             date = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(min_ts))
             snapshot = Device.cpu_snapshot()
             snapshot['date'] = date
-            RedisEx().hmset(name, {min_ts: json.dumps(snapshot)})
-            keys = RedisEx().hkeys(name)
-            if len(keys) > 1450:
-                keys.sort()
-                expire = keys[:len(keys) - 1440]
-                RedisEx().hmdel(name, expire)
+            try:
+                RedisEx().hmset(name, {min_ts: json.dumps(snapshot)})
+                keys = RedisEx().hkeys(name)
+                if len(keys) > 1450:
+                    keys.sort()
+                    expire = keys[:len(keys) - 1440]
+                    RedisEx().hmdel(name, expire)
+            except Exception:
+                pass
             gevent.sleep(60)
 
     @staticmethod
@@ -89,13 +95,13 @@ class Monitor(object):
             snapshot['date'] = date
             try:
                 RedisEx().hmset(name, {min_ts: json.dumps(snapshot)})
+                keys = RedisEx().hkeys(name)
+                if len(keys) > 1450:
+                    keys.sort()
+                    expire = keys[:len(keys) - 1440]
+                    RedisEx().hmdel(name, expire)
             except Exception as e:
                 log.exception(e)
-            keys = RedisEx().hkeys(name)
-            if len(keys) > 1450:
-                keys.sort()
-                expire = keys[:len(keys) - 1440]
-                RedisEx().hmdel(name, expire)
             gevent.sleep(60)
 
     @staticmethod
@@ -108,10 +114,13 @@ class Monitor(object):
             min_ts = TimeHelper(time.time()).get_minute_timestamp()
             date = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(min_ts))
             net_rate['date'] = date
-            RedisEx().hmset(name, {min_ts: json.dumps(net_rate)})
-            keys = RedisEx().hkeys(name)
-            if len(keys) > 1450:
-                keys.sort()
-                expire = keys[:len(keys) - 1440]
-                RedisEx().hmdel(name, expire)
+            try:
+                RedisEx().hmset(name, {min_ts: json.dumps(net_rate)})
+                keys = RedisEx().hkeys(name)
+                if len(keys) > 1450:
+                    keys.sort()
+                    expire = keys[:len(keys) - 1440]
+                    RedisEx().hmdel(name, expire)
+            except Exception:
+                pass
             gevent.sleep(60)
