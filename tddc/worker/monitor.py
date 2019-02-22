@@ -38,7 +38,7 @@ class Monitor(object):
 
     @staticmethod
     def snapshot():
-        name = 'tddc:worker:monitor:snapshot:{}'.format(Device.ip())
+        name = 'tddc:worker:monitor:snapshot:{}'.format(Device.mac())
         while True:
             if default_config.PID != getpid():
                 return
@@ -64,7 +64,7 @@ class Monitor(object):
 
     @staticmethod
     def cpu_usage_rate():
-        name = 'tddc:worker:monitor:cpu_usage_rate:{}'.format(Device.ip())
+        name = 'tddc:worker:monitor:cpu_usage_rate:{}'.format(Device.mac())
         while True:
             if default_config.PID != getpid():
                 return
@@ -85,7 +85,7 @@ class Monitor(object):
 
     @staticmethod
     def memory_usage_rate():
-        name = 'tddc:worker:monitor:memory_usage_rate:{}'.format(Device.ip())
+        name = 'tddc:worker:monitor:memory_usage_rate:{}'.format(Device.mac())
         while True:
             if default_config.PID != getpid():
                 return
@@ -106,7 +106,7 @@ class Monitor(object):
 
     @staticmethod
     def net_usage_rate():
-        name = 'tddc:worker:monitor:net_usage_rate:{}'.format(Device.ip())
+        name = 'tddc:worker:monitor:net_usage_rate:{}'.format(Device.mac())
         while True:
             if default_config.PID != getpid():
                 return

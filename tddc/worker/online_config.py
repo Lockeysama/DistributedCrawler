@@ -111,9 +111,9 @@ class OnlineConfig(RedisEx):
         return True
 
     def fetch_config(self, config_type):
-        name = 'tddc:worker:config:{platform}:{ip}:{feature}:{type}'.format(
+        name = 'tddc:worker:config:{platform}:{mac}:{feature}:{type}'.format(
             platform=lower(default_config.PLATFORM),
-            ip=Device.ip(),
+            mac=Device.mac(),
             feature=lower(default_config.FEATURE),
             type=config_type
         )
@@ -125,9 +125,9 @@ class OnlineConfig(RedisEx):
         return record
 
     def fetch_list_of_type_of_config(self, config_type):
-        name = 'tddc:worker:config:{platform}:{ip}:{feature}:{type}:*'.format(
+        name = 'tddc:worker:config:{platform}:{mac}:{feature}:{type}:*'.format(
             platform=lower(default_config.PLATFORM),
-            ip=Device.ip(),
+            mac=Device.mac(),
             feature=lower(default_config.FEATURE),
             type=config_type
         )
@@ -173,13 +173,13 @@ class OnlineConfig(RedisEx):
     @property
     def event(self):
         if not self._event:
-            self._event = self.fetch_config('event')
+            self._event = self.fetch_list_of_type_of_config('event')
         return type('EventConfig', (), self._event)
 
     @property
     def task(self):
         if not self._task:
-            self._task = self.fetch_config('task')
+            self._task = self.fetch_list_of_type_of_config('task')
         return type('TaskConfig', (), self._task)
 
     @property
@@ -209,7 +209,7 @@ class OnlineConfig(RedisEx):
     @property
     def proxy(self):
         if not self._proxy:
-            self._proxy = self.fetch_config('proxy')
+            self._proxy = self.fetch_list_of_type_of_config('proxy')
         return type('ProxyConfig', (), self._proxy)
 
     @property
@@ -225,9 +225,9 @@ class OnlineConfig(RedisEx):
         According to the template to generate configuration
         :return:
         """
-        config_path_base = 'tddc:worker:config:{platform}:{ip}:{feature}'.format(
+        config_path_base = 'tddc:worker:config:{platform}:{mac}:{feature}'.format(
             platform=lower(default_config.PLATFORM),
-            ip=Device.ip(),
+            mac=Device.mac(),
             feature=lower(default_config.FEATURE)
         ) + ':{}'
         template = self.template.get(config_type)
@@ -244,9 +244,9 @@ class OnlineConfig(RedisEx):
         According to the template to generate configuration
         :return:
         """
-        config_path_base = 'tddc:worker:config:{platform}:{ip}:{feature}'.format(
+        config_path_base = 'tddc:worker:config:{platform}:{mac}:{feature}'.format(
             platform=lower(default_config.PLATFORM),
-            ip=Device.ip(),
+            mac=Device.mac(),
             feature=lower(default_config.FEATURE)
         ) + ':{}'
         template = self.template.get(config_type)
@@ -275,23 +275,27 @@ class OnlineConfig(RedisEx):
             return self._template
         self._template = {
             'event': {
-                'topic': 'tddc:event:{}'.format(
-                    lower(default_config.PLATFORM)
-                ),
-                'record_key': 'tddc:event:record:{}'.format(
-                    lower(default_config.PLATFORM)
-                ),
-                'status_key': 'tddc:event:status:{}'.format(
-                    lower(default_config.PLATFORM)
-                )
+                'default': {
+                    'topic': 'tddc:event:{}'.format(
+                        lower(default_config.PLATFORM)
+                    ),
+                    'record_key': 'tddc:event:record:{}'.format(
+                        lower(default_config.PLATFORM)
+                    ),
+                    'status_key': 'tddc:event:status:{}'.format(
+                        lower(default_config.PLATFORM)
+                    )
+                }
             },
             'task': {
-                'in_queue_topic': 'tddc:task:queue:{}',
-                'out_queue_topic': 'tddc:task:queue:{}',
-                'cache_key': 'tddc:task:cache',
-                'status_key': 'tddc:task:status',
-                'record_key': 'tddc:task:record',
-                'queue_size': 32
+                'default': {
+                    'in_queue_topic': 'tddc:task:queue:{}',
+                    'out_queue_topic': 'tddc:task:queue:{}',
+                    'cache_key': 'tddc:task:cache',
+                    'status_key': 'tddc:task:status',
+                    'record_key': 'tddc:task:record',
+                    'queue_size': 32
+                }
             },
             'redis': {
                 'default': {
@@ -305,7 +309,7 @@ class OnlineConfig(RedisEx):
                 'default': {
                     'name': 'default',
                     'host': '127.0.0.1',
-                    'port': '6379',
+                    'port': '3306',
                     'user': 'admin',
                     'password': '',
                     'db': 'admin'
@@ -329,9 +333,11 @@ class OnlineConfig(RedisEx):
                 }
             },
             'proxy': {
-                'api': '',
-                'source': 'tddc:proxy:source',
-                'pool': 'tddc:proxy:pool'
+                'default': {
+                    'api': '',
+                    'source': 'tddc:proxy:source',
+                    'pool': 'tddc:proxy:pool'
+                }
             },
             'extra_modules': {
                 'test': {

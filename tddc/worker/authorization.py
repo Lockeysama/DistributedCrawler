@@ -9,9 +9,9 @@
 """
 import json
 import os
-import setproctitle
 
 import logging
+import time
 
 from ..default_config import default_config
 from ..base.util import Device, Singleton
@@ -40,12 +40,11 @@ class Authorization(RedisEx):
         if self._register_info:
             return self._register_info
         self._register_info = {
-            'ip': Device.ip(),
-            'mac': Device.mac(),
-            'platform': default_config.PLATFORM,
-            'feature': default_config.FEATURE,
-            'pid': os.getpid(),
-            'process_title': setproctitle.getproctitle()
+            's_ip': Device.ip(),
+            's_mac': Device.mac(),
+            's_platform': default_config.PLATFORM,
+            'i_pid': os.getpid(),
+            'i_date': int(time.time())
         }
         return self._register_info
 
@@ -58,9 +57,9 @@ class Authorization(RedisEx):
         while True:
             result = self.pull(
                 topic='tddc:worker:register:pass:{}:{}:{}'.format(
-                    self.register_info.get('ip'),
-                    self.register_info.get('platform'),
-                    self.register_info.get('pid')
+                    self.register_info.get('s_ip'),
+                    self.register_info.get('s_platform'),
+                    self.register_info.get('i_pid')
                 ),
                 timeout=5
             )

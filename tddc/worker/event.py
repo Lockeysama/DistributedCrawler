@@ -79,7 +79,7 @@ class EventCenter(RedisEx):
         self._event_queue = gevent.queue.Queue()
         self._event_call = {}
         from online_config import OnlineConfig
-        self.event_config = OnlineConfig().event
+        self.event_config = type('EventConfig', (), OnlineConfig().event.default)
         super(EventCenter, self).__init__()
         self._event_call = {}
         gevent.spawn_later(3, self.subscribing)

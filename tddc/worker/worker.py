@@ -62,7 +62,7 @@ class Worker(object):
                 RedisEx().hset(
                     'tddc:worker:monitor:health:{}'.format(lower(default_config.PLATFORM)),
                     '{}|{}'.format(
-                        Device.ip(), default_config.FEATURE
+                        Device.mac(), default_config.FEATURE
                     ),
                     time.time()
                 )

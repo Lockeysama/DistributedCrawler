@@ -42,7 +42,7 @@ def log_record_str(self):
         'date': self.asctime,
         'wf': default_config.FEATURE,
         'wp': default_config.PLATFORM,
-        'ip': Device.ip()
+        'ip': Device.mac()
     })
 
 

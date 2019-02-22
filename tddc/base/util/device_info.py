@@ -15,8 +15,14 @@ import netifaces
 
 class Device(object):
 
+    _ip = None
+
+    _mac = None
+
     @classmethod
     def ip(cls):
+        if cls._ip:
+            return cls._ip
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         try:
             s.connect(('8.8.8.8', 80))
@@ -25,10 +31,13 @@ class Device(object):
             ip = None
         finally:
             s.close()
+        cls._ip = ip
         return ip
 
     @classmethod
     def mac(cls):
+        if cls._mac:
+            return cls._mac
         for i in netifaces.interfaces():
             address = netifaces.ifaddresses(i)
             try:
@@ -37,7 +46,8 @@ class Device(object):
             except Exception as e:
                 continue
             if if_ip == Device.ip():
-                return if_mac
+                cls._mac = if_mac.replace(':', '-')
+                return cls._mac
         return None
 
     @classmethod

@@ -41,7 +41,8 @@ class Task(JsonObjectSerialization):
     fields = [
         's_id', 's_url', 's_platform', 's_feature', 'i_status', 'i_space', 's_headers',
         's_method', 's_proxy', 's_data', 's_cookies', 's_params', 's_json', 's_priority',
-        'b_allow_redirects', 'b_interrupt', 'b_valid', 'b_is_recover', 'i_timestamp'
+        'b_allow_redirects', 'b_interrupt', 'b_valid', 'b_is_recover', 'i_timestamp',
+        's_start_date', 's_timer', 's_desc'
     ]
 
     def __init__(self, fields=None, **kwargs):
@@ -51,16 +52,16 @@ class Task(JsonObjectSerialization):
 
 
 class TaskManager(RedisEx):
-    '''
+    """
     任务管理器
-    '''
+    """
     __metaclass__ = Singleton
 
     def __init__(self, mode='normal'):
-        '''
+        """
         Constructor
-        '''
-        self.task_conf = OnlineConfig().task
+        """
+        self.task_conf = type('TaskConfig', (), OnlineConfig().task.default)
         self.task_conf.queue_size = int(self.task_conf.queue_size)
         super(TaskManager, self).__init__()
         log.info('Task Manager Is Starting.')
@@ -275,7 +276,7 @@ class TaskManager(RedisEx):
             task_index = 'tddc:task:record:{}:{}'.format(task.s_platform, task.s_id)
             self.push(topic, task_index, _pushed)
         else:
-            topic = '{}:{}'.format(topic, task.s_priority)
+            topic = '{}:{}'.format(topic, task.s_priority.lower())
 
             def _pushed(_):
                 log.debug('[{}:{}] Pushed(Topic:{}).'.format(
