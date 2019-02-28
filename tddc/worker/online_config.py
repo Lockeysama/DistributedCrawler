@@ -8,24 +8,23 @@
 @time    : 2018/9/11 11:30
 """
 import logging
+import sys
 from collections import defaultdict
-from string import lower
 
-from tddc.base.util import Device
+import six
 
-from ..base.util import Singleton
+from ..base.util import Singleton, Device
 from ..default_config import default_config
 
 from .event import EventCenter, Event
 
-from redisex import RedisEx
+from .redisex import RedisEx
 
 log = logging.getLogger(__name__)
 
 
+@six.add_metaclass(Singleton)
 class OnlineConfig(RedisEx):
-
-    __metaclass__ = Singleton
 
     _event = {}
 
@@ -112,9 +111,9 @@ class OnlineConfig(RedisEx):
 
     def fetch_config(self, config_type):
         name = 'tddc:worker:config:{platform}:{mac}:{feature}:{type}'.format(
-            platform=lower(default_config.PLATFORM),
+            platform=default_config.PLATFORM.lower(),
             mac=Device.mac(),
-            feature=lower(default_config.FEATURE),
+            feature=default_config.FEATURE.lower(),
             type=config_type
         )
         record = self.hgetall(name)
@@ -126,9 +125,9 @@ class OnlineConfig(RedisEx):
 
     def fetch_list_of_type_of_config(self, config_type):
         name = 'tddc:worker:config:{platform}:{mac}:{feature}:{type}:*'.format(
-            platform=lower(default_config.PLATFORM),
+            platform=default_config.PLATFORM.lower(),
             mac=Device.mac(),
-            feature=lower(default_config.FEATURE),
+            feature=default_config.FEATURE.lower(),
             type=config_type
         )
         keys = self.keys(name)
@@ -144,7 +143,7 @@ class OnlineConfig(RedisEx):
 
     def fetch_list_of_type_of_common_config(self, config_type):
         name = 'tddc:worker:config:common:{type}:{platform}:*'.format(
-            platform=lower(default_config.PLATFORM),
+            platform=default_config.PLATFORM.lower(),
             type=config_type
         )
         keys = self.keys(name)
@@ -217,7 +216,10 @@ class OnlineConfig(RedisEx):
         if not self._extra_modules:
             self._extra_modules = self.fetch_list_of_type_of_common_config('extra_modules')
             if self._extra_modules.get('test'):
-                del self._extra_modules['test']
+                if sys.version > '3':
+                    self._extra_modules.pop('test')
+                else:
+                    del self._extra_modules['test']
         return type('ExtraModulesConfig', (), self._extra_modules)
 
     def generate_config(self, config_type):
@@ -226,9 +228,9 @@ class OnlineConfig(RedisEx):
         :return:
         """
         config_path_base = 'tddc:worker:config:{platform}:{mac}:{feature}'.format(
-            platform=lower(default_config.PLATFORM),
+            platform=default_config.PLATFORM.lower(),
             mac=Device.mac(),
-            feature=lower(default_config.FEATURE)
+            feature=default_config.FEATURE.lower()
         ) + ':{}'
         template = self.template.get(config_type)
         if config_type in ('redis', 'mysql', 'mongodb'):
@@ -245,9 +247,9 @@ class OnlineConfig(RedisEx):
         :return:
         """
         config_path_base = 'tddc:worker:config:{platform}:{mac}:{feature}'.format(
-            platform=lower(default_config.PLATFORM),
+            platform=default_config.PLATFORM.lower(),
             mac=Device.mac(),
-            feature=lower(default_config.FEATURE)
+            feature=default_config.FEATURE.lower()
         ) + ':{}'
         template = self.template.get(config_type)
         for k, v in template.items():
@@ -261,7 +263,7 @@ class OnlineConfig(RedisEx):
         :return:
         """
         config_path_base = 'tddc:worker:config:common:{platform}'.format(
-            platform=lower(default_config.PLATFORM),
+            platform=default_config.PLATFORM.lower(),
         ) + ':{}'
         template = self.template.get(config_type)
         for k, v in template.items():
@@ -277,13 +279,13 @@ class OnlineConfig(RedisEx):
             'event': {
                 'default': {
                     'topic': 'tddc:event:{}'.format(
-                        lower(default_config.PLATFORM)
+                        default_config.PLATFORM.lower()
                     ),
                     'record_key': 'tddc:event:record:{}'.format(
-                        lower(default_config.PLATFORM)
+                        default_config.PLATFORM.lower()
                     ),
                     'status_key': 'tddc:event:status:{}'.format(
-                        lower(default_config.PLATFORM)
+                        default_config.PLATFORM.lower()
                     )
                 }
             },
@@ -323,13 +325,6 @@ class OnlineConfig(RedisEx):
                     'user': 'admin',
                     'password': '',
                     'db': 'admin'
-                }
-            },
-            'hbase': {
-                'default': {
-                    'name': 'default',
-                    'host': '127.0.0.1',
-                    'port': '9090'
                 }
             },
             'proxy': {

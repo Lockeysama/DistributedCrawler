@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-'''
+"""
 Created on 2017年4月10日
 
 @author: chenyitao
-'''
+"""
 
 import logging
 import os
@@ -20,28 +20,52 @@ logging.INFO = 32
 logging.DEBUG = 31
 logging.NOTSET = 0
 
-logging._levelNames = {
-    logging.CRITICAL: 'CRITICAL',
-    logging.ERROR: 'ERROR',
-    logging.WARNING: 'WARNING',
-    logging.INFO: 'INFO',
-    logging.DEBUG: 'DEBUG',
-    logging.NOTSET: 'NOTSET',
-    'CRITICAL': logging.CRITICAL,
-    'ERROR': logging.ERROR,
-    'WARN': logging.WARNING,
-    'WARNING': logging.WARNING,
-    'INFO': logging.INFO,
-    'DEBUG': logging.DEBUG,
-    'NOTSET': logging.NOTSET,
-}
+
+if sys.version > '3':
+    logging._levelToName = {
+        logging.CRITICAL: 'CRITICAL',
+        logging.ERROR: 'ERROR',
+        logging.WARNING: 'WARNING',
+        logging.INFO: 'INFO',
+        logging.DEBUG: 'DEBUG',
+        logging.NOTSET: 'NOTSET',
+    }
+    logging._nameToLevel = {
+        'CRITICAL': logging.CRITICAL,
+        'FATAL': logging.FATAL,
+        'ERROR': logging.ERROR,
+        'WARN': logging.WARNING,
+        'WARNING': logging.WARNING,
+        'INFO': logging.INFO,
+        'DEBUG': logging.DEBUG,
+        'NOTSET': logging.NOTSET,
+    }
+else:
+    logging._levelNames = {
+        logging.CRITICAL: 'CRITICAL',
+        logging.ERROR: 'ERROR',
+        logging.WARNING: 'WARNING',
+        logging.INFO: 'INFO',
+        logging.DEBUG: 'DEBUG',
+        logging.NOTSET: 'NOTSET',
+        'CRITICAL': logging.CRITICAL,
+        'ERROR': logging.ERROR,
+        'WARN': logging.WARNING,
+        'WARNING': logging.WARNING,
+        'INFO': logging.INFO,
+        'DEBUG': logging.DEBUG,
+        'NOTSET': logging.NOTSET,
+    }
 
 
 if not os.path.exists('./logs'):
     os.mkdir('./logs')
 
 
-log_fmt = '[%(asctime)s] [%(levelname)s] [%(name)s:%(lineno)s:%(funcName)s] )=> %(message)s'
+if sys.version > '3':
+    log_fmt = '[%(asctime)s] [%(levelname)s] [%(name)s:%(lineno)d:%(funcName)s] )=> %(message)s'
+else:
+    log_fmt = '[%(asctime)s] [%(levelname)s] [%(name)s:%(lineno)s:%(funcName)s] )=> %(message)s'
 formatter = logging.Formatter(log_fmt)
 
 debug_file_handler = TimedRotatingFileHandler(
@@ -74,8 +98,14 @@ logging.getLogger().addHandler(error_handler)
 
 stream = logging.StreamHandler()
 stream.setLevel(logging.NOTSET)
-stream.setFormatter(logging.Formatter(fmt=('\33[1m\33[%(levelno)dm[%(asctime)s] [%(levelname)s] '
-                                           '[%(name)s:%(lineno)s:%(funcName)s] '
-                                           ' )=> %(message)s\33[0m'),
-                                      datefmt='%Y-%m-%d %H:%M:%S'))
+if sys.version > '3':
+    stream.setFormatter(logging.Formatter(fmt=('\33[1m\33[%(levelno)dm[%(asctime)s] [%(levelname)s] '
+                                               '[%(name)s:%(lineno)d:%(funcName)s] '
+                                               ' )=> %(message)s\33[0m'),
+                                          datefmt='%Y-%m-%d %H:%M:%S'))
+else:
+    stream.setFormatter(logging.Formatter(fmt=('\33[1m\33[%(levelno)dm[%(asctime)s] [%(levelname)s] '
+                                               '[%(name)s:%(lineno)s:%(funcName)s] '
+                                               ' )=> %(message)s\33[0m'),
+                                          datefmt='%Y-%m-%d %H:%M:%S'))
 logging.getLogger().addHandler(stream)

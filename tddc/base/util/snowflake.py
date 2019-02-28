@@ -9,32 +9,33 @@
 """
 import time
 
+import six
+
 from .util import Singleton
 
 
+@six.add_metaclass(Singleton)
 class SnowFlakeID(object):
 
-    __metaclass__ = Singleton
+    twepoch = 1420041600000
 
-    twepoch = 1420041600000L
+    sequence_bits = 12
 
-    sequence_bits = 12L
+    worker_id_bits = 10
 
-    worker_id_bits = 10L
+    worker_id_shift = 12
 
-    worker_id_shift = 12L
-
-    timestamp_left_shift = 22L
+    timestamp_left_shift = 22
 
     def __init__(self, worker_id=512):
         self.worker_id = worker_id
-        self.sequence = 0L
-        self.max_worker_id = -1L ^ (-1L << self.worker_id_bits)
-        self.sequence_mask = -1L ^ (-1L << self.sequence_bits)
-        self.last_timestamp = -1L
+        self.sequence = 0
+        self.max_worker_id = -1 ^ (-1 << self.worker_id_bits)
+        self.sequence_mask = -1 ^ (-1 << self.sequence_bits)
+        self.last_timestamp = -1
 
     def _time_gen(self):
-        return long(int(time.time() * 1000))
+        return int(time.time() * 1000)
 
     def _till_next_millis(self, last_timestamp):
         timestamp = self._time_gen()
@@ -83,6 +84,6 @@ class SnowFlakeID(object):
         worker_id = "0" if sequence_start == 0 else b_sf_id[worker_start:sequence_start]
         worker_id_int = int(worker_id, 2)
         timestamp = "0" if worker_start == 0 else b_sf_id[0:worker_start]
-        ts = long(timestamp, 2)
+        ts = int(timestamp)
         ts += cls.twepoch
         return ts, sequence_int, worker_id_int

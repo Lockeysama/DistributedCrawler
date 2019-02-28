@@ -13,18 +13,18 @@ import time
 from os import getpid
 
 import gevent
+import six
 
 from ..default_config import default_config
 from ..base.util import TimeHelper, Device, Singleton
 
-from redisex import RedisEx
+from .redisex import RedisEx
 
 log = logging.getLogger(__name__)
 
 
+@six.add_metaclass(Singleton)
 class Monitor(object):
-
-    __metaclass__ = Singleton
 
     def __init__(self):
         gevent.spawn(self.snapshot)

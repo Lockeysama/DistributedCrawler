@@ -12,6 +12,7 @@ import time
 from os import getpid
 
 import gevent
+import six
 
 from ..base.util import Singleton
 from ..base.redis import RedisClient
@@ -20,17 +21,17 @@ from ..default_config import default_config
 log = logging.getLogger(__name__)
 
 
+@six.add_metaclass(Singleton)
 class RedisEx(RedisClient):
     """
     消息队列
     """
-    __metaclass__ = Singleton
 
     def __init__(self, nodes=None, tag='default'):
         super(RedisEx, self).__init__(startup_nodes=nodes or self.nodes(tag))
 
     def nodes(self, tag):
-        from online_config import OnlineConfig
+        from .online_config import OnlineConfig
         node = getattr(OnlineConfig().redis, tag)
         if not node:
             return []
@@ -194,4 +195,3 @@ class RedisEx(RedisClient):
         def _publish(_channel, _message):
             self.publish(_channel, _message)
         self.robust(_publish, channel, message)
-

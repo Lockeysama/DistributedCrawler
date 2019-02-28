@@ -9,17 +9,15 @@ from setuptools import setup, find_packages
 
 setup(
     name='tddc',
-    version='3.0',
+    version='4.0',
     packages=find_packages(),
     install_requires=[
         'gevent',
-        'happybase',
         'pymongo',
         'requests',
-        'mysql-python',
         'pymysql',
+        'mysqlclient',
         'redis-py-cluster',
-        'logging',
         'netifaces',
         'psutil',
         'setproctitle',

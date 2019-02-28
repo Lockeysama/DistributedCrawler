@@ -9,11 +9,12 @@ import logging
 import time
 
 import gevent.queue
+import six
 
 from ..base.util import ShortUUID, Singleton
 from ..default_config import default_config
 
-from redisex import RedisEx
+from .redisex import RedisEx
 
 log = logging.getLogger(__name__)
 
@@ -66,11 +67,11 @@ class Event(object):
         return self.__dict__
 
 
+@six.add_metaclass(Singleton)
 class EventCenter(RedisEx):
     """
     事件中心
     """
-    __metaclass__ = Singleton
 
     _dispatcher = {}
 
@@ -78,7 +79,7 @@ class EventCenter(RedisEx):
         log.info('Event Manager Is Starting.')
         self._event_queue = gevent.queue.Queue()
         self._event_call = {}
-        from online_config import OnlineConfig
+        from .online_config import OnlineConfig
         self.event_config = type('EventConfig', (), OnlineConfig().event.default)
         super(EventCenter, self).__init__()
         self._event_call = {}

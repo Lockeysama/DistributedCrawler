@@ -8,5 +8,5 @@
 @time: 2018/4/9 19:57
 """
 
-from mysql_helper import MySQLHelper
-from pymysql_ex import PyMySQLEx
+from .mysql_helper import MySQLHelper
+from .pymysql_ex import PyMySQLEx

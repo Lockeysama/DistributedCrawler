@@ -10,7 +10,7 @@
 from gevent.monkey import patch_all; patch_all()
 
 import logging
-from base.log import logger
+from .base.log import logger
 
 log = logging.getLogger(__name__)
 

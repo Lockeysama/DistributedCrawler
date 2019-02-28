@@ -8,5 +8,5 @@
 @time    : 2018/10/23 14:49
 """
 
-from extern_base import ExternBase
-from extern_manager import ExternManager
+from .extern_base import ExternBase
+from .extern_manager import ExternManager

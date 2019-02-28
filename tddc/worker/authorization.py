@@ -13,17 +13,18 @@ import os
 import logging
 import time
 
+import six
+
 from ..default_config import default_config
 from ..base.util import Device, Singleton
 
-from redisex import RedisEx
+from .redisex import RedisEx
 
 log = logging.getLogger(__name__)
 
 
+@six.add_metaclass(Singleton)
 class Authorization(RedisEx):
-
-    __metaclass__ = Singleton
 
     _register_info = {}
 

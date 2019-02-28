@@ -11,6 +11,7 @@ import pymysql
 from collections import defaultdict
 from gevent.queue import Queue
 import logging
+import six
 
 from pymysql.cursors import DictCursor
 
@@ -19,9 +20,8 @@ from ..util.util import Singleton
 log = logging.getLogger(__name__)
 
 
+@six.add_metaclass(Singleton)
 class PyMySQLEx(object):
-
-    __metaclass__ = Singleton
 
     def __init__(self, conf=None, size=10, tag='default'):
         super(PyMySQLEx, self).__init__()

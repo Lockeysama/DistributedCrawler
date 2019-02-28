@@ -9,22 +9,24 @@
 """
 import logging
 
+import six
+
 from ..base.util import Singleton
 from ..base.mysql import MySQLHelper
 
 log = logging.getLogger(__name__)
 
 
+@six.add_metaclass(Singleton)
 class MySQLEx(MySQLHelper):
     """
     消息队列
     """
-    __metaclass__ = Singleton
 
     def __init__(self, nodes=None, tag='default'):
         super(MySQLEx, self).__init__(nodes or self.nodes(tag))
 
     def nodes(self, tag):
-        from online_config import OnlineConfig
+        from .online_config import OnlineConfig
         node = getattr(OnlineConfig().mysql, tag)
         return node

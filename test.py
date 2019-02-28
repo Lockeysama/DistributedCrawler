@@ -240,7 +240,7 @@ def mysql_test():
                     items = records[100 * index:]
                 else:
                     items = records[100 * index: 100 * (index + 1)]
-                items = [['\'{}\''.format(v) if isinstance(v, unicode) else str(v) for v in item]
+                items = [['\'{}\''.format(v) if isinstance(v, str) else str(v) for v in item]
                          for item in items]
                 v_str_list = [u' ({}) '.format(u','.join(item))
                               for item in items]
@@ -359,7 +359,7 @@ def WS():
         for i in json.loads(message):
             b = base64.b64decode(i.get('data'))
 
-        print 'over'
+        print('over')
 
 
 def log_test():

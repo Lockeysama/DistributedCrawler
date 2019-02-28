@@ -6,7 +6,7 @@ Created on 2017年4月10日
 '''
 import json
 import logging
-from string import upper
+import sys
 
 import gevent
 import time
@@ -166,13 +166,19 @@ class SingleRedisClient(Redis):
             if 'redis://' not in host:
                 kwargs['host'] = host
                 kwargs['port'] = startup_nodes[0].get('port')
-                del kwargs['startup_nodes']
+                if sys.version > '3':
+                    kwargs.pop('startup_nodes')
+                else:
+                    del kwargs['startup_nodes']
                 kwargs['password'] = password
             else:
                 url = host.format(password=password)
                 connection_pool = ConnectionPool.from_url(url, db=0, **kwargs)
                 kwargs['connection_pool'] = connection_pool
-                del kwargs['startup_nodes']
+                if sys.version > '3':
+                    kwargs.pop('startup_nodes')
+                else:
+                    del kwargs['startup_nodes']
         super(SingleRedisClient, self).__init__(max_connections=128, *args, **kwargs)
         self.set_response_callback('GET', self._get)
         self.set_response_callback('HGETALL', self._hgetall)
@@ -189,7 +195,7 @@ class SingleRedisClient(Redis):
         connection = pool.get_connection(command_name, **options)
         try:
             connection.send_command(*args)
-            if upper(command_name) in ['HGETALL', 'HGET', 'HMGET', 'GET']:
+            if command_name.upper() in ['HGETALL', 'HGET', 'HMGET', 'GET']:
                 options['args'] = args
             return self.parse_response(connection, command_name, **options)
         except (ConnectionError, TimeoutError) as e:
@@ -200,6 +206,20 @@ class SingleRedisClient(Redis):
             return self.parse_response(connection, command_name, **options)
         finally:
             pool.release(connection)
+
+    def parse_response(self, connection, command_name, **options):
+        "Parses a response from the Redis server"
+        response = connection.read_response()
+        if isinstance(response, list):
+            response = [r.decode() for r in response]
+        elif isinstance(response, bytes):
+            try:
+                response = response.decode()
+            except:
+                pass
+        if command_name in self.response_callbacks:
+            return self.response_callbacks[command_name](response, **options)
+        return response
 
     @staticmethod
     def _get(response, **option):

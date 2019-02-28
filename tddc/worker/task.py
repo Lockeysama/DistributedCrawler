@@ -9,16 +9,16 @@ import random
 import time
 from collections import defaultdict
 from os import getpid
-from string import lower
 
 import gevent.queue
+import six
 
 from ..base.util import Singleton, JsonObjectSerialization, SnowFlakeID
 from ..default_config import default_config
 
-from event import EventCenter, Event
-from online_config import OnlineConfig
-from redisex import RedisEx
+from .event import EventCenter, Event
+from .online_config import OnlineConfig
+from .redisex import RedisEx
 
 log = logging.getLogger(__name__)
 
@@ -51,11 +51,11 @@ class Task(JsonObjectSerialization):
         self.i_timestamp = kwargs.get('i_timestamp', int(time.time()))
 
 
+@six.add_metaclass(Singleton)
 class TaskManager(RedisEx):
     """
     任务管理器
     """
-    __metaclass__ = Singleton
 
     def __init__(self, mode='normal'):
         """
@@ -130,7 +130,7 @@ class TaskManager(RedisEx):
                             continue
                         self._totals += 1
                         task.i_status = Task.Status.WaitCrawl \
-                            if lower(default_config.PLATFORM) == 'crawler' \
+                            if default_config.PLATFORM.lower() == 'crawler' \
                             else Task.Status.WaitParse
                         key = '{base}:{platform}:{task_id}'.format(
                             base=self.task_conf.record_key,

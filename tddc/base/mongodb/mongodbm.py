@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
-'''
+"""
 Created on 2017年4月10日
 
 @author: chenyitao
-'''
+"""
 import logging
-import random
 
 import gevent
 import pymongo

@@ -10,6 +10,8 @@
 import os
 import sys
 
+PROJECT_ROOT = 'tddc'
+
 PLATFORM = 'Default'
 
 FEATURE = 'Default' if len(sys.argv) < 2 else sys.argv[1]

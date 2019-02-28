@@ -13,8 +13,8 @@ import sys
 from ..base.util import Device
 from ..default_config import default_config
 
-from event import EventCenter, Event
-from redisex import RedisEx
+from .event import EventCenter, Event
+from .redisex import RedisEx
 
 
 """
@@ -46,27 +46,50 @@ def log_record_str(self):
     })
 
 
-def _log(self, level, msg, args, exc_info=None, extra=None):
-    """
-    Low-level logging routine which creates a LogRecord and then calls
-    all the handlers of this logger to handle the record.
-    """
-    if logging._srcfile:
-        # IronPython doesn't track Python frames, so findCaller raises an
-        # exception on some versions of IronPython. We trap it here so that
-        # IronPython can use logging.
-        try:
-            fn, lno, func = self.findCaller()
-        except ValueError:
+if sys.version > '3':
+    def _log(self, level, msg, args, exc_info=None, extra=None, stack_info=False):
+        sinfo = None
+        if logging._srcfile:
+            # IronPython doesn't track Python frames, so findCaller raises an
+            # exception on some versions of IronPython. We trap it here so that
+            # IronPython can use logging.
+            try:
+                fn, lno, func, sinfo = self.findCaller(stack_info)
+            except ValueError:  # pragma: no cover
+                fn, lno, func = "(unknown file)", 0, "(unknown function)"
+        else:  # pragma: no cover
             fn, lno, func = "(unknown file)", 0, "(unknown function)"
-    else:
-        fn, lno, func = "(unknown file)", 0, "(unknown function)"
-    if exc_info:
-        if not isinstance(exc_info, tuple):
-            exc_info = sys.exc_info()
-    record = self.makeRecord(self.name, level, fn, lno, msg, args, exc_info, func, extra)
-    self.handle(record)
-    return record
+        if exc_info:
+            if isinstance(exc_info, BaseException):
+                exc_info = (type(exc_info), exc_info, exc_info.__traceback__)
+            elif not isinstance(exc_info, tuple):
+                exc_info = sys.exc_info()
+        record = self.makeRecord(self.name, level, fn, lno, msg, args,
+                                 exc_info, func, extra, sinfo)
+        self.handle(record)
+        return record
+else:
+    def _log(self, level, msg, args, exc_info=None, extra=None):
+        """
+        Low-level logging routine which creates a LogRecord and then calls
+        all the handlers of this logger to handle the record.
+        """
+        if logging._srcfile:
+            # IronPython doesn't track Python frames, so findCaller raises an
+            # exception on some versions of IronPython. We trap it here so that
+            # IronPython can use logging.
+            try:
+                fn, lno, func = self.findCaller()
+            except ValueError as e:
+                fn, lno, func = "(unknown file)", 0, "(unknown function)"
+        else:
+            fn, lno, func = "(unknown file)", 0, "(unknown function)"
+        if exc_info:
+            if not isinstance(exc_info, tuple):
+                exc_info = sys.exc_info()
+        record = self.makeRecord(self.name, level, fn, lno, msg, args, exc_info, func, extra)
+        self.handle(record)
+        return record
 
 
 def debug(self, msg, *args, **kwargs):

@@ -9,6 +9,8 @@ import importlib
 import logging
 import os
 
+import six
+
 from ...base.util import Singleton
 from ...default_config import default_config
 
@@ -18,11 +20,11 @@ from ..event import EventCenter, Event
 log = logging.getLogger(__name__)
 
 
+@six.add_metaclass(Singleton)
 class ExternManager(object):
     """
     扩展模块管理
     """
-    __metaclass__ = Singleton
 
     # 扩展模块更新成功回调
     update_success_callback = set()
@@ -88,7 +90,7 @@ class ExternManager(object):
         try:
             content = event_mould.s_source
             with open(path_base + event_mould.s_package + '.py', 'w') as f:
-                f.write(content.encode('utf-8'))
+                f.write(content)
         except Exception as e:
             log.exception(e)
             log.warning(e)
@@ -112,7 +114,7 @@ class ExternManager(object):
         return True
 
     def _load_moulds(self, package):
-        rules_path_base = 'worker.extern_modules'
+        rules_path_base = '{}.worker.extern_modules'.format(default_config.PROJECT_ROOT)
         try:
             path = '{}.{}.{}'.format(
                 rules_path_base,
@@ -123,14 +125,14 @@ class ExternManager(object):
             if os.path.exists(pyc_path):
                 os.remove(pyc_path)
             module = importlib.import_module(path)
-            module = reload(module)
+            module = importlib.reload(module)
         except Exception as e:
             log.exception(e)
             return False
         if not module:
             return False
         if not self._update_models_table(
-                package.get('s_platform'), package.get('s_mould'), module
+            package.get('s_platform'), package.get('s_mould'), module
         ):
             return False
         return True

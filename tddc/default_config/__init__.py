@@ -8,4 +8,4 @@
 @time    : 2018/10/23 14:49
 """
 
-from default_config import *
+from .default_config import *

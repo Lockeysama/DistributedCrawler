@@ -12,11 +12,13 @@ from os import getpid
 
 import logging
 
+import six
+
 from ..base.util import JsonObjectSerialization, SnowFlakeID, Singleton
 from ..default_config import default_config
 
-from event import EventCenter, Event
-from redisex import RedisEx
+from .event import EventCenter, Event
+from .redisex import RedisEx
 
 log = logging.getLogger(__name__)
 
@@ -50,9 +52,8 @@ class TaskPadTask(JsonObjectSerialization):
         self.i_timestamp = kwargs.get('i_timestamp', int(time.time()))
 
 
+@six.add_metaclass(Singleton)
 class TaskPadManager(object):
-
-    __metaclass__ = Singleton
 
     def __init__(self):
         super(TaskPadManager, self).__init__()
