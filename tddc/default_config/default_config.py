@@ -10,7 +10,7 @@
 import os
 import sys
 
-PROJECT_ROOT = 'tddc'
+PROJECT_ROOT = sys.path[0].split('/')[-1]
 
 PLATFORM = 'Default'
 

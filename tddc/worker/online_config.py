@@ -36,8 +36,6 @@ class OnlineConfig(RedisEx):
 
     _mongodb = {}
 
-    _hbase = {}
-
     _proxy = {}
 
     _extra_modules = defaultdict(dict)
@@ -98,9 +96,6 @@ class OnlineConfig(RedisEx):
         elif target == 'proxy':
             OnlineConfig()._proxy.clear()
             OnlineConfig().proxy()
-        elif target == 'hbase':
-            OnlineConfig()._hbase.clear()
-            OnlineConfig().hbase()
         elif target == 'extra_modules':
             OnlineConfig()._extra_modules.clear()
             OnlineConfig().extra_modules()
@@ -167,7 +162,6 @@ class OnlineConfig(RedisEx):
         self.mongodb()
         self.proxy()
         self.extra_modules()
-        self.hbase()
 
     @property
     def event(self):
@@ -198,12 +192,6 @@ class OnlineConfig(RedisEx):
         if not self._mongodb:
             self._mongodb = self.fetch_list_of_type_of_config('mongodb')
         return type('MongodbConfig', (), self._mongodb)
-
-    @property
-    def hbase(self):
-        if not self._hbase:
-            self._hbase = self.fetch_list_of_type_of_config('hbase')
-        return type('HBaseConfig', (), self._hbase)
 
     @property
     def proxy(self):
@@ -293,9 +281,7 @@ class OnlineConfig(RedisEx):
                 'default': {
                     'in_queue_topic': 'tddc:task:queue:{}',
                     'out_queue_topic': 'tddc:task:queue:{}',
-                    'cache_key': 'tddc:task:cache',
-                    'status_key': 'tddc:task:status',
-                    'record_key': 'tddc:task:record',
+                    'record_key': 'tddc:task:timing:record',
                     'queue_size': 32
                 }
             },

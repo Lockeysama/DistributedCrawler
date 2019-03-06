@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-'''
+"""
 Created on 2017年4月10日
 
 @author: chenyitao
-'''
+"""
 import json
 import logging
 import sys
@@ -19,13 +19,15 @@ log = logging.getLogger(__name__)
 
 
 class RedisClient(StrictRedisCluster):
-    '''
+    """
     classdocs
-    '''
+    """
 
     def __init__(self, *args, **kwargs):
         self.status = type('RedisStatus', (), {'alive_timestamp': 0})
-        super(RedisClient, self).__init__(max_connections=64, *args, **kwargs)
+        super(RedisClient, self).__init__(
+            max_connections=64, decode_responses=True, *args, **kwargs
+        )
         self.set_response_callback()
         gevent.spawn(self._alive_check)
         gevent.sleep()
@@ -179,7 +181,9 @@ class SingleRedisClient(Redis):
                     kwargs.pop('startup_nodes')
                 else:
                     del kwargs['startup_nodes']
-        super(SingleRedisClient, self).__init__(max_connections=128, *args, **kwargs)
+        super(SingleRedisClient, self).__init__(
+            max_connections=128, decode_responses=True, *args, **kwargs
+        )
         self.set_response_callback('GET', self._get)
         self.set_response_callback('HGETALL', self._hgetall)
         self.set_response_callback('HGET', self._hget)
@@ -206,20 +210,6 @@ class SingleRedisClient(Redis):
             return self.parse_response(connection, command_name, **options)
         finally:
             pool.release(connection)
-
-    def parse_response(self, connection, command_name, **options):
-        "Parses a response from the Redis server"
-        response = connection.read_response()
-        if isinstance(response, list):
-            response = [r.decode() for r in response]
-        elif isinstance(response, bytes):
-            try:
-                response = response.decode()
-            except:
-                pass
-        if command_name in self.response_callbacks:
-            return self.response_callbacks[command_name](response, **options)
-        return response
 
     @staticmethod
     def _get(response, **option):

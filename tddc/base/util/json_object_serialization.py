@@ -15,8 +15,13 @@ class JsonObjectSerialization(object):
     fields = None
 
     def __init__(self, fields=None, **kwargs):
-        if not fields and not self.fields:
-            raise Exception(message='Fields Not Found.')
+        if fields:
+            self.fields = fields
+        if not self.fields:
+            raise Exception('Fields Not Found.')
+        self.init(kwargs)
+
+    def init(self, kwargs):
         for k in self.fields:
             self.__dict__[k] = kwargs.get(k, None)
 

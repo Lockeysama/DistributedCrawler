@@ -9,4 +9,3 @@
 """
 
 from .mysql_helper import MySQLHelper
-from .pymysql_ex import PyMySQLEx

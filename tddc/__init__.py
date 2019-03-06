@@ -8,6 +8,8 @@
 @time    : 2018/10/23 14:49
 """
 from gevent.monkey import patch_all; patch_all()
+import sys
+sys.path.append('/' + '/'.join(sys.path[0].split('/')[:-1]))
 
 import logging
 from .base.log import logger

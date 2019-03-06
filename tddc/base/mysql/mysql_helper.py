@@ -38,8 +38,11 @@ class MySQLHelper(object):
     def replace(self, table, **fields_values):
         cursor = self.db.cursor()
         fields = ','.join(fields_values.keys())
-        values = [v.encode('utf-8') if isinstance(v, unicode) else v for v in fields_values.values()]
-        values = ','.join(['\'{}\''.format(v) if isinstance(v, str) else '{}'.format(v) for v in values])
+        values = [v for v in fields_values.values()]
+        values = ','.join(
+            ['\'{}\''.format(v) if isinstance(v, str) else '{}'.format(v)
+             for v in values]
+        )
         sql = 'REPLACE INTO {} ({}) VALUES ({});'.format(table, fields, values)
         try:
             cursor.execute(sql)
@@ -62,9 +65,7 @@ class MySQLHelper(object):
         for fv in fields_values:
             ks = fv.keys()
             ks.sort()
-            fv_values = [fv[k].encode('utf-8')
-                         if isinstance(fv.get(k), unicode)
-                         else (fv.get(k) if fv.get(k) is not None else 0)
+            fv_values = [fv.get(k) if fv.get(k) is not None else 0
                          for k in fields]
             v = ', '.join(['\'{}\''.format(v)
                            if isinstance(v, str) and v != 'null'
@@ -99,10 +100,12 @@ class MySQLHelper(object):
 
     def update(self, table, query, **update_values):
         cursor = self.db.cursor()
-        update_values = {k: v.encode('utf-8') if isinstance(v, unicode) else v for k, v in update_values.items()}
-        new_values = ','.join(['{}='.format(k) + ('\'{}\''.format(v) if isinstance(v, str) else '{}'.format(v))
-                              for k, v in update_values.items()])
-        query = {k: v.encode('utf-8') if isinstance(v, unicode) else v for k, v in query.items()}
+        update_values = {k: v for k, v in update_values.items()}
+        new_values = ','.join(
+            ['{}='.format(k) + ('\'{}\''.format(v) if isinstance(v, str) else '{}'.format(v))
+             for k, v in update_values.items()]
+        )
+        query = {k: v for k, v in query.items()}
         query_str = ' AND '.join(['{}='.format(k) + ('\'{}\''.format(v)
                                                      if isinstance(v, str)
                                                      else '{}'.format(v))
@@ -125,7 +128,7 @@ class MySQLHelper(object):
 
     def select(self, table, *fields, **query):
         cursor = self.db.cursor()
-        query = {k: v.encode('utf-8') if isinstance(v, unicode) else v for k, v in query.items()}
+        query = {k: v for k, v in query.items()}
         fields = ','.join(fields)
         query_str = ' AND '.join(['{}='.format(k) + ('\'{}\''.format(v)
                                                      if isinstance(v, str)

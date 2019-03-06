@@ -33,15 +33,15 @@ class Event(object):
         Executed_Success = 3200
         Executed_Failed = 3400
 
-    id = None
+    s_id = None
 
-    own = None
+    s_owner = None
 
-    platform = None
+    s_platform = None
 
-    feature = None
+    s_feature = None
 
-    url = None
+    s_url = None
 
     file_md5 = None
 
@@ -104,10 +104,10 @@ class EventCenter(RedisEx):
 
     def _data_fetched(self, data):
         event = self._deserialization(data)
-        if not event or not hasattr(event, 'id'):
+        if not event or not event.get('s_id'):
             return
-        self.update_the_status(event, Event.Status.Fetched)
-        callback = self._dispatcher.get(event.e_type, None)
+        self.update_the_status(type('Event', (), event), Event.Status.Fetched)
+        callback = self._dispatcher.get(event.get('i_event'), None)
         if callback:
             callback(event)
 
@@ -120,12 +120,12 @@ class EventCenter(RedisEx):
         try:
             item = json.loads(data)
         except Exception as e:
-            log.warning('Event:"%s" | %s.' % (data, e.message))
+            log.warning('Event:"%s" | %s.' % (data, e.args[0]))
             return None
         if not isinstance(item, dict):
             log.warning('Event:"%s" is not type of dict.' % data)
             return None
-        return type('EventRecord', (), item)
+        return item
 
     def update_the_status(self, event, status):
         """
@@ -138,13 +138,13 @@ class EventCenter(RedisEx):
             value(key from hash(name('xxx:xx:x:event_id')))
         """
         RedisEx().set_the_hash_value_for_the_hash(
-            'tddc:event:status:{}'.format(event.event.get('platform')),
-            str(event.id),
-            'tddc:event:status:value:{}'.format(event.id),
+            'tddc:event:status:{}'.format(event.d_data.get('s_platform')),
+            str(event.s_id),
+            'tddc:event:status:value:{}'.format(event.s_id),
             '{}|{}'.format(default_config.PLATFORM, default_config.FEATURE),
             status
         )
         RedisEx().sadd(
-            'tddc:event:status:processing:%s' % event.event.get('platform'),
-            event.id
+            'tddc:event:status:processing:%s' % event.d_data.get('s_platform'),
+            event.s_id
         )
