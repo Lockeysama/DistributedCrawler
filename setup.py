@@ -27,7 +27,7 @@ setup(
         'flask_moment',
         'flask_httpauth',
         'lxml',
-        'websocket-client=0.48.0'
+        'websocket-client==0.48.0'
     ],
     entry_points='''
         [console_scripts]

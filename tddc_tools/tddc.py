@@ -21,7 +21,7 @@ def tddc():
 @tddc.command()
 @click.option(
     '--type',
-    prompt=('Please Input Worker Type:\n1.timing_crawler '
+    prompt=('Please Input Worker Type:\n0.manager_api\n1.timing_crawler '
             '\n2.timing_parser\n3.keep_crawler\n4.proxies_checker\nInput Option Number'),
     help='timing_crawler | timing_parser | keep_crawler | proxies_checker.'
 )
