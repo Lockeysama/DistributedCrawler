@@ -16,13 +16,18 @@ setup(
         'gevent',
         'pymongo',
         'requests',
-        'pymysql',
         'mysqlclient',
         'redis-py-cluster',
         'netifaces',
         'psutil',
         'setproctitle',
-        'pytz'
+        'pytz',
+        'flask',
+        'flask_script',
+        'flask_moment',
+        'flask_httpauth',
+        'lxml',
+        'websocket-client=0.48.0'
     ],
     entry_points='''
         [console_scripts]
