@@ -1,40 +1,38 @@
 # -*- coding: utf-8 -*-
-'''
+"""
 Created on 2017年4月20日
 
 @author: chenyitao
-'''
+"""
 
 import importlib
-import json
 import logging
 import os
 
-import requests
+import six
 
-from ...util.util import Singleton
+from ...base.util import Singleton
+from ...default_config import default_config
 
-from ..models import DBSession, ModulesModel
+from ..online_config import OnlineConfig
 from ..event import EventCenter, Event
-from ..storager import Storager
 
 log = logging.getLogger(__name__)
 
 
+@six.add_metaclass(Singleton)
 class ExternManager(object):
-    '''
+    """
     扩展模块管理
-    '''
-    __metaclass__ = Singleton
+    """
 
     # 扩展模块更新成功回调
     update_success_callback = set()
 
     def __init__(self):
+        EventCenter()
         log.info('Extern Modules Is Loading.')
         super(ExternManager, self).__init__()
-        EventCenter()
-        Storager()
         self._load_local_models()
         log.info('Extern Modules Was Loaded.')
 
@@ -44,10 +42,12 @@ class ExternManager(object):
         :return:
         """
         self._rules_moulds = {}
-        conf = DBSession.query(ModulesModel).all()
+        conf = OnlineConfig().extra_modules
         if not conf:
             return False
-        for module_info in conf:
+        for attr_name, module_info in conf.__dict__.items():
+            if attr_name[:2] == '__' and attr_name[-2:] == '__':
+                continue
             try:
                 self._load_moulds(module_info)
             except Exception as e:
@@ -56,17 +56,21 @@ class ExternManager(object):
         return True
 
     @staticmethod
-    @EventCenter.route(Event.Type.ExternModuleUpdate)
+    @EventCenter.route(Event.Type.ExtraModuleUpdate)
     def _models_update_event(event):
         """
         注册到事件中心，在收到相应事件时回调
         :param event:
         :return:
         """
-        EventCenter().update_the_status(event,
-                                        Event.Status.Executed_Success
-                                        if ExternManager()._update(event)
-                                        else Event.Status.Executed_Failed)
+        if default_config.PID != os.getpid():
+            return
+        EventCenter().update_the_status(
+            event,
+            Event.Status.Executed_Success
+            if ExternManager()._update(event)
+            else Event.Status.Executed_Failed
+        )
 
     def _create_package(self, path, platform):
         if not os.path.exists(path):
@@ -81,11 +85,11 @@ class ExternManager(object):
         :param path:
         :return:
         """
-        path_base = '%s/%s/' % (path, event_mould.platform)
-        self._create_package(path_base, event_mould.platform)
+        path_base = '%s/%s/' % (path, event_mould.s_platform)
+        self._create_package(path_base, event_mould.s_platform)
         try:
-            content = requests.get(event_mould.url).content
-            with open(path_base + event_mould.package + '.py', 'w') as f:
+            content = event_mould.s_source
+            with open(path_base + event_mould.s_package + '.py', 'w') as f:
                 f.write(content)
         except Exception as e:
             log.exception(e)
@@ -97,17 +101,11 @@ class ExternManager(object):
     def _update(self, event):
         log.info('Extern Modules Is Updating...')
         event_model = Event(**event.event)
-        if not event_model.platform:
+        if not event_model.s_platform:
             return False
         path = os.popen('find . -name extern_modules').readlines()[0].strip()
         if not self._download_package_file(event_model, path):
             return False
-        module = DBSession.query(ModulesModel).filter_by(platform=event_model.platform,
-                                                         feature=event_model.feature).first()
-        module = module or ModulesModel()
-        module.update(event_model)
-        DBSession.add(module)
-        DBSession.commit()
         if not self._load_local_models():
             return False
         log.info('Extern Modules Was Updated.')
@@ -116,20 +114,26 @@ class ExternManager(object):
         return True
 
     def _load_moulds(self, package):
-        rules_path_base = 'worker.extern_modules'
+        rules_path_base = '{}.worker.extern_modules'.format(default_config.PROJECT_ROOT)
         try:
-            path = '%s.%s.%s' % (rules_path_base, package.platform, package.package)
+            path = '{}.{}.{}'.format(
+                rules_path_base,
+                package.get('s_platform'),
+                package.get('s_package')
+            )
             pyc_path = path.replace('.', '/') + '.pyc'
             if os.path.exists(pyc_path):
                 os.remove(pyc_path)
             module = importlib.import_module(path)
-            module = reload(module)
+            module = importlib.reload(module)
         except Exception as e:
             log.exception(e)
             return False
         if not module:
             return False
-        if not self._update_models_table(package.platform, package.mould, module):
+        if not self._update_models_table(
+            package.get('s_platform'), package.get('s_mould'), module
+        ):
             return False
         return True
 
@@ -148,7 +152,7 @@ class ExternManager(object):
         if not feature:
             return False
         valid = getattr(cls, 'valid', None)
-        if valid != '1':
+        if not int(valid):
             return False
         if not self._rules_moulds.get(platform, None):
             self._rules_moulds[platform] = {}

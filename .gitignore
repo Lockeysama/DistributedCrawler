@@ -101,3 +101,5 @@ ENV/
 
 # Mac OSX Files
 .DS_Store
+
+logs

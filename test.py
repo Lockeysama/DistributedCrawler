@@ -1,7 +1,10 @@
 # -*- coding:utf-8 -*-
 import hashlib
+import json
 import re
+import zlib
 
+import MySQLdb
 import gevent
 
 # from tddc import ConfigCenter, Singleton, WorkerConfigCenter
@@ -10,6 +13,10 @@ import gevent
 # from tddc.worker.event import EventCenter
 # from tddc.worker.message_queue import MessageQueue
 import time
+
+# from pyecharts import Kline
+from websocket import WebSocketApp
+
 
 
 def _callback(*args, **kwargs):
@@ -167,12 +174,230 @@ def spilt_test():
 
 def mongo_test():
     from pymongo import MongoClient
-    client = MongoClient('72.127.2.216', 27017)
+    client = MongoClient('192.168.0.103', 27017)
     print(client)
 
 
+def subprocess_test():
+    import gevent.monkey
+    import gevent.queue
+    gevent.monkey.patch_all()
+    import multiprocessing
+
+    def _g1(q):
+        while True:
+            print(q.get())
+            gevent.sleep(1)
+
+    def _p1():
+        q = gevent.queue.Queue()
+        gevent.spawn(_g1, q)
+        gevent.sleep()
+        while True:
+            # print(1)
+            q.put(1)
+            gevent.sleep(1)
+
+    multiprocessing.Process(target=_p1).start()
+    while True:
+        gevent.sleep(10)
+
+
+def mysql_test():
+    aliyun = 'rm-bp1eq3q0ni7376g35no.mysql.rds.aliyuncs.com'
+    aws = 'public-1.cluster-cvt1rggskuer.ap-northeast-1.rds.amazonaws.com'
+    db = MySQLdb.Connect(host=aliyun,
+                         port=3306,
+                         user='bishi',
+                         passwd='Zheshimima123',
+                         db='bishi',
+                         charset='utf8',
+                         autocommit=True)
+    aws_db = MySQLdb.Connect(host=aws,
+                             port=3306,
+                             user='bishi',
+                             passwd='Zheshimima123',
+                             db='bishi',
+                             charset='utf8',
+                             autocommit=True)
+    c = db.cursor()
+    sql = ('select code, high, open, low, close, volume, date '
+           'from bishi_kline_1h where date >= 1527564600 and date < 1527570000 limit 150000;')
+    aws_c = aws_db.cursor()
+    try:
+        print('fetch data.')
+        ret = c.execute(sql)
+        if ret:
+            records = c.fetchall()
+            print(len(records))
+            times = len(records) / 100 + 1
+            sql_base = ('replace into bishi_kline_1h '
+                        '(code, high, open, low, close, volume, date) '
+                        'values {};')
+            print('write data.')
+            for index in range(times):
+                if index == times - 1:
+                    items = records[100 * index:]
+                else:
+                    items = records[100 * index: 100 * (index + 1)]
+                items = [['\'{}\''.format(v) if isinstance(v, str) else str(v) for v in item]
+                         for item in items]
+                v_str_list = [u' ({}) '.format(u','.join(item))
+                              for item in items]
+                v_str = ', '.join(v_str_list)
+                rp_sql = sql_base.format(v_str)
+                aws_c.execute(rp_sql)
+                print(index)
+    except Exception as e:
+        print(e)
+    aws_c.close()
+    c.close()
+    aws_db.close()
+    db.close()
+    print('done.')
+
+
+def subprocess_test2():
+    import subprocess
+    import gevent
+    import multiprocessing
+    from os import getpid
+    
+    # class A(subprocess.Popen):
+    #     def __init__(self):
+    #         super(A, self).__init__(multiprocessing.Process)
+    #         print(2)
+    #
+    # A()
+    q = multiprocessing.Queue()
+
+    def _g():
+        while True:
+            print(getpid())
+            gevent.sleep(1)
+
+    gevent.spawn(_g)
+    gevent.sleep()
+
+    def p(q):
+        while True:
+            x = q.get()
+            print(getpid(), x)
+
+    multiprocessing.Process(target=p, args=(q,)).start()
+    multiprocessing.Process(target=p, args=(q,)).start()
+    i = 1
+    while i:
+        # print(1)
+        q.put(i)
+        i += 1
+        gevent.sleep(1)
+
+
+def try_test():
+    while True:
+        try:
+            print(1)
+            a = 1
+            a += '1'
+        except TypeError as e:
+            print(e)
+            time.sleep(1)
+        except Exception as e:
+            print('exit')
+            time.sleep(1)
+            raise
+
+
+def ws_test():
+    # wss://stream.binance.com:9443/stream?streams={}
+    def on_message(ws, message):
+        print(message)
+        return
+        message = json.loads(zlib.decompress(message, 16 + zlib.MAX_WBITS))
+        if message.get('ping'):
+            pong = {'pong': message.get('ping')}
+            ws.send(json.dumps(pong))
+            return
+        asks = message.get('tick', {}).get('asks')
+        if asks:
+            print(asks[0], asks[-1])
+
+    def on_open(ws):
+        # ws.send('{"channel": "market_eosbtc_kline_5min", "cb_id": "eosbtc"}')
+        return
+        ws.send('{"sub":"market.btcusdt.depth.step0","id":"kline1528184226049"}')
+
+    url = 'wss://ws.coinbig.com/ws'
+    ws = WebSocketApp(url=url, #  'wss://stream.binance.com:9443/stream?streams=BTCUSDT@depth20', #  'wss://api.huobipro.com/ws',
+                      on_message=on_message, on_open=on_open)
+    ws.run_forever(http_proxy_host='127.0.0.1', http_proxy_port=8118)
+
+
+def WS():
+    import json
+    import time
+    import base64
+    from websocket import create_connection
+    headers = [
+        "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.89 Safari/537.36", ]
+
+    ws1 = "wss://push.coinpark.cc/"
+    while True:
+        try:
+            ws = create_connection(ws1, header=headers, http_proxy_host="127.0.0.1", http_proxy_port=8118)
+            break
+        except:
+            print('connect ws error,retry...')
+            time.sleep(5)
+
+    data = '{"event": "addChannel", "channel": "bibox_sub_spot_ETC_ETH_kline_1min", "binary": 1}'
+    ws.send(data)
+
+    while True:
+        message = ws.recv()
+        for i in json.loads(message):
+            b = base64.b64decode(i.get('data'))
+
+        print('over')
+
+
+def log_test():
+    import gevent.monkey; gevent.monkey.patch_all()
+    import logging
+    from tddc.worker.event import EventCenter
+    from tddc.worker import logging_ext
+    logging_ext.patch()
+    EventCenter()
+    log = logging.getLogger(__name__)
+    while True:
+        log.debug(time.ctime())
+        gevent.sleep(1)
+
+
+def singleton_test():
+    from tddc.base.util import Singleton
+
+    class A(object):
+        __metaclass__ = Singleton
+        
+        def __init__(self, tag='default'):
+            super(A, self).__init__()
+            print('New')
+
+    print(A(), A(tag='1'), A(tag='2'))
+    
+
 def main():
-    mongo_test()
+    singleton_test()
+    # log_test()
+    # WS()
+    # ws_test()
+    # try_test()
+    # subprocess_test2()
+    # mysql_test()
+    # subprocess_test()
+    # mongo_test()
     # spilt_test()
     # type_test()
     # cerely_test()
@@ -213,7 +438,7 @@ def req():
     # code = code[16:] + code[:16]
     # set_cookie = [cookie for cookie in self.response.headers.getlist('Set-Cookie')
     #               if '_che300' in cookie][-1].split(';')[0].split('=')[1]
-    # task.cookies = {spidercooskie: timestamp,
+    # task.s_cookies = {spidercooskie: timestamp,
     #                 spidercode: code,
     #                 '_che300': set_cookie}
     #
@@ -337,7 +562,7 @@ def redis():
     print(CacheManager().get_random('tddc:proxy:pool:che300'))
     CacheManager().logger.info('Cache')
     StatusManager()
-    print(StatusManager().get_status('tddc.task.status.che300.1200',
+    print(StatusManager().get_status('tddc.Task.Status.che300.1200',
                                      'XRTDepEFx255UPyqEZEJsG'))
     StatusManager().logger.error('Status')
 

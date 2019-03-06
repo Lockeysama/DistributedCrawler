@@ -1,30 +1,31 @@
 # -*- coding: utf-8 -*-
-'''
+"""
 Created on 2017年5月5日
 
 @author: chenyitao
-'''
+"""
 import json
 import logging
 import time
 
 import gevent.queue
+import six
 
-from ..util.short_uuid import ShortUUID
-from ..util.util import Singleton
+from ..base.util import ShortUUID, Singleton
+from ..default_config import default_config
 
-from .models import DBSession, WorkerModel, EventModel
-from .pubsub import Pubsub
-from .status import StatusManager
-from .cache import CacheManager
-from .record import RecordManager
+from .redisex import RedisEx
 
 log = logging.getLogger(__name__)
 
 
 class Event(object):
     class Type(object):
-        ExternModuleUpdate = 1001
+        ExtraModuleUpdate = 1001
+        TaskFilterUpdate = 2001
+        LogOnlineSwitch = 3001
+        OnlineConfigFlush = 4001
+        LongTaskStatusChange = 5001
 
     class Status(object):
         Pushed = 1001
@@ -32,15 +33,15 @@ class Event(object):
         Executed_Success = 3200
         Executed_Failed = 3400
 
-    id = None
+    s_id = None
 
-    own = None
+    s_owner = None
 
-    platform = None
+    s_platform = None
 
-    feature = None
+    s_feature = None
 
-    url = None
+    s_url = None
 
     file_md5 = None
 
@@ -66,25 +67,24 @@ class Event(object):
         return self.__dict__
 
 
-class EventCenter(Pubsub):
-    '''
+@six.add_metaclass(Singleton)
+class EventCenter(RedisEx):
+    """
     事件中心
-    '''
-    __metaclass__ = Singleton
+    """
 
     _dispatcher = {}
 
     def __init__(self):
         log.info('Event Manager Is Starting.')
-        StatusManager()
-        CacheManager()
-        RecordManager()
         self._event_queue = gevent.queue.Queue()
         self._event_call = {}
-        self.worker = DBSession.query(WorkerModel).get(1)
-        self.event_config = DBSession.query(EventModel).get(1)
+        from .online_config import OnlineConfig
+        self.event_config = type('EventConfig', (), OnlineConfig().event.default)
         super(EventCenter, self).__init__()
         self._event_call = {}
+        gevent.spawn_later(3, self.subscribing)
+        gevent.sleep()
         log.info('Event Manager Was Ready.')
 
     @classmethod
@@ -104,10 +104,10 @@ class EventCenter(Pubsub):
 
     def _data_fetched(self, data):
         event = self._deserialization(data)
-        if not event or not hasattr(event, 'id'):
+        if not event or not event.get('s_id'):
             return
-        self.update_the_status(event, Event.Status.Fetched)
-        callback = self._dispatcher.get(event.e_type, None)
+        self.update_the_status(type('Event', (), event), Event.Status.Fetched)
+        callback = self._dispatcher.get(event.get('i_event'), None)
         if callback:
             callback(event)
 
@@ -120,12 +120,12 @@ class EventCenter(Pubsub):
         try:
             item = json.loads(data)
         except Exception as e:
-            log.warning('Event:"%s" | %s.' % (data, e.message))
+            log.warning('Event:"%s" | %s.' % (data, e.args[0]))
             return None
         if not isinstance(item, dict):
             log.warning('Event:"%s" is not type of dict.' % data)
             return None
-        return type('EventRecord', (), item)
+        return item
 
     def update_the_status(self, event, status):
         """
@@ -137,10 +137,14 @@ class EventCenter(Pubsub):
             key(event id)
             value(key from hash(name('xxx:xx:x:event_id')))
         """
-        StatusManager().set_the_hash_value_for_the_hash('tddc:event:status:' + event.event.get('platform'),
-                                                        event.id,
-                                                        'tddc:event:status:value:' + event.id,
-                                                        '%s|%s' % (self.worker.name, self.worker.id),
-                                                        status)
-        StatusManager().sadd('tddc:event:status:processing:%s' % event.event.get('platform'),
-                             event.id)
+        RedisEx().set_the_hash_value_for_the_hash(
+            'tddc:event:status:{}'.format(event.d_data.get('s_platform')),
+            str(event.s_id),
+            'tddc:event:status:value:{}'.format(event.s_id),
+            '{}|{}'.format(default_config.PLATFORM, default_config.FEATURE),
+            status
+        )
+        RedisEx().sadd(
+            'tddc:event:status:processing:%s' % event.d_data.get('s_platform'),
+            event.s_id
+        )

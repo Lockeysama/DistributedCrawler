@@ -1,31 +1,53 @@
-from __future__ import absolute_import
+# -*- coding: utf-8 -*-
+"""
+@author  : chenyitao
+@email   : yt.chen@bshier.com
+@license: Apache Licence
+@software: PyCharm
+@file    : __init__.py.py
+@time    : 2018/10/23 14:49
+"""
+from gevent.monkey import patch_all; patch_all()
+import sys
+sys.path.append('/' + '/'.join(sys.path[0].split('/')[:-1]))
 
-from .config.config import *
-from .hbase.hbase import *
-from .mongodb.mongodbm import *
-from .log import logger
-from .redis.redis_client import *
-from .util.short_uuid import *
-from .util.util import *
-from .worker import *
+import logging
+from .base.log import logger
 
-__all__ = ['ExceptionCollection',
-           'HBaseManager',
-           'MongoDBManager',
-           'CacheManager',
-           'RecordManager',
-           'RedisClient',
-           'StatusManager',
-           'ShortUUID',
-           'Singleton', 'object2json', 'timer',
-           'EventCenter',
-           'ExternBase',
-           'ExternManager',
-           'WorkerManager',
-           'Storager',
-           'CacheManager',
-           'StatusManager',
-           'RecordManager',
-           'MessageQueue',
-           'Pubsub',
-           'TaskManager', 'Task', 'TaskRecordManager', 'TaskCacheManager']
+log = logging.getLogger(__name__)
+
+
+log.info(
+    '\n'
+    '\n'
+    '                   _oo0oo_\n'
+    '                  o8888888o\n'
+    '                  88" . "88\n'
+    '                  (| -_- |)\n'
+    '                  0\  =  /0\n'
+    '                ___/`---\'\___\n'
+    '              .\' \\\\|     |// \'.\n'
+    '             / \\\\|||  :  |||// \\\n'
+    '            / _||||| -:- |||||- \\\n'
+    '           |   | \\\\\\  -  /// |   |\n'
+    '           | \_|  \'\'\\---/\'\'  |_/ |\n'
+    '           \\  .-\\__  \'-\'  ___/-. /\n'
+    '         ___\'. .\'  /--.--\  `. .\'___\n'
+    '      ."" \'<  `.___\\_<|>_/___.\' >\' "".\n'
+    '     | | :  `- \`.;`\ _ /`;.`/ - ` : | |\n'
+    '     \\  \\ `_.   \\_ __\\ /__ _/   .-` /  /\n'
+    ' =====`-.____`.___ \\_____/___.-`___.-\'=====\n'
+    '                   `=---=\n'
+    '\n'
+    ' ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n'
+    '            菩提本无树   明镜亦非台\n'
+    '            本来无霸葛   何必常修改\n'
+)
+
+
+try:
+    __import__('config')
+except:
+    log.info('Custom Config Not Found.')
+else:
+    log.info('Load Custom Config.')
