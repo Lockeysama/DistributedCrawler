@@ -11,7 +11,7 @@ import random
 
 import gevent
 
-from ..timing_task_model import TimingTaskStatus
+from tddc.worker.models.timing_task_model import TimingTaskStatus
 
 from .proxy import ProxyHelper
 

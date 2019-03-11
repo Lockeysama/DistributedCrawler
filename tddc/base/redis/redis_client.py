@@ -224,6 +224,8 @@ class SingleRedisClient(Redis):
                 response = response not in ['0', 'False', 'false']
             elif field_prefix in ['d_', 'l_']:
                 response = json.loads(response)
+        if isinstance(response, bytes):
+            response = response.decode()
         return response
 
     @staticmethod

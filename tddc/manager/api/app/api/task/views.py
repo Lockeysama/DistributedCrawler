@@ -12,10 +12,10 @@ import sys
 from collections import defaultdict
 
 from flask import jsonify, request
-from tddc.worker import KeepTask, TimingTask
+from ......worker import KeepTask, TimingTask
 
 from ...base.define import DATA_EMPTY
-from ...base.redisex_for_manager import RedisExForManager
+from ......worker.redisex import RedisEx
 from ...auth.models import login_required
 from .. import api
 
@@ -27,7 +27,7 @@ log = logging.getLogger(__name__)
 @api.route('/task/list')
 @login_required
 def timing_task_list():
-    keys = RedisExForManager().keys('tddc:task:config:timing:*')
+    keys = RedisEx().keys('tddc:task:config:timing:*')
     if not keys:
         return jsonify({
             'code': DATA_EMPTY,
@@ -44,7 +44,7 @@ def timing_task_list():
 @login_required
 def timing_task_detail():
     feature = request.args.get('feature')
-    data = RedisExForManager().hgetall('tddc:task:config:timing:{}'.format(feature))
+    data = RedisEx().hgetall('tddc:task:config:timing:{}'.format(feature))
     if not data:
         return jsonify({
             'code': DATA_EMPTY,
@@ -86,7 +86,7 @@ def delete_timing_task():
 @api.route('/keep_task/list')
 @login_required
 def keep_task_list():
-    keys = RedisExForManager().keys('tddc:task:config:keep:*')
+    keys = RedisEx().keys('tddc:task:config:keep:*')
     if not keys:
         return jsonify({
             'code': DATA_EMPTY,
@@ -104,7 +104,7 @@ def keep_task_list():
 def keep_task_detail():
     platform = request.args.get('platform')
     market = request.args.get('market')
-    keys = RedisExForManager().keys('tddc:task:config:keep:{}:{}*'.format(platform, market))
+    keys = RedisEx().keys('tddc:task:config:keep:{}:{}*'.format(platform, market))
     if not keys:
         return jsonify({
             'code': DATA_EMPTY,
@@ -115,7 +115,7 @@ def keep_task_detail():
         'data': [], 'platform': platform, 'market': market
     }
     for key in keys:
-        resp = RedisExForManager().hgetall(key)
+        resp = RedisEx().hgetall(key)
         result['data'].append(resp)
     return jsonify(result)
 

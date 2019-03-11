@@ -16,12 +16,12 @@ from copy import deepcopy
 
 import six
 from flask import json
-from tddc.base.util import Singleton, SnowFlakeID
-from tddc.worker import Event, OnlineConfig
+from ......base.util import Singleton
+from ......worker import Event, OnlineConfig, OnlineConfigEvent, ExtraModuleEvent
 
-from ...base.redisex_for_manager import RedisExForManager
+from ......worker.redisex import RedisEx
 
-from .models import Module
+Module = type('Module', (ExtraModuleEvent, ), {})
 
 log = logging.getLogger(__name__)
 
@@ -68,64 +68,52 @@ class ModulesHelper(object):
     def edit(self, owner, filename, file_content):
         module = self._get_module_info(filename, file_content)
         module.s_owner = owner
-        module_online = RedisExForManager().hgetall(
+        module_online = RedisEx().hgetall(
             '{}:{}:{}'.format(self.key_base, owner.lower(), module.s_feature)
         )
         if module_online:
             module_online = Module(**module_online)
             if module.s_file_md5 == module_online.s_file_md5:
                 return
-        RedisExForManager().hmset(
+        RedisEx().hmset(
             '{}:{}:{}'.format(self.key_base, owner.lower(), module.s_feature),
             module.to_dict()
         )
 
     def delete(self, owner, feature):
-        RedisExForManager().delete(
+        RedisEx().delete(
             '{}:{}:{}'.format(self.key_base, owner.lower(), feature)
         )
 
     def query(self, owner='*', feature='*'):
         if owner == '*':
-            keys = RedisExForManager().keys('{}:*'.format(self.key_base))
-            return [Module(**RedisExForManager().hgetall(key)) for key in keys]
+            keys = RedisEx().keys('{}:*'.format(self.key_base))
+            return [Module(**RedisEx().hgetall(key)) for key in keys]
         else:
             if feature == '*':
-                keys = RedisExForManager().keys('{}:{}:*'.format(
+                keys = RedisEx().keys('{}:{}:*'.format(
                     self.key_base, owner.lower())
                 )
-                return [Module(**RedisExForManager().hgetall(key)) for key in keys]
+                return [Module(**RedisEx().hgetall(key)) for key in keys]
             else:
-                key = RedisExForManager().keys('{}:{}:{}'.format(
+                key = RedisEx().keys('{}:{}:{}'.format(
                     self.key_base, owner.lower(), feature)
                 )
                 if key:
                     key = key[0]
-                return Module(**RedisExForManager().hgetall(key))
+                return Module(**RedisEx().hgetall(key))
 
     def push(self, owner, feature):
-        data = {'e_type': Event.Type.OnlineConfigFlush,
-                'name': 'Config Update',
-                'describe': 'Config Update Event.',
-                'event': {
-                    'config_type': 'extra_modules'
-                },
-                'id': SnowFlakeID().get_id(),
-                'status': 0,
-                'timestamp': int(time.time())}
-        RedisExForManager().publish(
+        event = Event(OnlineConfigEvent)
+        event.data = {'s_type': 'extra_modules'}
+        RedisEx().publish(
             '{}:{}'.format(self.event_conf.topic, owner.lower()),
-            json.dumps(data)
+            json.dumps(event.to_dict())
         )
         module = self.query(owner, feature)
-        data = {'e_type': Event.Type.ExtraModuleUpdate,
-                'name': 'Modules Update',
-                'describe': 'Modules(%s|%s) Update Event.' % (owner, feature),
-                'event': module.to_dict(),
-                'id': SnowFlakeID().get_id(),
-                'status': 0,
-                'timestamp': int(time.time())}
-        RedisExForManager().publish(
+        event2 = Event(ExtraModuleEvent)
+        event2.data = module.to_dict()
+        RedisEx().publish(
             '{}:{}'.format(self.event_conf.topic, owner.lower()),
-            json.dumps(data)
+            json.dumps(event2.to_dict())
         )

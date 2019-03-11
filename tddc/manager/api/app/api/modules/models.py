@@ -7,7 +7,7 @@
 @file: models.py
 @time: 2018/3/28 17:42
 """
-from tddc.base.util import JsonObjectSerialization
+from ......base.util import JsonObjectSerialization
 
 
 class Module(JsonObjectSerialization):

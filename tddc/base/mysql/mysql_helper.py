@@ -63,7 +63,7 @@ class MySQLHelper(object):
         fields_str = ','.join(fields)
         values = []
         for fv in fields_values:
-            ks = fv.keys()
+            ks = list(fv.keys())
             ks.sort()
             fv_values = [fv.get(k) if fv.get(k) is not None else 0
                          for k in fields]

@@ -13,8 +13,10 @@ import sys
 from ..base.util import Device
 from ..default_config import default_config
 
-from .event import EventCenter, Event
+from .event import EventCenter
 from .redisex import RedisEx
+from .define.event import LogOnlineSwitch
+from .models.event_model import Event
 
 
 """
@@ -183,7 +185,7 @@ def critical(self, msg, *args, **kwargs):
 
 
 def online_print_switch(event):
-    if event.e_type != Event.Type.LogOnlineSwitch:
+    if event.e_type != LogOnlineSwitch:
         return
     lv = event.event.get('lv')
     activate = event.event.get('activate')
@@ -193,7 +195,7 @@ def online_print_switch(event):
 
 
 def patch():
-    EventCenter._dispatcher[Event.Type.LogOnlineSwitch] = online_print_switch
+    EventCenter._dispatcher[LogOnlineSwitch] = online_print_switch
     logging.LogRecord.__str__ = log_record_str
     logging.Logger._log = _log
     logging.Logger.debug = debug

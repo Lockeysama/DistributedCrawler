@@ -8,7 +8,7 @@
 @time: 2018/10/10 20:06
 """
 
-from tddc.base.util import JsonObjectSerialization
+from ......base.util import JsonObjectSerialization
 
 
 class ProxyTask(JsonObjectSerialization):

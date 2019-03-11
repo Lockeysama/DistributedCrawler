@@ -10,8 +10,8 @@
 import logging
 
 import six
-from tddc.base.util import Singleton
-from ...base.redisex_for_manager import RedisExForManager
+from ......base.util import Singleton
+from ......worker.redisex import RedisEx
 
 from .models import ProxyTask
 
@@ -24,24 +24,24 @@ class ProxyHelper(object):
     key_base = 'tddc:worker:config:common:proxy_check_list'
 
     def edit(self, proxy_task):
-        RedisExForManager().hmset(
+        RedisEx().hmset(
             '{}:{}'.format(self.key_base, proxy_task.s_feature),
             proxy_task.to_dict()
         )
 
     def delete(self, feature):
-        RedisExForManager().delete(
+        RedisEx().delete(
             '{}:{}'.format(self.key_base, feature)
         )
 
     def query(self, feature='*'):
         if feature == '*':
-            keys = RedisExForManager().keys('{}:*'.format(self.key_base))
-            return [ProxyTask(**RedisExForManager().hgetall(key)) for key in keys]
+            keys = RedisEx().keys('{}:*'.format(self.key_base))
+            return [ProxyTask(**RedisEx().hgetall(key)) for key in keys]
         else:
-            key = RedisExForManager().keys('{}:{}'.format(
+            key = RedisEx().keys('{}:{}'.format(
                 self.key_base, feature)
             )
             if key:
                 key = key[0]
-            return ProxyTask(**RedisExForManager().hgetall(key))
+            return ProxyTask(**RedisEx().hgetall(key))

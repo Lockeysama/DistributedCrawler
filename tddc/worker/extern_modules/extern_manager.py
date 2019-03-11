@@ -15,7 +15,10 @@ from ...base.util import Singleton
 from ...default_config import default_config
 
 from ..online_config import OnlineConfig
-from ..event import EventCenter, Event
+from ..event import EventCenter
+
+from ..models.extra_modules_model import ExtraModuleEvent
+from ..models.event_model import Event
 
 log = logging.getLogger(__name__)
 
@@ -56,7 +59,7 @@ class ExternManager(object):
         return True
 
     @staticmethod
-    @EventCenter.route(Event.Type.ExtraModuleUpdate)
+    @EventCenter.route(ExtraModuleEvent)
     def _models_update_event(event):
         """
         注册到事件中心，在收到相应事件时回调
@@ -65,11 +68,9 @@ class ExternManager(object):
         """
         if default_config.PID != os.getpid():
             return
-        EventCenter().update_the_status(
-            event,
-            Event.Status.Executed_Success
-            if ExternManager()._update(event)
-            else Event.Status.Executed_Failed
+        ret = ExternManager()._update(event)
+        event.set_state(
+            Event.Status.Executed_Success if ret else Event.Status.Executed_Failed
         )
 
     def _create_package(self, path, platform):
@@ -100,7 +101,7 @@ class ExternManager(object):
 
     def _update(self, event):
         log.info('Extern Modules Is Updating...')
-        event_model = Event(**event.event)
+        event_model = event.data
         if not event_model.s_platform:
             return False
         path = os.popen('find . -name extern_modules').readlines()[0].strip()

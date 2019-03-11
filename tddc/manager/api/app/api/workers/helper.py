@@ -13,9 +13,9 @@ import time
 
 import gevent
 import six
-from tddc.base.util import Singleton
+from ......base.util import Singleton
 
-from ...base.redisex_for_manager import RedisExForManager
+from ......worker.redisex import RedisEx
 
 log = logging.getLogger(__name__)
 
@@ -38,15 +38,15 @@ class AuthManager(object):
 
     def run(self):
         while True:
-            register = RedisExForManager().brpop('tddc:worker:register')[1]
+            register = RedisEx().brpop('tddc:worker:register')[1]
             if not register:
                 gevent.sleep(10)
                 continue
             try:
                 register_dict = json.loads(register)
                 mac = register_dict.get('s_mac')
-                if RedisExForManager().keys(self.white_key + ':{}'.format(mac)):
-                    RedisExForManager().lpush(
+                if RedisEx().keys(self.white_key + ':{}'.format(mac)):
+                    RedisEx().lpush(
                         self.pass_key_fmt.format(
                             register_dict.get('s_ip'),
                             register_dict.get('s_platform'),
@@ -54,8 +54,8 @@ class AuthManager(object):
                         ),
                         json.dumps({'code': 0, 'msg': 'Auth Success.'})
                     )
-                elif RedisExForManager().keys(self.black_key + ':{}'.format(mac)):
-                    RedisExForManager().lpush(
+                elif RedisEx().keys(self.black_key + ':{}'.format(mac)):
+                    RedisEx().lpush(
                         self.pass_key_fmt.format(
                             register_dict.get('s_ip'),
                             register_dict.get('s_platform'),
@@ -64,22 +64,22 @@ class AuthManager(object):
                         json.dumps({'code': -1000, 'msg': 'Reject.'})
                     )
                 else:
-                    RedisExForManager().hmset(
+                    RedisEx().hmset(
                         self.apply_key + ':{}'.format(mac), register_dict
                     )
             except Exception as e:
                 log.exception(e)
 
     def get_registration_list(self):
-        keys = RedisExForManager().keys(self.apply_key + ':*')
-        return [RedisExForManager().hgetall(key) for key in keys]
+        keys = RedisEx().keys(self.apply_key + ':*')
+        return [RedisEx().hgetall(key) for key in keys]
 
     def get_white_list(self):
-        keys = RedisExForManager().keys(self.white_key + ':*')
-        return [RedisExForManager().hgetall(key) for key in keys]
+        keys = RedisEx().keys(self.white_key + ':*')
+        return [RedisEx().hgetall(key) for key in keys]
 
     def edit_white_list(self, worker):
-        RedisExForManager().hmset(
+        RedisEx().hmset(
             self.white_key + ':{}'.format(
                 worker.get('s_mac')
             ),
@@ -90,18 +90,18 @@ class AuthManager(object):
         )
 
     def remove_from_white_list(self, worker):
-        RedisExForManager().delete(
+        RedisEx().delete(
             self.white_key + ':{}'.format(
                 worker.get('s_mac')
             )
         )
 
     def get_black_list(self):
-        keys = RedisExForManager().keys(self.black_key + ':*')
-        return [RedisExForManager().hgetall(key) for key in keys]
+        keys = RedisEx().keys(self.black_key + ':*')
+        return [RedisEx().hgetall(key) for key in keys]
 
     def edit_black_list(self, worker):
-        RedisExForManager().hmset(
+        RedisEx().hmset(
             self.black_key + ':{}'.format(
                 worker.get('s_mac')
             ),
@@ -112,26 +112,26 @@ class AuthManager(object):
         )
 
     def remove_from_black_list(self, worker):
-        RedisExForManager().delete(
+        RedisEx().delete(
             self.black_key + ':{}'.format(
                 worker.get('s_mac')
             )
         )
 
     def auth(self, is_pass, worker):
-        RedisExForManager().delete(
+        RedisEx().delete(
             self.apply_key + ':{}'.format(worker.get('s_mac'))
         )
         if not worker.get('s_mac'):
             return
-        RedisExForManager().sadd(
+        RedisEx().sadd(
             self.white_key if is_pass else self.black_key,
             json.dumps({
                 's_ip': worker.get('s_ip'),
                 's_mac': worker.get('s_mac')
             })
         )
-        RedisExForManager().hmset(
+        RedisEx().hmset(
             (self.white_key if is_pass else self.black_key) + ':{}'.format(
                 worker.get('s_mac')
             ),
@@ -143,7 +143,7 @@ class AuthManager(object):
                 'i_date': str(int(time.time()))
             }
         )
-        RedisExForManager().lpush(
+        RedisEx().lpush(
             self.pass_key_fmt.format(
                 worker.get('s_ip'), worker.get('s_platform'), worker.get('i_pid')
             ),

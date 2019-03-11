@@ -11,7 +11,7 @@ import gevent
 from ..extern_modules import ExternManager
 from ..online_config import OnlineConfig
 from ..timing_task_manager import TimingTaskManager
-from ..timing_task_model import TimingTaskStatus
+from tddc.worker.models.timing_task_model import TimingTaskStatus
 from ..redisex import RedisEx
 from ..storager import Storager
 

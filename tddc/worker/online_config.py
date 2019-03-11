@@ -16,9 +16,10 @@ import six
 from ..base.util import Singleton, Device
 from ..default_config import default_config
 
-from .event import EventCenter, Event
-
+from .event import EventCenter
 from .redisex import RedisEx
+from .models.online_config_model import OnlineConfigEvent
+from .models.event_model import Event
 
 log = logging.getLogger(__name__)
 
@@ -52,19 +53,17 @@ class OnlineConfig(RedisEx):
         return default_config.DEFAULT_REDIS_NODES
 
     @staticmethod
-    @EventCenter.route(Event.Type.OnlineConfigFlush)
+    @EventCenter.route(OnlineConfigEvent)
     def _config_update_event(event):
         """
         注册到事件中心，在收到相应事件时回调
         :param event:
         :return:
         """
-        config_type = event.event.get('config_type')
-        EventCenter().update_the_status(
-            event,
-            Event.Status.Executed_Success
-            if OnlineConfig().flush_config(config_type)
-            else Event.Status.Executed_Failed
+        config_type = event.data.s_type
+        ret = OnlineConfig().flush_config(config_type)
+        event.set_state(
+            Event.Status.Executed_Success if ret else Event.Status.Executed_Failed
         )
 
     @staticmethod

@@ -11,10 +11,12 @@ import hashlib
 import logging
 import time
 
-from ..base.util import JsonObjectSerialization
-from .online_config import OnlineConfig
-from .redisex import RedisEx
+from ...base.util import JsonObjectSerialization
+from ..online_config import OnlineConfig
+from ..redisex import RedisEx
+from ..define.event import TaskFilterUpdate
 
+from .event_model import EventBase
 
 log = logging.getLogger(__name__)
 
@@ -203,52 +205,18 @@ class TimingTask(_Task):
         RedisEx().delete(key)
 
 
-class _KeepTaskIndex(_Task):
+class TimingTaskFilterEvent(EventBase):
 
-    fields = [
-        's_id', 's_owner', 's_platform', 's_feature'
-    ]
+    event = TaskFilterUpdate
 
+    name = 'TaskFilterUpdate'
 
-class KeepTaskStatus(_Task):
+    desc = 'TaskFilterUpdate'
 
-    TaskTopic = 0
+    fields = TimingTask.fields
 
-    Running = 200
-
-    Reconnecting = 302
-
-    Closed = 400
-
-    fields = [
-        's_id', 's_platform', 's_feature', 'i_state'
-    ]
-
-    def set_state(self, state):
-        key = '{}:keep:{}:{}'.format(
-            self._record_key, self.s_platform, self.s_id
-        )
-        RedisEx().hset(key, 'i_state', state)
-
-
-class KeepTask(_Task):
-
-    fields = [
-        's_id', 's_owner', 's_platform', 's_feature', 'i_status',
-        's_proxy', 'b_valid', 'i_timestamp', 's_desc'
-    ]
-
-    def init_with_index(self, index):
-        key = '{}:keep:{}:{}'.format(
-            self._record_key, index.s_platform, index.s_id
-        )
-        records = RedisEx().hgetall(key)
-        self.init(records)
-
-    @property
-    def index(self):
-        return _KeepTaskIndex(**self.to_dict())
-
-    @property
-    def state(self):
-        return KeepTaskStatus(**self.to_dict())
+    def __init__(self, task=None, **kwargs):
+        if task:
+            super(TimingTaskFilterEvent, self).__init__(**task.to_dict())
+        else:
+            super(TimingTaskFilterEvent, self).__init__(**kwargs)

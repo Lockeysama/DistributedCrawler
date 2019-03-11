@@ -15,7 +15,7 @@ from collections import defaultdict
 from flask import jsonify, request
 
 from ...base.define import CMD_INVALIDATE
-from ...base.redisex_for_manager import RedisExForManager
+from ......worker.redisex import RedisEx
 from ...auth.models import login_required
 from .. import api
 
@@ -52,7 +52,7 @@ def _next_path_query(keys, prefix):
 @login_required
 def next_path_query():
     prefix = request.args.get('prefix')
-    keys = RedisExForManager().keys('{}:*'.format(prefix))
+    keys = RedisEx().keys('{}:*'.format(prefix))
     return jsonify(_next_path_query(keys, prefix))
 
 
@@ -60,11 +60,11 @@ def next_path_query():
 @login_required
 def get_key_content():
     key = request.args.get('key')
-    redis_methods = {'hash': RedisExForManager().hgetall,
-                     'set': RedisExForManager().smembers,
-                     'list': RedisExForManager().lrange,
-                     'string': RedisExForManager().get}
-    key_type = RedisExForManager().type(key)
+    redis_methods = {'hash': RedisEx().hgetall,
+                     'set': RedisEx().smembers,
+                     'list': RedisEx().lrange,
+                     'string': RedisEx().get}
+    key_type = RedisEx().type(key)
     method = redis_methods.get(key_type)
     if not method:
         return jsonify({
@@ -77,10 +77,10 @@ def get_key_content():
     if key_type == 'list':
         data = method(key, 0, 100)
         result['result'] = data
-        length = RedisExForManager().llen(key)
+        length = RedisEx().llen(key)
         result['len'] = length
     elif key_type == 'string':
-        data = {'value': method(key).encode('utf')}
+        data = {'value': method(key)}
         result['result'] = data
     elif key_type == 'set':
         data = method(key)
@@ -103,7 +103,7 @@ def set_key_content():
         return jsonify({'error': u'请输入命令', 'date': time.ctime()})
     cmd = cmd.split(' ')
     if cmd[0] == 'clean':
-        ret = RedisExForManager().clean(cmd[1])
+        ret = RedisEx().clean(cmd[1])
         return jsonify({'result': ret, 'date': time.ctime(), 'cmd': ' '.join(cmd)})
     elif cmd[0].lower() in ('subscribe',):
         return jsonify({'result': u'该命令被禁用', 'cmd': ' '.join(cmd), 'date': time.ctime()})
@@ -112,7 +112,7 @@ def set_key_content():
         result['cmd'] = ' '.join(cmd)
         result['date'] = time.ctime()
         try:
-            ret = RedisExForManager().execute_command(*cmd)
+            ret = RedisEx().execute_command(*cmd)
             if cmd[0] == 'hget' and ':cache:' in cmd[1]:
                 ret = zlib.decompress(ret)
             result['result'] = ret

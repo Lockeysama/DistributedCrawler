@@ -14,7 +14,7 @@ from collections import defaultdict
 from flask import jsonify, request
 
 from ...base.define import DATA_EMPTY
-from ...base.redisex_for_manager import RedisExForManager
+from ......worker.redisex import RedisEx
 from ...auth.models import login_required
 from .. import api
 
@@ -32,7 +32,7 @@ def modules_list():
         query = 'tddc:worker:config:common:extra_modules:{}:*'.format(platform)
     else:
         query = 'tddc:worker:config:common:extra_modules:{}:{}:*'.format(platform, market)
-    keys = RedisExForManager().keys(query)
+    keys = RedisEx().keys(query)
     if not keys:
         return jsonify({
             'code': DATA_EMPTY,
@@ -50,7 +50,7 @@ def modules_list():
 def modules_detail():
     platform = request.args.get('platform')
     market = request.args.get('market')
-    keys = RedisExForManager().keys(
+    keys = RedisEx().keys(
         'tddc:worker:config:common:extra_modules:{}:{}*'.format(platform, market)
     )
     if not keys:
@@ -63,7 +63,7 @@ def modules_detail():
         'data': [], 'platform': platform, 'market': market
     }
     for key in keys:
-        resp = RedisExForManager().hgetall(key)
+        resp = RedisEx().hgetall(key)
         result['data'].append(resp)
     return jsonify(result)
 

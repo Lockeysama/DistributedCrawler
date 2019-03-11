@@ -6,7 +6,7 @@ Created on 2017年8月31日
 """
 from tddc.default_config import default_config
 
-from tddc_proxy.worker.checker import Checker
+from tddc.worker import ProxiesChecker
 
 default_config.PLATFORM = 'Proxy'
 
@@ -14,6 +14,6 @@ default_config.DEFAULT_REDIS_NODES = [
     {'host': '127.0.0.1', 'port': 6379, 'password': None}
 ]
 
-Checker.HTTP_CHECK_CONCURRENT = 32
+ProxiesChecker.HTTP_CHECK_CONCURRENT = 32
 
-Checker.HTTPS_CHECK_CONCURRENT = 32
+ProxiesChecker.HTTPS_CHECK_CONCURRENT = 32

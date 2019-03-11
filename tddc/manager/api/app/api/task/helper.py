@@ -16,13 +16,13 @@ import gevent
 import time
 
 import six
-from tddc.base.util import Singleton, ShortUUID, SnowFlakeID
-from tddc.worker import (
+from ......base.util import Singleton, ShortUUID, SnowFlakeID
+from ......worker import (
     Event, TimingTask, KeepTask, OnlineConfig, TimingTaskStatus,
     KeepTaskStatus, KeepTaskEvent
 )
 
-from ...base.redisex_for_manager import RedisExForManager
+from ......worker.redisex import RedisEx
 
 log = logging.getLogger(__name__)
 
@@ -51,27 +51,27 @@ class TaskHelper(object):
     def edit(self, task):
         data = task.to_dict()
         name = '{}:{}'.format(self.key_base, task.s_feature)
-        RedisExForManager().hmset(name, data)
+        RedisEx().hmset(name, data)
 
     def delete(self, feature):
-        RedisExForManager().delete(
+        RedisEx().delete(
             '{}:{}'.format(self.key_base, feature)
         )
 
     def query(self, feature='*'):
         if feature == '*':
-            keys = RedisExForManager().keys('{}:*'.format(self.key_base))
-            return [TimingTask(**RedisExForManager().hgetall(key)) for key in keys]
+            keys = RedisEx().keys('{}:*'.format(self.key_base))
+            return [TimingTask(**RedisEx().hgetall(key)) for key in keys]
         else:
-            key = RedisExForManager().keys('{}:{}'.format(
+            key = RedisEx().keys('{}:{}'.format(
                 self.key_base, feature)
             )
             if key:
                 key = key[0]
-            return TimingTask(**RedisExForManager().hgetall(key))
+            return TimingTask(**RedisEx().hgetall(key))
 
     def task_filter_update(self):
-        filter_table = RedisExForManager().hgetall('tddc:task:filter') or {}
+        filter_table = RedisEx().hgetall('tddc:task:filter') or {}
         if filter_table:
             for k, v in filter_table.items():
                 if not v:
@@ -86,7 +86,7 @@ class TaskHelper(object):
                 key = '{base}:{platform}:{task_id}'.format(
                     base=self.task_config.record_key, platform=task.s_platform, task_id=task.s_id
                 )
-                RedisExForManager().delete(key)
+                RedisEx().delete(key)
                 return True
         return False
 
@@ -117,16 +117,16 @@ class TaskHelper(object):
             key = '{base}:{platform}:{task_id}'.format(
                 base=self.task_config.record_key, platform=task.s_platform, task_id=task.s_id
             )
-            RedisExForManager().hmset(key, task.to_dict())
+            RedisEx().hmset(key, task.to_dict())
             TaskHelper().edit(task)
-            RedisExForManager().push(
+            RedisEx().push(
                 '{}:crawler:{}'.format(self.task_config.in_queue_topic, task.s_priority.lower()),
                 '{}:{}:{}'.format(self.task_config.record_key, task.s_platform, task.s_id)
             )
             log.debug('Push Main Task({}).'.format(task.s_feature))
 
     def _task_recycle(self):
-        for event in RedisExForManager().psubscribe('__keyevent@0__:expired'):
+        for event in RedisEx().psubscribe('__keyevent@0__:expired'):
             if event.get('type') == 'psubscribe' \
                 or event.get('data') == 1 \
                     or (self.task_config.record_key + ':') not in event.get('data'):
@@ -134,14 +134,14 @@ class TaskHelper(object):
             log.info(event)
             task_index = event.get('data')
             task_index = ':'.join(task_index.split(':')[:-1])
-            task = RedisExForManager().get_records(task_index)
+            task = RedisEx().get_records(task_index)
             if not task:
                 continue
             task = TimingTask(**task)
             if self.task_filter(task):
                 continue
             task.i_state = TimingTaskStatus.CrawlTopic
-            RedisExForManager().push(
+            RedisEx().push(
                 '{}:crawler{}'.format(
                     self.task_config.in_queue_topic,
                     ':{}'.format(task.s_priority) if task.s_priority else ''
@@ -150,7 +150,7 @@ class TaskHelper(object):
             )
 
     def task_interrupt_changed(self, task_info):
-        features = RedisExForManager().hget('tddc:task:filter', task_info.s_platform)
+        features = RedisEx().hget('tddc:task:filter', task_info.s_platform)
         features = set(features.split(',')) if features else set()
         if task_info.b_interrupt:
             if task_info.s_feature in features:
@@ -161,9 +161,9 @@ class TaskHelper(object):
                 return
             features.remove(task_info.s_feature)
         if features:
-            RedisExForManager().hset('tddc:task:filter', task_info.s_platform, ','.join(features))
+            RedisEx().hset('tddc:task:filter', task_info.s_platform, ','.join(features))
         else:
-            RedisExForManager().hdel('tddc:task:filter', task_info.s_platform)
+            RedisEx().hdel('tddc:task:filter', task_info.s_platform)
         event_id = ShortUUID.UUID()
         data = {'e_type': EVENT_All_TASK_FILTER_UPDATE,
                 'name': 'Task Interrupt Changed',
@@ -172,10 +172,10 @@ class TaskHelper(object):
                 'id': event_id,
                 'status': 0,
                 'timestamp': int(time.time())}
-        RedisExForManager().publish(
+        RedisEx().publish(
             '{}:crawler'.format(self.event_config.topic), json.dumps(data)
         )
-        RedisExForManager().publish(
+        RedisEx().publish(
             '{}:parser'.format(self.event_config.topic), json.dumps(data)
         )
         self.task_filter_update()
@@ -195,32 +195,32 @@ class TaskPadHelper(object):
         log.info('Task Pad Helper Was Ready.')
 
     def edit(self, task):
-        RedisExForManager().hmset(
+        RedisEx().hmset(
             '{}:{}:{}'.format(self.key_base, task.s_owner.lower(), task.s_feature),
             task.to_dict()
         )
 
     def delete(self, platform, feature):
-        RedisExForManager().delete(
+        RedisEx().delete(
             '{}:{}:{}'.format(self.key_base, platform.lower(), feature)
         )
 
     def query(self, platform='*', feature='*'):
         platform = platform.lower()
         if platform == '*':
-            keys = RedisExForManager().keys('{}:*'.format(self.key_base))
-            return [KeepTask(**RedisExForManager().hgetall(key)) for key in keys]
+            keys = RedisEx().keys('{}:*'.format(self.key_base))
+            return [KeepTask(**RedisEx().hgetall(key)) for key in keys]
         else:
             if feature == '*':
-                keys = RedisExForManager().keys('{}:{}:*'.format(self.key_base, platform))
-                return [KeepTask(**RedisExForManager().hgetall(key)) for key in keys]
+                keys = RedisEx().keys('{}:{}:*'.format(self.key_base, platform))
+                return [KeepTask(**RedisEx().hgetall(key)) for key in keys]
             else:
-                key = RedisExForManager().keys('{}:{}:{}'.format(
+                key = RedisEx().keys('{}:{}:{}'.format(
                     self.key_base, platform, feature)
                 )
                 if key:
                     key = key[0]
-                    return KeepTask(**RedisExForManager().hgetall(key))
+                    return KeepTask(**RedisEx().hgetall(key))
                 return None
 
     def start_task(self, task):
@@ -232,9 +232,9 @@ class TaskPadHelper(object):
         task.b_valid = True
         task.i_state = KeepTaskStatus.Dispatched
         self.edit(task)
-        event = KeepTaskEvent()
+        event = Event(KeepTaskEvent)
         event.data = task.to_dict()
-        RedisExForManager().publish(
+        RedisEx().publish(
             '{}:{}'.format(self.event_config.topic, task.s_owner.lower()),
             json.dumps(event.to_dict())
         )
@@ -246,19 +246,19 @@ class TaskPadHelper(object):
         task.b_valid = False
         task.i_state = KeepTaskStatus.Stop
         self.edit(task)
-        event = KeepTaskEvent()
+        event = Event(KeepTaskEvent)
         event.data = task.to_dict()
-        RedisExForManager().publish(
+        RedisEx().publish(
             '{}:{}'.format(self.event_config.topic, task.s_owner.lower()),
             json.dumps(event.to_dict())
         )
 
     @staticmethod
     def _get_heads(owner):
-        keys = RedisExForManager().keys('tddc:worker:monitor:health:*')
+        keys = RedisEx().keys('tddc:worker:monitor:health:*')
         for key in keys:
             if key.split(':')[-1] == owner.lower():
-                return RedisExForManager().hgetall(key)
+                return RedisEx().hgetall(key)
         return None
 
     def _get_the_most_suitable_head(self, owner):
@@ -272,23 +272,23 @@ class TaskPadHelper(object):
         for head, heart in heads.items():
             mac, feature = head.split('|')
             name = 'tddc:worker:monitor:memory_usage_rate:{}'.format(mac)
-            hkeys = RedisExForManager().hkeys(name)
+            hkeys = RedisEx().hkeys(name)
             if hkeys:
                 hkeys.sort()
                 hkeys = hkeys[-5:]
                 mem_percent_avg = sum(
-                    [json.loads(RedisExForManager().hget(name, k)).get('mem_percent') for k in hkeys]
+                    [json.loads(RedisEx().hget(name, k)).get('mem_percent') for k in hkeys]
                 ) / len(hkeys)
             else:
                 mem_percent_avg = 0
             name = 'tddc:worker:monitor:cpu_usage_rate:{}'.format(mac)
-            hkeys = RedisExForManager().hkeys(name)
+            hkeys = RedisEx().hkeys(name)
             if hkeys:
                 hkeys.sort()
                 hkeys = hkeys[-5:]
-                cpu_count = json.loads(RedisExForManager().hget(name, hkeys[0])).get('cpu_count')
+                cpu_count = json.loads(RedisEx().hget(name, hkeys[0])).get('cpu_count')
                 cpu_percent_avg = sum(
-                    [sum(json.loads(RedisExForManager().hget(name, k)).get('cpu_percent')) / cpu_count for k in hkeys]
+                    [sum(json.loads(RedisEx().hget(name, k)).get('cpu_percent')) / cpu_count for k in hkeys]
                 ) / len(hkeys)
             else:
                 cpu_percent_avg = 0
@@ -313,10 +313,10 @@ class TaskPadHelper(object):
         while True:
             try:
                 ts = time.time()
-                keys = RedisExForManager().keys('{}:*'.format(self.key_base))
+                keys = RedisEx().keys('{}:*'.format(self.key_base))
                 dispatch = []
                 for key in keys:
-                    task = KeepTask(**RedisExForManager().hgetall(key))
+                    task = KeepTask(**RedisEx().hgetall(key))
                     if not task.b_valid:
                         continue
                     if task.i_state == KeepTaskStatus.Dispatched:
@@ -337,14 +337,14 @@ class TaskPadHelper(object):
                         dispatch.append(task)
                         task.state.set_state(KeepTaskStatus.Dispatched)
                 for task in dispatch:
-                    event = KeepTaskEvent()
+                    event = Event(KeepTaskEvent)
                     event.data = task.to_dict()
                     if not self._assign_task_to_head(task):
                         log.warning('Assign Task({}:{}) Failed.'.format(
                             task.s_owner, task.s_feature
                         ))
                         continue
-                    RedisExForManager().publish(
+                    RedisEx().publish(
                         '{}:{}'.format(self.event_config.topic, task.s_owner.lower()),
                         json.dumps(event.to_dict())
                     )

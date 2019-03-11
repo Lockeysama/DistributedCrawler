@@ -10,19 +10,14 @@
 import logging
 import setproctitle
 
-import gevent.monkey
 from gevent.pywsgi import WSGIServer
 from werkzeug.contrib.fixers import ProxyFix
-
-gevent.monkey.patch_all()
 
 from ...default_config import default_config
 from ...worker.monitor import Monitor
 from ...worker.event import EventCenter
-from ...worker import redisex
 
 from .app.api.workers.helper import AuthManager
-from .app.base.redisex_for_manager import RedisExForManager
 from .app.api.task.helper import TaskHelper, TaskPadHelper
 
 from .app import create_app
@@ -31,7 +26,6 @@ log = logging.getLogger(__name__)
 
 
 def _start_plugin():
-    redisex.RedisEx = RedisExForManager
     Monitor()
     EventCenter()
     TaskHelper()

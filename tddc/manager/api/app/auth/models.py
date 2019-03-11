@@ -16,7 +16,7 @@ from itsdangerous import (TimedJSONWebSignatureSerializer as Serializer,
                           SignatureExpired, BadSignature)
 
 from ..base.define import LOGIN_FAILED
-from ..base.redisex_for_manager import RedisExForManager
+from .....worker.redisex import RedisEx
 
 
 class User(object):
@@ -28,7 +28,7 @@ class User(object):
     @classmethod
     def add_user(cls, username, password, role):
         password_hash = generate_password_hash(password)
-        RedisExForManager().hmset(
+        RedisEx().hmset(
             'tddc:worker:config:manager:user:{}'.format(username),
             {
                 'username': username,
@@ -39,7 +39,7 @@ class User(object):
 
     @classmethod
     def auth(cls, username, password):
-        user = RedisExForManager().hgetall(
+        user = RedisEx().hgetall(
             'tddc:worker:config:manager:user:{}'.format(username)
         )
         if not user:
@@ -53,7 +53,7 @@ class User(object):
         s = Serializer(os.environ.get('SECRET_KEY') or 'hello', expires_in=expiration)
         password_hash = generate_password_hash(password)
         token = s.dumps({'username': username, 'password_hash': password_hash}).decode()
-        RedisExForManager().setex(
+        RedisEx().setex(
             'tddc:worker:config:manager:user:auth:{}'.format(username), expiration, token
         )
         return token
@@ -69,7 +69,7 @@ class User(object):
             return None
         except BadSignature:
             return None
-        _token = RedisExForManager().get(
+        _token = RedisEx().get(
             'tddc:worker:config:manager:user:auth:{}'.format(data.get('username'))
         )
         if _token != token:
@@ -85,7 +85,7 @@ class User(object):
             return False
         except BadSignature:
             return False
-        RedisExForManager().delete(
+        RedisEx().delete(
             'tddc:worker:config:manager:user:auth:{}'.format(data.get('username'))
         )
 

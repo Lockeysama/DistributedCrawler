@@ -11,7 +11,7 @@ from tddc.worker import Worker, KeepTaskManager
 log = logging.getLogger(__name__)
 
 
-class WSCrawlerWorker(Worker):
+class KeepCrawlerWorker(Worker):
     """
     classdocs
     """
@@ -23,7 +23,7 @@ class WSCrawlerWorker(Worker):
 
 
 def main():
-    WSCrawlerWorker.start()
+    KeepCrawlerWorker.start()
 
 
 if __name__ == '__main__':

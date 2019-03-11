@@ -14,7 +14,7 @@ from collections import defaultdict
 from flask import jsonify, request
 
 from ...base.define import DATA_EMPTY, CONFIG_MODIFY_FAILED, CONFIG_DELETE_FAILED
-from ...base.redisex_for_manager import RedisExForManager
+from ......worker.redisex import RedisEx
 from ...auth.models import login_required
 from .. import api
 
@@ -26,7 +26,7 @@ log = logging.getLogger(__name__)
 @api.route('/config/list')
 @login_required
 def config_list():
-    keys = RedisExForManager().keys('tddc:worker:config:*')
+    keys = RedisEx().keys('tddc:worker:config:*')
     if not keys:
         return jsonify({
             'code': DATA_EMPTY,
@@ -48,7 +48,7 @@ def config_detail():
     platform = request.args.get('platform')
     ip = request.args.get('ip')
     feature = request.args.get('feature')
-    keys = RedisExForManager().keys('tddc:worker:config:{}:{}:{}:*'.format(
+    keys = RedisEx().keys('tddc:worker:config:{}:{}:{}:*'.format(
         platform, ip, feature)
     )
     if not keys:
@@ -59,7 +59,7 @@ def config_detail():
     result = defaultdict(lambda: defaultdict(object))
     for key in keys:
         fields = key.split(':')
-        data = RedisExForManager().hgetall(key)
+        data = RedisEx().hgetall(key)
         if len(fields) == 8:
             result[fields[6]][fields[7]] = data
         elif len(fields) == 7:

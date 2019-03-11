@@ -14,11 +14,15 @@ from os import getpid
 
 import gevent.queue
 import six
-from tddc import default_config
-from tddc.base.util import Singleton
-from tddc.worker import RedisEx, OnlineConfig, EventCenter, Event
 
-from .timing_task_model import TimingTask, TimingTaskStatus, TimingTaskIndex
+from ..default_config import default_config
+from ..base.util import Singleton
+from ..worker import RedisEx, OnlineConfig, EventCenter
+
+from .models.timing_task_model import (
+    TimingTask, TimingTaskStatus, TimingTaskIndex, TimingTaskFilterEvent
+)
+from .models.event_model import Event
 
 log = logging.getLogger(__name__)
 
@@ -201,13 +205,11 @@ class TimingTaskManager(RedisEx):
         self.push(topic, task_index, _pushed)
 
     @staticmethod
-    @EventCenter.route(Event.Type.TaskFilterUpdate)
+    @EventCenter.route(TimingTaskFilterEvent)
     def task_filter_update(event):
-        EventCenter().update_the_status(
-            event,
-            Event.Status.Executed_Success
-            if TimingTaskManager()._task_filter_update()
-            else Event.Status.Executed_Failed
+        ret = TimingTaskManager()._task_filter_update()
+        event.set_state(
+            Event.Status.Executed_Success if ret else Event.Status.Executed_Failed
         )
         log.info('Task Filter Update.')
 

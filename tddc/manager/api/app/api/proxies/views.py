@@ -13,7 +13,7 @@ from collections import defaultdict
 from flask import jsonify, request
 
 from ...base.define import DATA_EMPTY
-from ...base.redisex_for_manager import RedisExForManager
+from ......worker.redisex import RedisEx
 from ...auth.models import login_required
 from .. import api
 
@@ -26,7 +26,7 @@ log = logging.getLogger(__name__)
 @api.route('/proxies/list')
 @login_required
 def proxies_list():
-    keys = RedisExForManager().keys('tddc:worker:config:common:proxy_check_list:*')
+    keys = RedisEx().keys('tddc:worker:config:common:proxy_check_list:*')
     if not keys:
         return jsonify({
             'code': DATA_EMPTY,
@@ -43,7 +43,7 @@ def proxies_list():
 @login_required
 def proxies_detail():
     feature = request.args.get('feature')
-    data = RedisExForManager().hgetall('tddc:worker:config:common:proxy_check_list:{}'.format(feature))
+    data = RedisEx().hgetall('tddc:worker:config:common:proxy_check_list:{}'.format(feature))
     if not data:
         return jsonify({
             'code': DATA_EMPTY,

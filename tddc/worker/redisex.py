@@ -127,10 +127,10 @@ class RedisEx(RedisClient):
             return self.srandmember(_name)
         return self.robust(_get_random, name, pop)
 
-    def set(self, name, *cache):
-        def _set(_name, *_cache):
-            self.sadd(_name, *_cache)
-        self.robust(_set, name, *cache)
+    # def set(self, name, *cache):
+    #     def _set(_name, *_cache):
+    #         self.sadd(_name, *_cache)
+    #     self.robust(_set, name, *cache)
 
     def remove(self, name, *cache):
         def _remove(_name, *_cache):

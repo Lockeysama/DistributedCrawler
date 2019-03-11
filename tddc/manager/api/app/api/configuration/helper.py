@@ -12,7 +12,7 @@ import logging
 import six
 from tddc.base.util import Singleton
 
-from ...base.redisex_for_manager import RedisExForManager
+from ......worker.redisex import RedisEx
 
 
 log = logging.getLogger(__name__)
@@ -28,19 +28,19 @@ class ConfigsHelper(object):
         for k1, v1 in config.items():
             for k2, v2 in v1.items():
                 for k3, v3 in v2.items():
-                    RedisExForManager().hset('{}:{}:{}'.format(_path, k1, k2), k3, v3)
+                    RedisEx().hset('{}:{}:{}'.format(_path, k1, k2), k3, v3)
         return True
 
     def delete(self, path, config):
         _path = '{}:{}'.format(self.key_base, ':'.join(path))
         for k1, v1 in config.items():
             if v1 == '*':
-                RedisExForManager().clean('{}:{}:*'.format(_path, k1))
+                RedisEx().clean('{}:{}:*'.format(_path, k1))
                 return True
             for k2, v2 in v1.items():
                 if v2 == '*':
-                    RedisExForManager().clean('{}:{}:{}'.format(_path, k1, k2))
+                    RedisEx().clean('{}:{}:{}'.format(_path, k1, k2))
                     return True
                 for k3, _ in v2.items():
-                    RedisExForManager().hdel('{}:{}:{}'.format(_path, k1, k2), k3)
+                    RedisEx().hdel('{}:{}:{}'.format(_path, k1, k2), k3)
         return True

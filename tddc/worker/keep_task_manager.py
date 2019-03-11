@@ -19,8 +19,9 @@ import six
 from ..base.util import Singleton, Device
 from ..default_config import default_config
 
-from .event import EventCenter, Event
-from .keep_task_model import KeepTaskEvent, KeepTaskStatus
+from .event import EventCenter
+from .models.keep_task_model import KeepTaskEvent, KeepTaskStatus, KeepTask
+from .models.event_model import Event
 from .extern_modules import ExternManager
 
 log = logging.getLogger(__name__)
@@ -36,25 +37,28 @@ class KeepTaskManager(object):
         log.info('Keep Task Manager Was Started.')
 
     @staticmethod
-    @EventCenter.route(Event.Type.LongTaskStatusChange)
+    @EventCenter.route(KeepTaskEvent)
     def _task_status_change(event):
         if getpid() != default_config.PID:
             return
         log.info('Long Task Status Changed...')
-        event_model = KeepTaskEvent(**event)
-        KeepTaskManager().task_status_change(event_model)
+        ret = KeepTaskManager().task_status_change(event)
+        event.set_state(
+            Event.Status.Executed_Success if ret else Event.Status.Executed_Failed
+        )
 
     def task_status_change(self, event):
-        task = event.data
+        task = KeepTask(**event.data.to_dict())
         if not task:
             log.warning('Task Not Found.{}'.format(event))
-            return
+            return False
         if task.b_valid:
             self.start_task(task)
             task.state.set_state(KeepTaskStatus.Running)
         else:
             self.stop_task(task)
             task.state.set_state(KeepTaskStatus.Stop)
+        return True
 
     def start_task(self, task):
         if task.i_state == KeepTaskStatus.Dispatched:

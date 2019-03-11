@@ -12,10 +12,13 @@ import time
 
 import logging
 
-from ..base.util import JsonObjectSerialization, SnowFlakeID
+from ...base.util import JsonObjectSerialization, SnowFlakeID
+from ...worker.define.event import KeepTaskStateChange
 
-from .redisex import RedisEx
-from .event import Event
+from ..redisex import RedisEx
+from ..event import Event
+
+from .event_model import EventBase
 
 log = logging.getLogger(__name__)
 
@@ -113,30 +116,18 @@ class KeepTask(_Task):
         return KeepTaskHead(**self.to_dict())
 
 
-class KeepTaskEvent(JsonObjectSerialization):
+class KeepTaskEvent(EventBase):
 
-    fields = ('s_id', 'i_timestamp', 'i_event', 'i_state'
-              's_owner', 's_head', 'd_data')
+    event = KeepTaskStateChange
 
-    def __init__(self, fields=None, **kwargs):
-        super(KeepTaskEvent, self).__init__(fields, **kwargs)
-        self.s_id = kwargs.get('s_id', SnowFlakeID().get_id())
-        self.i_timestamp = kwargs.get('i_timestamp', int(time.time()))
-        self.i_event = kwargs.get('i_event', Event.Type.LongTaskStatusChange)
-        self.i_state = kwargs.get('i_state', Event.Status.Pushed)
-        self.d_data = KeepTask(**kwargs.get('d_data')) if kwargs.get('d_data') else None
+    name = 'KeepTaskStateChange'
 
-    @property
-    def data(self):
-        return self.d_data
+    desc = 'KeepTaskStateChange'
 
-    @data.setter
-    def data(self, new_data):
-        self.d_data = KeepTask(**new_data)
+    fields = KeepTask.fields
 
-    def to_dict(self):
-        d = {k: self.__dict__.get(k)
-             for k in self.fields
-             if self.__dict__.get(k) is not None}
-        d['d_data'] = self.data.to_dict()
-        return d
+    def __init__(self, task=None, **kwargs):
+        if task:
+            super(KeepTaskEvent, self).__init__(**task.to_dict())
+        else:
+            super(KeepTaskEvent, self).__init__(**kwargs)
