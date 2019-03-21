@@ -176,3 +176,43 @@ class MySQLHelper(object):
             cursor.close()
         log.debug('Fetch {} Data.({})'.format(table, len(results)))
         return results
+
+    def update_with(self, table, query, **update_values):
+        cursor = self.db.cursor()
+        new_values = ','.join(
+            ['{}='.format(k) + ('\'{}\''.format(v) if isinstance(v, str) else '{}'.format(v))
+             for k, v in update_values.items()]
+        )
+        if query:
+            query_str = ' WHERE ' + query
+        else:
+            query_str = ''
+        sql = 'UPDATE {} SET {}{};'.format(table, new_values, query_str)
+        try:
+            cursor.execute(sql)
+        except MySQLdb.OperationalError as e:
+            log.exception(e)
+            self.db = self.connect()
+            return self.update_with(table, query, **update_values)
+        except Exception as e:
+            log.warning(e)
+        finally:
+            cursor.close()
+
+    def delete_with(self, table, query):
+        cursor = self.db.cursor()
+        if query:
+            query_str = ' WHERE ' + query
+        else:
+            query_str = ''
+        sql = 'DELETE FROM {} {};'.format(table, query_str)
+        try:
+            cursor.execute(sql)
+        except MySQLdb.OperationalError as e:
+            log.exception(e)
+            self.db = self.connect()
+            return self.delete_with(table, query)
+        except Exception as e:
+            log.warning(e)
+        finally:
+            cursor.close()
