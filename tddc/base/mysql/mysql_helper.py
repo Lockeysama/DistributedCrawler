@@ -59,6 +59,7 @@ class MySQLHelper(object):
     def replace_mutil(self, table, fields, *fields_values):
         if not len(fields_values):
             return
+        fields = list(fields)
         fields.sort()
         fields_str = ','.join(fields)
         values = []
