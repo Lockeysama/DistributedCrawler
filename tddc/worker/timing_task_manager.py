@@ -188,6 +188,9 @@ class TimingTaskManager(RedisEx):
             self.conf.record_key, task.s_platform, task.s_id
         )
         RedisEx().hmset(key, task.to_dict())
+        log.debug('[{}:{}:{}] Task Failed.'.format(
+            task.s_platform, task.s_feature, task.s_url
+        ))
 
     def push_task(self, task):
         topic = '{}:{}'.format(

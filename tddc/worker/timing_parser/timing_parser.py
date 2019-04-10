@@ -42,6 +42,9 @@ class TimingParser(object):
                 task.i_state = TimingTaskStatus.ParseModuleNotFound
                 TimingTaskManager().task_failed(task)
                 del task
+                log.debug('[{}:{}] Parser Module Not Found.'.format(
+                    task.s_platform, task.s_feature
+                ))
                 continue
             self._parsing(task, cls)
 
